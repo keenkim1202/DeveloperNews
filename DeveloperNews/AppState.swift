@@ -158,6 +158,18 @@ final class AppState {
         await reload()
     }
 
+    func refreshIfStale(maxAge: TimeInterval) async {
+        guard !isLoading else {
+            return
+        }
+
+        if let lastUpdatedAt, Date().timeIntervalSince(lastUpdatedAt) < maxAge, hasLoadedContent {
+            return
+        }
+
+        await reload()
+    }
+
     func reload() async {
         isLoading = true
         errorMessage = nil
