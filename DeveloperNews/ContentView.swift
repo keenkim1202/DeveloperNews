@@ -43,6 +43,9 @@ private struct TopicSelectionView: View {
 
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         ForEach(Topic.allCases) { topic in
+                            let isSelected = appState.selectedTopics.contains(topic)
+                            let isDisabled = !isSelected && !appState.canSelectMoreTopics
+
                             Button {
                                 appState.toggleTopic(topic)
                             } label: {
@@ -53,15 +56,17 @@ private struct TopicSelectionView: View {
                                 }
                                 .frame(maxWidth: .infinity, minHeight: 56)
                                 .padding(.horizontal, 12)
-                                .background(appState.selectedTopics.contains(topic) ? Color.accentColor.opacity(0.18) : Color(.secondarySystemBackground))
-                                .foregroundStyle(appState.selectedTopics.contains(topic) ? Color.accentColor : Color.primary)
+                                .background(isSelected ? Color.accentColor.opacity(0.18) : Color(.secondarySystemBackground))
+                                .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
                                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                .opacity(isDisabled ? 0.4 : 1)
                             }
                             .buttonStyle(.plain)
+                            .disabled(isDisabled)
                         }
                     }
 
-                    Text("Choose at least one topic to continue.")
+                    Text("Pick 1 to \(AppState.maxSelectedTopics) topics to continue.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -276,24 +281,29 @@ private struct SettingsView: View {
         NavigationStack {
             List {
                 Section("Your topics") {
-                    Text("\(appState.selectedTopics.count) selected")
+                    Text("\(appState.selectedTopics.count) of \(AppState.maxSelectedTopics) selected")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
 
                     ForEach(Topic.allCases) { topic in
+                        let isSelected = appState.selectedTopics.contains(topic)
+                        let isDisabled = !isSelected && !appState.canSelectMoreTopics
+
                         Button {
                             appState.toggleTopic(topic)
                         } label: {
                             HStack {
                                 Label(topic.title, systemImage: topic.symbolName)
                                 Spacer()
-                                if appState.selectedTopics.contains(topic) {
+                                if isSelected {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.tint)
                                 }
                             }
+                            .opacity(isDisabled ? 0.4 : 1)
                         }
                         .buttonStyle(.plain)
+                        .disabled(isDisabled)
                     }
                 }
 

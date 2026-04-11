@@ -3,6 +3,8 @@ import Observation
 
 @Observable
 final class AppState {
+    static let maxSelectedTopics = 5
+
     private enum StorageKey {
         static let selectedTopics = "selectedTopics"
         static let savedItemIDs = "savedItemIDs"
@@ -68,11 +70,18 @@ final class AppState {
         !allItems.isEmpty
     }
 
+    var canSelectMoreTopics: Bool {
+        selectedTopics.count < Self.maxSelectedTopics
+    }
+
     func toggleTopic(_ topic: Topic) {
         if selectedTopics.contains(topic) {
             selectedTopics.remove(topic)
         }
         else {
+            guard canSelectMoreTopics else {
+                return
+            }
             selectedTopics.insert(topic)
         }
 
