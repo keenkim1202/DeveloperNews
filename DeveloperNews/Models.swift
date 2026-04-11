@@ -39,6 +39,11 @@ enum Topic: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
+struct EngagementMetrics: Hashable {
+    let reactionCount: Int
+    let commentCount: Int
+}
+
 struct ContentItem: Identifiable, Hashable {
     enum Kind: String {
         case article
@@ -70,6 +75,7 @@ struct ContentItem: Identifiable, Hashable {
     let topics: [Topic]
     let trendScore: Int
     let thumbnailURL: URL?
+    let engagement: EngagementMetrics?
 
     init(
         id: UUID,
@@ -82,7 +88,8 @@ struct ContentItem: Identifiable, Hashable {
         publishedAt: Date,
         topics: [Topic],
         trendScore: Int,
-        thumbnailURL: URL? = nil
+        thumbnailURL: URL? = nil,
+        engagement: EngagementMetrics? = nil
     ) {
         self.id = id
         self.kind = kind
@@ -95,5 +102,6 @@ struct ContentItem: Identifiable, Hashable {
         self.topics = topics
         self.trendScore = trendScore
         self.thumbnailURL = thumbnailURL
+        self.engagement = engagement
     }
 }

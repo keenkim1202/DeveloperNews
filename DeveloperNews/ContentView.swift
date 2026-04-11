@@ -243,6 +243,10 @@ private struct FeedItemRow: View {
                             }
                         }
                     }
+
+                    if let engagement = item.engagement {
+                        EngagementSummaryView(engagement: engagement)
+                    }
                 }
 
                 if let thumbnailURL = item.thumbnailURL {
@@ -251,6 +255,28 @@ private struct FeedItemRow: View {
             }
             .padding(.vertical, 6)
         }
+    }
+}
+
+private struct EngagementSummaryView: View {
+    let engagement: EngagementMetrics
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Label(formatted(engagement.reactionCount), systemImage: "arrow.up")
+            Label(formatted(engagement.commentCount), systemImage: "bubble.left")
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .labelStyle(.titleAndIcon)
+    }
+
+    private func formatted(_ value: Int) -> String {
+        if value >= 1000 {
+            let thousands = Double(value) / 1000
+            return String(format: "%.1fk", thousands)
+        }
+        return "\(value)"
     }
 }
 
