@@ -10,6 +10,7 @@ final class AppState {
         static let selectedTopics = "selectedTopics"
         static let savedItemIDs = "savedItemIDs"
         static let savedItemTimestamps = "savedItemTimestamps"
+        static let savedItemSnapshots = "savedItemSnapshots"
         static let savedSortOrder = "savedSortOrder"
         static let notificationsEnabled = "notificationsEnabled"
         static let disabledSourceCategories = "disabledSourceCategories"
@@ -25,7 +26,8 @@ final class AppState {
     var selectedTopics: Set<Topic> = []
     var focusedTopic: Topic?
     var currentTab: AppTab = .home
-    var savedItemTimestamps: [ContentItem.ID: Date] = [:]
+    var savedItemSnapshots: [URL: ContentItem] = [:]
+    var savedItemTimestampsByURL: [URL: Date] = [:]
     var savedSortOrder: SavedSortOrder = .recentlySaved
     var notificationsEnabled = false
     var disabledSourceCategories: Set<SourceCategory> = []
@@ -47,8 +49,17 @@ final class AppState {
         return Date().timeIntervalSince(topStoryDismissedAt) < Self.topStoryDismissalWindow
     }
 
+    var savedURLs: Set<URL> {
+        Set(savedItemSnapshots.keys)
+    }
+
     var savedItemIDs: Set<ContentItem.ID> {
-        Set(savedItemTimestamps.keys)
+        let urls = savedURLs
+        return Set(allItems.filter { urls.contains($0.url) }.map(\.id))
+    }
+
+    func isSaved(_ item: ContentItem) -> Bool {
+        savedItemSnapshots[item.url] != nil
     }
 
     init(contentSourceClient: (any ContentSourceClient)? = nil) {
@@ -99,19 +110,19 @@ final class AppState {
 
     private func savedSourceNameCounts() -> [String: Int] {
         var counts: [String: Int] = [:]
-        for item in allItems where savedItemIDs.contains(item.id) {
+        for item in savedItemSnapshots.values {
             counts[item.sourceName, default: 0] += 1
         }
         return counts
     }
 
     var savedItems: [ContentItem] {
-        let items = allItems.filter { savedItemTimestamps[$0.id] != nil }
+        let items = Array(savedItemSnapshots.values)
         switch savedSortOrder {
         case .recentlySaved:
             return items.sorted { lhs, rhs in
-                let lhsDate = savedItemTimestamps[lhs.id] ?? .distantPast
-                let rhsDate = savedItemTimestamps[rhs.id] ?? .distantPast
+                let lhsDate = savedItemTimestampsByURL[lhs.url] ?? .distantPast
+                let rhsDate = savedItemTimestampsByURL[rhs.url] ?? .distantPast
                 return lhsDate > rhsDate
             }
         case .trending:
@@ -221,12 +232,14 @@ final class AppState {
         resetPagination()
     }
 
-    func toggleSaved(itemID: ContentItem.ID) {
-        if savedItemTimestamps[itemID] != nil {
-            savedItemTimestamps[itemID] = nil
+    func toggleSaved(_ item: ContentItem) {
+        if savedItemSnapshots[item.url] != nil {
+            savedItemSnapshots[item.url] = nil
+            savedItemTimestampsByURL[item.url] = nil
         }
         else {
-            savedItemTimestamps[itemID] = .now
+            savedItemSnapshots[item.url] = item
+            savedItemTimestampsByURL[item.url] = .now
         }
 
         persistState()
@@ -322,17 +335,12 @@ final class AppState {
             selectedTopics = Set(storedTopicValues.compactMap(Topic.init(rawValue:)))
         }
 
-        if let storedTimestamps = defaults.dictionary(forKey: StorageKey.savedItemTimestamps) as? [String: Double] {
-            savedItemTimestamps = Dictionary(uniqueKeysWithValues: storedTimestamps.compactMap { key, value in
-                guard let id = UUID(uuidString: key) else {
-                    return nil
-                }
-                return (id, Date(timeIntervalSince1970: value))
-            })
-        }
-        else if let storedSavedIDs = defaults.stringArray(forKey: StorageKey.savedItemIDs) {
-            let migrated = storedSavedIDs.compactMap(UUID.init(uuidString:))
-            savedItemTimestamps = Dictionary(uniqueKeysWithValues: migrated.map { ($0, Date.distantPast) })
+        if let snapshotData = defaults.data(forKey: StorageKey.savedItemSnapshots),
+           let decoded = try? JSONDecoder().decode([SavedRecord].self, from: snapshotData) {
+            for record in decoded {
+                savedItemSnapshots[record.item.url] = record.item
+                savedItemTimestampsByURL[record.item.url] = record.savedAt
+            }
         }
 
         if let storedSortOrder = defaults.string(forKey: StorageKey.savedSortOrder),
@@ -364,19 +372,26 @@ final class AppState {
     private func persistState() {
         let defaults = UserDefaults.standard
         let topicValues = selectedTopics.map(\.rawValue).sorted()
-        let timestampDict: [String: Double] = Dictionary(uniqueKeysWithValues: savedItemTimestamps.map { id, date in
-            (id.uuidString, date.timeIntervalSince1970)
-        })
         let disabledCategoryValues = disabledSourceCategories.map(\.rawValue).sorted()
+        let records = savedItemSnapshots.values.map { item in
+            SavedRecord(item: item, savedAt: savedItemTimestampsByURL[item.url] ?? .now)
+        }
 
         defaults.set(topicValues, forKey: StorageKey.selectedTopics)
-        defaults.set(timestampDict, forKey: StorageKey.savedItemTimestamps)
+        if let encoded = try? JSONEncoder().encode(records) {
+            defaults.set(encoded, forKey: StorageKey.savedItemSnapshots)
+        }
         defaults.set(savedSortOrder.rawValue, forKey: StorageKey.savedSortOrder)
         defaults.set(notificationsEnabled, forKey: StorageKey.notificationsEnabled)
         defaults.set(disabledCategoryValues, forKey: StorageKey.disabledSourceCategories)
         defaults.set(lastUpdatedAt, forKey: StorageKey.lastUpdatedAt)
         defaults.set(hasSeenIntro, forKey: StorageKey.hasSeenIntro)
         defaults.set(topStoryDismissedAt, forKey: StorageKey.topStoryDismissedAt)
+    }
+
+    private struct SavedRecord: Codable {
+        let item: ContentItem
+        let savedAt: Date
     }
 
     private static func defaultContentSourceClient() -> any ContentSourceClient {

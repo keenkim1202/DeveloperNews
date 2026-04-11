@@ -476,12 +476,17 @@ private struct FeedSectionListView: View {
     var onLoadMore: (() -> Void)? = nil
     var scrollToTopTrigger: Int = 0
 
+    private var firstAnchorID: ContentItem.ID? {
+        articleItems.first?.id ?? discussionItems.first?.id
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             list
                 .onChange(of: scrollToTopTrigger) { _, _ in
+                    guard let anchor = firstAnchorID else { return }
                     withAnimation {
-                        proxy.scrollTo("__feed_top__", anchor: .top)
+                        proxy.scrollTo(anchor, anchor: .top)
                     }
                 }
         }
@@ -489,13 +494,6 @@ private struct FeedSectionListView: View {
 
     private var list: some View {
         List {
-            Color.clear
-                .frame(height: 0)
-                .listRowInsets(EdgeInsets())
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .id("__feed_top__")
-
             if showsSummary {
                 Section {
                     VStack(alignment: .leading, spacing: 2) {
@@ -950,17 +948,11 @@ private struct SettingsView: View {
 
     private var settingsList: some View {
         List {
-            Color.clear
-                .frame(height: 0)
-                .listRowInsets(EdgeInsets())
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .id("__settings_top__")
-
             Section("Your topics") {
                 Text("\(appState.selectedTopics.count) of \(AppState.maxSelectedTopics) selected")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                    .id("__settings_top__")
 
                     ForEach(Topic.allCases) { topic in
                         let isSelected = appState.selectedTopics.contains(topic)
@@ -1278,11 +1270,11 @@ private struct ArticleDetailView: View {
 
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    appState.toggleSaved(itemID: item.id)
+                    appState.toggleSaved(item)
                 } label: {
-                    Image(systemName: appState.savedItemIDs.contains(item.id) ? "bookmark.fill" : "bookmark")
+                    Image(systemName: appState.isSaved(item) ? "bookmark.fill" : "bookmark")
                 }
-                .accessibilityLabel(appState.savedItemIDs.contains(item.id) ? "Remove from saved" : "Save story")
+                .accessibilityLabel(appState.isSaved(item) ? "Remove from saved" : "Save story")
             }
 
             ToolbarItem(placement: .topBarTrailing) {
