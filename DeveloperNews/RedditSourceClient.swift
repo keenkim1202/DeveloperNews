@@ -76,7 +76,8 @@ struct RedditSourceClient: ContentSourceClient {
                 publishedAt: publishedAt,
                 topics: topics,
                 trendScore: trendScore(score: post.score, commentCount: post.numComments, publishedAt: publishedAt),
-                thumbnailURL: thumbnailURL(from: post)
+                thumbnailURL: thumbnailURL(from: post),
+                engagement: EngagementMetrics(reactionCount: post.score, commentCount: post.numComments)
             )
         }
     }

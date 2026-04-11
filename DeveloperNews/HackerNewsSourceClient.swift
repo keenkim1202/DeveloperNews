@@ -56,7 +56,8 @@ struct HackerNewsSourceClient: ContentSourceClient {
             url: link,
             publishedAt: publishedAt,
             topics: topics,
-            trendScore: score
+            trendScore: score,
+            engagement: EngagementMetrics(reactionCount: story.score, commentCount: story.descendants ?? 0)
         )
     }
 
@@ -92,4 +93,5 @@ private struct HNStory: Decodable {
     let by: String?
     let score: Int
     let time: Int
+    let descendants: Int?
 }

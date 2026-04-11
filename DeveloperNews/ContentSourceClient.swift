@@ -64,6 +64,7 @@ struct CompositeContentSourceClient: ContentSourceClient {
         let mentionBoost = (group.count - 1) * 4
         let unionedTopics = Array(Set(group.flatMap(\.topics)))
         let thumbnail = primary.thumbnailURL ?? group.lazy.compactMap(\.thumbnailURL).first
+        let engagement = primary.engagement ?? group.lazy.compactMap(\.engagement).first
 
         return ContentItem(
             id: primary.id,
@@ -76,7 +77,8 @@ struct CompositeContentSourceClient: ContentSourceClient {
             publishedAt: primary.publishedAt,
             topics: unionedTopics,
             trendScore: min(100, primary.trendScore + mentionBoost),
-            thumbnailURL: thumbnail
+            thumbnailURL: thumbnail,
+            engagement: engagement
         )
     }
 
