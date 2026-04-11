@@ -91,25 +91,35 @@ private struct TopicSelectionView: View {
     }
 }
 
+private enum AppTab: Hashable {
+    case home
+    case saved
+    case settings
+}
+
 private struct MainTabView: View {
     let appState: AppState
+    @State private var selectedTab: AppTab = .home
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             HomeView(appState: appState)
                 .tabItem {
                     Label("Home", systemImage: "newspaper")
                 }
+                .tag(AppTab.home)
 
-            SavedView(appState: appState)
+            SavedView(appState: appState, selectedTab: $selectedTab)
                 .tabItem {
                     Label("Saved", systemImage: "bookmark")
                 }
+                .tag(AppTab.saved)
 
             SettingsView(appState: appState)
                 .tabItem {
                     Label("Settings", systemImage: "gearshape")
                 }
+                .tag(AppTab.settings)
         }
     }
 }
@@ -165,16 +175,25 @@ private struct HomeView: View {
 
 private struct SavedView: View {
     let appState: AppState
+    @Binding var selectedTab: AppTab
 
     var body: some View {
         NavigationStack {
             Group {
                 if appState.savedItems.isEmpty {
-                    ContentUnavailableView(
-                        "No saved stories yet",
-                        systemImage: "bookmark",
-                        description: Text("Saved stories will show up here once article detail is wired in.")
-                    )
+                    ContentUnavailableView {
+                        Label("No saved stories yet", systemImage: "bookmark")
+                    } description: {
+                        Text("Open a story you want to come back to and tap save. It will show up here.")
+                    } actions: {
+                        Button {
+                            selectedTab = .home
+                        } label: {
+                            Text("Browse trending")
+                                .fontWeight(.semibold)
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
                 }
                 else {
                     FeedSectionListView(
