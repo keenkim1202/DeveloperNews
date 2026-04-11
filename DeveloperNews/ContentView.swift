@@ -55,6 +55,22 @@ private struct TopicSelectionView: View {
                             .foregroundStyle(.secondary)
                     }
 
+                    HStack(spacing: 12) {
+                        Text("Selected")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        Text("\(appState.selectedTopics.count) / \(AppState.maxSelectedTopics)")
+                            .font(.subheadline.monospacedDigit().weight(.semibold))
+                            .foregroundStyle(appState.selectedTopics.isEmpty ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.accentColor))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(Capsule())
+                    }
+
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         ForEach(Topic.allCases) { topic in
                             let isSelected = appState.selectedTopics.contains(topic)
