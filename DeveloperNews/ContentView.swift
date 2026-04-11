@@ -254,6 +254,36 @@ private struct FeedItemRow: View {
     }
 }
 
+private struct DetailHeroImageView: View {
+    let url: URL
+
+    var body: some View {
+        AsyncImage(url: url) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .scaledToFill()
+            case .failure:
+                Color(.tertiarySystemFill)
+                    .overlay {
+                        Image(systemName: "photo")
+                            .font(.title2)
+                            .foregroundStyle(.secondary)
+                    }
+            case .empty:
+                Color(.tertiarySystemFill)
+                    .overlay { ProgressView() }
+            @unknown default:
+                Color(.tertiarySystemFill)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 200)
+        .clipped()
+    }
+}
+
 private struct FeedItemThumbnailView: View {
     let url: URL
 
@@ -386,6 +416,14 @@ private struct ArticleDetailView: View {
 
     var body: some View {
         List {
+            if let thumbnailURL = item.thumbnailURL {
+                Section {
+                    DetailHeroImageView(url: thumbnailURL)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                }
+            }
+
             Section {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(item.title)
