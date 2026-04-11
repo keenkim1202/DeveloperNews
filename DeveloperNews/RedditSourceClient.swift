@@ -137,7 +137,12 @@ extension RedditSourceClient {
         RedditFeedDefinition(subreddit: "webdev", defaultTopics: [.web, .product]),
         RedditFeedDefinition(subreddit: "iosprogramming", defaultTopics: [.ios]),
         RedditFeedDefinition(subreddit: "androiddev", defaultTopics: [.android]),
-        RedditFeedDefinition(subreddit: "MachineLearning", defaultTopics: [.ai])
+        RedditFeedDefinition(subreddit: "MachineLearning", defaultTopics: [.ai]),
+        RedditFeedDefinition(subreddit: "rust", defaultTopics: [.backend, .devops]),
+        RedditFeedDefinition(subreddit: "golang", defaultTopics: [.backend, .devops]),
+        RedditFeedDefinition(subreddit: "typescript", defaultTopics: [.web]),
+        RedditFeedDefinition(subreddit: "kubernetes", defaultTopics: [.devops, .backend]),
+        RedditFeedDefinition(subreddit: "netsec", defaultTopics: [.security])
     ]
 }
 
