@@ -65,6 +65,7 @@ enum SourceCategory: String, CaseIterable, Identifiable, Hashable, Codable {
     case article
     case hackerNews
     case reddit
+    case github
 
     var id: String { rawValue }
 
@@ -73,6 +74,7 @@ enum SourceCategory: String, CaseIterable, Identifiable, Hashable, Codable {
         case .article: "Articles"
         case .hackerNews: "Hacker News"
         case .reddit: "Reddit"
+        case .github: "GitHub"
         }
     }
 
@@ -81,6 +83,7 @@ enum SourceCategory: String, CaseIterable, Identifiable, Hashable, Codable {
         case .article: "newspaper"
         case .hackerNews: "flame"
         case .reddit: "bubble.left.and.bubble.right"
+        case .github: "chevron.left.forwardslash.chevron.right"
         }
     }
 }
