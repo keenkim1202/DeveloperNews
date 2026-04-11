@@ -14,7 +14,10 @@ final class AppState {
         static let disabledSourceCategories = "disabledSourceCategories"
         static let lastUpdatedAt = "lastUpdatedAt"
         static let hasSeenIntro = "hasSeenIntro"
+        static let topStoryDismissedAt = "topStoryDismissedAt"
     }
+
+    private static let topStoryDismissalWindow: TimeInterval = 24 * 60 * 60
 
     private let contentSourceClient: any ContentSourceClient
 
@@ -30,6 +33,14 @@ final class AppState {
     var errorMessage: String?
     var lastUpdatedAt: Date?
     var hasSeenIntro = false
+    var topStoryDismissedAt: Date?
+
+    var isTopStoryHidden: Bool {
+        guard let topStoryDismissedAt else {
+            return false
+        }
+        return Date().timeIntervalSince(topStoryDismissedAt) < Self.topStoryDismissalWindow
+    }
 
     var savedItemIDs: Set<ContentItem.ID> {
         Set(savedItemTimestamps.keys)
@@ -196,6 +207,11 @@ final class AppState {
         persistState()
     }
 
+    func dismissTopStory() {
+        topStoryDismissedAt = .now
+        persistState()
+    }
+
     func resetTopics() {
         selectedTopics.removeAll()
         focusedTopic = nil
@@ -286,6 +302,10 @@ final class AppState {
         if defaults.object(forKey: StorageKey.hasSeenIntro) != nil {
             hasSeenIntro = defaults.bool(forKey: StorageKey.hasSeenIntro)
         }
+
+        if let storedDismissedAt = defaults.object(forKey: StorageKey.topStoryDismissedAt) as? Date {
+            topStoryDismissedAt = storedDismissedAt
+        }
     }
 
     private func persistState() {
@@ -303,6 +323,7 @@ final class AppState {
         defaults.set(disabledCategoryValues, forKey: StorageKey.disabledSourceCategories)
         defaults.set(lastUpdatedAt, forKey: StorageKey.lastUpdatedAt)
         defaults.set(hasSeenIntro, forKey: StorageKey.hasSeenIntro)
+        defaults.set(topStoryDismissedAt, forKey: StorageKey.topStoryDismissedAt)
     }
 
     private static func defaultContentSourceClient() -> any ContentSourceClient {

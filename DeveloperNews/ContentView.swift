@@ -148,13 +148,13 @@ private struct HomeView: View {
                 if let topItem {
                     HomeTopStoryCard(appState: appState, item: topItem)
                         .padding(.horizontal, 16)
-                        .padding(.top, 12)
-                        .padding(.bottom, 12)
+                        .padding(.vertical, 8)
                 }
 
                 feedContent(excluding: topItem)
             }
             .navigationTitle("Trending")
+            .navigationBarTitleDisplayMode(.inline)
             .refreshable {
                 await appState.reload()
             }
@@ -162,6 +162,7 @@ private struct HomeView: View {
     }
 
     private var shouldShowTopStory: Bool {
+        guard !appState.isTopStoryHidden else { return false }
         guard !appState.personalizedItems.isEmpty else { return false }
         return !appState.isLoading || appState.hasLoadedContent
     }
@@ -252,7 +253,8 @@ private struct HomeTopicFocusBar: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.top, 2)
+            .padding(.bottom, 8)
         }
         .background(.bar)
     }
@@ -372,7 +374,7 @@ private struct FeedSectionListView: View {
         List {
             if showsSummary {
                 Section {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: 2) {
                         Text("\(articleItems.count + discussionItems.count) stories across your selected topics")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
@@ -383,6 +385,7 @@ private struct FeedSectionListView: View {
                                 .foregroundStyle(.tertiary)
                         }
                     }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 4, trailing: 20))
                 }
             }
 
@@ -402,6 +405,8 @@ private struct FeedSectionListView: View {
                 }
             }
         }
+        .listSectionSpacing(.compact)
+        .contentMargins(.top, 0, for: .scrollContent)
     }
 }
 
@@ -410,60 +415,108 @@ private struct HomeTopStoryCard: View {
     let item: ContentItem
 
     var body: some View {
-        NavigationLink {
-            ArticleDetailView(appState: appState, item: item)
-        } label: {
-            VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
                 Label("Top story", systemImage: "sparkles")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tint)
 
-                if let thumbnailURL = item.thumbnailURL {
-                    AsyncImage(url: thumbnailURL) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        case .failure:
-                            Color(.tertiarySystemFill)
-                                .overlay {
-                                    Image(systemName: "photo")
-                                        .foregroundStyle(.secondary)
-                                }
-                        case .empty:
-                            Color(.tertiarySystemFill)
-                                .overlay { ProgressView() }
-                        @unknown default:
-                            Color(.tertiarySystemFill)
-                        }
+                Spacer()
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        appState.dismissTopStory()
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 160)
-                    .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Hide for a day")
+                        Image(systemName: "xmark")
+                    }
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color(.tertiarySystemFill))
+                    .clipShape(Capsule())
+                    .contentShape(Capsule())
                 }
-
-                Text(item.title)
-                    .font(.title3.bold())
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-
-                HStack(spacing: 6) {
-                    Text(item.sourceName)
-                    Text("·")
-                    Text(relativeDateFormatter.localizedString(for: item.publishedAt, relativeTo: .now))
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .buttonStyle(.plain)
+                .accessibilityLabel("Hide top story for a day")
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.accentColor.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+            NavigationLink {
+                ArticleDetailView(appState: appState, item: item)
+            } label: {
+                HStack(alignment: .top, spacing: 10) {
+                    HomeTopStoryThumbnail(url: item.thumbnailURL)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        HStack(spacing: 6) {
+                            Text(item.sourceName)
+                                .lineLimit(1)
+                            Text("·")
+                            Text(relativeDateFormatter.localizedString(for: item.publishedAt, relativeTo: .now))
+                                .lineLimit(1)
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.accentColor.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
+
+private struct HomeTopStoryThumbnail: View {
+    let url: URL?
+
+    var body: some View {
+        Group {
+            if let url {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .failure:
+                        placeholder
+                    case .empty:
+                        Color(.tertiarySystemFill)
+                            .overlay { ProgressView().controlSize(.small) }
+                    @unknown default:
+                        placeholder
+                    }
+                }
+            }
+            else {
+                placeholder
+            }
+        }
+        .frame(width: 60, height: 60)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private var placeholder: some View {
+        Color(.tertiarySystemFill)
+            .overlay {
+                Image(systemName: "newspaper")
+                    .foregroundStyle(.secondary)
+            }
     }
 }
 
@@ -475,41 +528,52 @@ private struct FeedItemRow: View {
         NavigationLink {
             ArticleDetailView(appState: appState, item: item)
         } label: {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 8) {
-                    FeedItemMetaView(item: item)
+            VStack(alignment: .leading, spacing: 8) {
+                FeedItemMetaView(item: item)
 
-                    Text(item.title)
-                        .font(.headline)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(alignment: .top, spacing: 10) {
+                        Text(item.title)
+                            .font(.headline)
+                            .lineLimit(3)
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        if let thumbnailURL = item.thumbnailURL {
+                            FeedItemThumbnailView(url: thumbnailURL)
+                        }
+                    }
 
                     Text(item.summary)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
 
+                if !item.topics.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 3) {
                             ForEach(item.topics) { topic in
                                 Text(topic.title)
-                                    .font(.caption.weight(.medium))
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
+                                    .font(.caption2.weight(.medium))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
                                     .background(Color(.secondarySystemBackground))
                                     .clipShape(Capsule())
                             }
                         }
                     }
-
-                    if let engagement = item.engagement {
-                        EngagementSummaryView(engagement: engagement)
-                    }
+                    .padding(.leading, -8)
+                    .scrollClipDisabled()
                 }
 
-                if let thumbnailURL = item.thumbnailURL {
-                    FeedItemThumbnailView(url: thumbnailURL)
+                if let engagement = item.engagement {
+                    EngagementSummaryView(engagement: engagement)
                 }
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, 4)
         }
     }
 }
@@ -519,12 +583,17 @@ private struct EngagementSummaryView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Label(formatted(engagement.reactionCount), systemImage: "arrow.up")
-            Label(formatted(engagement.commentCount), systemImage: "bubble.left")
+            HStack(spacing: 2) {
+                Image(systemName: "arrow.up")
+                Text(formatted(engagement.reactionCount))
+            }
+            HStack(spacing: 2) {
+                Image(systemName: "bubble.left")
+                Text(formatted(engagement.commentCount))
+            }
         }
-        .font(.caption)
+        .font(.caption2)
         .foregroundStyle(.secondary)
-        .labelStyle(.titleAndIcon)
     }
 
     private func formatted(_ value: Int) -> String {
@@ -536,20 +605,17 @@ private struct EngagementSummaryView: View {
     }
 }
 
-private struct DetailEngagementStat: View {
+private struct EngagementInline: View {
     let systemImage: String
     let value: Int
-    let caption: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Label("\(value)", systemImage: systemImage)
-                .font(.title3.weight(.semibold))
-                .labelStyle(.titleAndIcon)
-            Text(caption)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        HStack(spacing: 3) {
+            Image(systemName: systemImage)
+            Text("\(value)")
         }
+        .font(.caption)
+        .foregroundStyle(.secondary)
     }
 }
 
@@ -606,7 +672,7 @@ private struct FeedItemThumbnailView: View {
                 Color(.tertiarySystemFill)
             }
         }
-        .frame(width: 72, height: 72)
+        .frame(width: 56, height: 56)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
@@ -615,36 +681,36 @@ private struct FeedItemMetaView: View {
     let item: ContentItem
 
     var body: some View {
-        HStack(spacing: 8) {
-            Label(item.kind.title, systemImage: item.kind.symbolName)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
+                Image(systemName: item.kind.symbolName)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
 
-            Text("•")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+                Text(item.sourceName)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
 
-            Text(item.sourceName)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            if let linkLabel = externalLinkLabel(for: item) {
                 Text("·")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
 
-                Text(linkLabel)
+                Text(relativeDateFormatter.localizedString(for: item.publishedAt, relativeTo: .now))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .truncationMode(.middle)
+                    .fixedSize()
             }
 
-            Spacer()
-
-            Text(relativeDateFormatter.localizedString(for: item.publishedAt, relativeTo: .now))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            if let linkLabel = externalLinkLabel(for: item) {
+                Text(linkLabel)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
         }
     }
 }
@@ -773,28 +839,38 @@ private struct ArticleDetailView: View {
                     Text(item.title)
                         .font(.title2.bold())
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label(item.kind.title, systemImage: item.kind.symbolName)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
+                    VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 8) {
-                            Text(item.sourceName)
-                                .font(.subheadline)
+                            Label(item.kind.title, systemImage: item.kind.symbolName)
+                                .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
 
-                            Text("•")
-                                .font(.caption)
+                            Text("·")
+                                .foregroundStyle(.tertiary)
+
+                            Text(item.sourceName)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+
+                            Text("·")
                                 .foregroundStyle(.tertiary)
 
                             Text(relativeDateFormatter.localizedString(for: item.publishedAt, relativeTo: .now))
-                                .font(.subheadline)
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
+
+                            if let engagement = item.engagement {
+                                Text("·")
+                                    .foregroundStyle(.tertiary)
+
+                                EngagementInline(systemImage: "arrow.up", value: engagement.reactionCount)
+                                EngagementInline(systemImage: "bubble.left", value: engagement.commentCount)
+                            }
                         }
 
                         if let authorName = item.authorName {
                             Text("By \(authorName)")
-                                .font(.subheadline)
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -803,16 +879,6 @@ private struct ArticleDetailView: View {
                         .font(.body)
                 }
                 .padding(.vertical, 4)
-            }
-
-            if let engagement = item.engagement {
-                Section("Community signal") {
-                    HStack(spacing: 24) {
-                        DetailEngagementStat(systemImage: "arrow.up", value: engagement.reactionCount, caption: "Upvotes")
-                        DetailEngagementStat(systemImage: "bubble.left", value: engagement.commentCount, caption: "Comments")
-                    }
-                    .padding(.vertical, 4)
-                }
             }
 
             Section("Topics") {
@@ -842,8 +908,14 @@ private struct ArticleDetailView: View {
             }
 
             Section("Actions") {
-                Button(appState.savedItemIDs.contains(item.id) ? "Remove from saved items" : "Save to saved items") {
+                Button {
                     appState.toggleSaved(itemID: item.id)
+                } label: {
+                    let isSaved = appState.savedItemIDs.contains(item.id)
+                    Label(
+                        isSaved ? "Remove from saved items" : "Save to saved items",
+                        systemImage: isSaved ? "bookmark.slash" : "bookmark"
+                    )
                 }
 
                 Button {
