@@ -40,9 +40,17 @@ struct RedditSourceClient: ContentSourceClient {
         let (data, _) = try await session.data(for: request)
         let response = try JSONDecoder().decode(RedditListingResponse.self, from: data)
 
-        return response.data.children.prefix(maxItemsPerFeed).compactMap { child in
-            let post = child.data
+        let eligiblePosts = response.data.children.lazy
+            .map(\.data)
+            .filter { post in
+                !post.over18
+                    && !post.spoiler
+                    && !post.stickied
+                    && !post.locked
+                    && !post.quarantine
+            }
 
+        return eligiblePosts.prefix(maxItemsPerFeed).compactMap { post in
             guard
                 let urlString = post.url,
                 let link = URL(string: urlString),
@@ -133,6 +141,11 @@ private struct RedditPost: Decodable {
     let numComments: Int
     let createdUTC: TimeInterval
     let isSelf: Bool
+    let over18: Bool
+    let spoiler: Bool
+    let stickied: Bool
+    let locked: Bool
+    let quarantine: Bool
 
     enum CodingKeys: String, CodingKey {
         case title
@@ -142,5 +155,26 @@ private struct RedditPost: Decodable {
         case numComments = "num_comments"
         case createdUTC = "created_utc"
         case isSelf = "is_self"
+        case over18 = "over_18"
+        case spoiler
+        case stickied
+        case locked
+        case quarantine
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        title = try container.decode(String.self, forKey: .title)
+        url = try container.decodeIfPresent(String.self, forKey: .url)
+        selftext = try container.decodeIfPresent(String.self, forKey: .selftext)
+        score = try container.decodeIfPresent(Int.self, forKey: .score) ?? 0
+        numComments = try container.decodeIfPresent(Int.self, forKey: .numComments) ?? 0
+        createdUTC = try container.decodeIfPresent(TimeInterval.self, forKey: .createdUTC) ?? 0
+        isSelf = try container.decodeIfPresent(Bool.self, forKey: .isSelf) ?? false
+        over18 = try container.decodeIfPresent(Bool.self, forKey: .over18) ?? false
+        spoiler = try container.decodeIfPresent(Bool.self, forKey: .spoiler) ?? false
+        stickied = try container.decodeIfPresent(Bool.self, forKey: .stickied) ?? false
+        locked = try container.decodeIfPresent(Bool.self, forKey: .locked) ?? false
+        quarantine = try container.decodeIfPresent(Bool.self, forKey: .quarantine) ?? false
     }
 }
