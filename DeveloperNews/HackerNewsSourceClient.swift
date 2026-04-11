@@ -11,15 +11,22 @@ struct HackerNewsSourceClient: ContentSourceClient {
 
     func fetchItems() async throws -> [ContentItem] {
         let topStoryIDs = try await fetchTopStoryIDs()
-        var collectedItems: [ContentItem] = []
 
-        for id in topStoryIDs.prefix(maxStories) {
-            if let item = try? await fetchStory(id: id) {
-                collectedItems.append(item)
+        return await withTaskGroup(of: ContentItem?.self) { group in
+            for id in topStoryIDs.prefix(maxStories) {
+                group.addTask {
+                    try? await fetchStory(id: id)
+                }
             }
-        }
 
-        return collectedItems
+            var combined: [ContentItem] = []
+            for await item in group {
+                if let item {
+                    combined.append(item)
+                }
+            }
+            return combined
+        }
     }
 
     private func fetchTopStoryIDs() async throws -> [Int] {

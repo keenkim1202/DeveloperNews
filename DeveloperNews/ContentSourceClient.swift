@@ -25,12 +25,18 @@ struct CompositeContentSourceClient: ContentSourceClient {
     let fallbackClient: any ContentSourceClient
 
     func fetchItems() async throws -> [ContentItem] {
-        var collectedItems: [ContentItem] = []
-
-        for client in clients {
-            if let items = try? await client.fetchItems(), !items.isEmpty {
-                collectedItems.append(contentsOf: items)
+        let collectedItems = await withTaskGroup(of: [ContentItem].self) { group in
+            for client in clients {
+                group.addTask {
+                    (try? await client.fetchItems()) ?? []
+                }
             }
+
+            var combined: [ContentItem] = []
+            for await items in group {
+                combined.append(contentsOf: items)
+            }
+            return combined
         }
 
         if collectedItems.isEmpty {
