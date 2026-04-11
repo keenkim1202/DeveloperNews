@@ -259,6 +259,19 @@ private struct FocusChip: View {
 
 private struct SavedView: View {
     let appState: AppState
+    @State private var searchQuery = ""
+
+    private var matchingArticleItems: [ContentItem] {
+        filtered(appState.savedArticleItems)
+    }
+
+    private var matchingDiscussionItems: [ContentItem] {
+        filtered(appState.savedDiscussionItems)
+    }
+
+    private var hasAnyMatches: Bool {
+        !matchingArticleItems.isEmpty || !matchingDiscussionItems.isEmpty
+    }
 
     var body: some View {
         NavigationStack {
@@ -278,16 +291,20 @@ private struct SavedView: View {
                         .buttonStyle(.borderedProminent)
                     }
                 }
+                else if !hasAnyMatches {
+                    ContentUnavailableView.search(text: searchQuery)
+                }
                 else {
                     FeedSectionListView(
                         appState: appState,
-                        articleItems: appState.savedArticleItems,
-                        discussionItems: appState.savedDiscussionItems,
+                        articleItems: matchingArticleItems,
+                        discussionItems: matchingDiscussionItems,
                         showsSummary: false
                     )
                 }
             }
             .navigationTitle("Saved")
+            .searchable(text: $searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search saved stories")
             .toolbar {
                 if !appState.savedItems.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -306,6 +323,20 @@ private struct SavedView: View {
                     }
                 }
             }
+        }
+    }
+
+    private func filtered(_ items: [ContentItem]) -> [ContentItem] {
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else {
+            return items
+        }
+
+        let needle = query.lowercased()
+        return items.filter { item in
+            item.title.lowercased().contains(needle)
+                || item.summary.lowercased().contains(needle)
+                || item.sourceName.lowercased().contains(needle)
         }
     }
 }
