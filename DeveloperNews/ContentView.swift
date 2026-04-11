@@ -743,21 +743,6 @@ private struct ArticleWebView: UIViewRepresentable {
     }
 }
 
-private struct EngagementInline: View {
-    let systemImage: String
-    let value: Int
-
-    var body: some View {
-        HStack(spacing: 3) {
-            Image(systemName: systemImage)
-            Text("\(value)")
-        }
-        .font(.caption)
-        .foregroundStyle(.secondary)
-    }
-}
-
-
 private struct FeedItemThumbnailView: View {
     let url: URL
 
