@@ -69,4 +69,31 @@ struct ContentItem: Identifiable, Hashable {
     let publishedAt: Date
     let topics: [Topic]
     let trendScore: Int
+    let thumbnailURL: URL?
+
+    init(
+        id: UUID,
+        kind: Kind,
+        title: String,
+        summary: String,
+        sourceName: String,
+        authorName: String?,
+        url: URL,
+        publishedAt: Date,
+        topics: [Topic],
+        trendScore: Int,
+        thumbnailURL: URL? = nil
+    ) {
+        self.id = id
+        self.kind = kind
+        self.title = title
+        self.summary = summary
+        self.sourceName = sourceName
+        self.authorName = authorName
+        self.url = url
+        self.publishedAt = publishedAt
+        self.topics = topics
+        self.trendScore = trendScore
+        self.thumbnailURL = thumbnailURL
+    }
 }
