@@ -25,7 +25,7 @@ enum SampleData {
             authorName: nil,
             url: URL(string: "https://news.ycombinator.com")!,
             publishedAt: .now.addingTimeInterval(-60 * 90),
-            topics: [.backend, .devops],
+            topics: [.backend],
             trendScore: 88
         ),
         ContentItem(
@@ -53,19 +53,6 @@ enum SampleData {
             publishedAt: .now.addingTimeInterval(-60 * 240),
             topics: [.ai, .backend, .product],
             trendScore: 95
-        ),
-        ContentItem(
-            id: UUID(),
-            kind: .discussion,
-            title: "Reddit: What is your backend stack in 2026?",
-            summary: "A developer discussion comparing Go, TypeScript, Rust, Postgres, and managed infrastructure choices.",
-            sourceName: "Reddit",
-            sourceCategory: .reddit,
-            authorName: "r/backend",
-            url: URL(string: "https://www.reddit.com")!,
-            publishedAt: .now.addingTimeInterval(-60 * 300),
-            topics: [.backend, .web],
-            trendScore: 79
-        ),
+        )
     ]
 }

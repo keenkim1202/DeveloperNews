@@ -918,6 +918,28 @@ private struct SettingsView: View {
                 }
 
                 Section {
+                    NavigationLink {
+                        SourcesAttributionView()
+                    } label: {
+                        Label("Content sources", systemImage: "doc.text")
+                    }
+
+                    NavigationLink {
+                        PrivacyPolicyView()
+                    } label: {
+                        Label("Privacy policy", systemImage: "hand.raised")
+                    }
+
+                    NavigationLink {
+                        TermsOfUseView()
+                    } label: {
+                        Label("Terms of use", systemImage: "doc.plaintext")
+                    }
+
+                    Link(destination: AppContact.supportURL) {
+                        Label("Send feedback", systemImage: "envelope")
+                    }
+
                     LabeledContent("Version", value: appVersionString)
                 } header: {
                     Text("About")
@@ -925,6 +947,162 @@ private struct SettingsView: View {
             }
             .navigationTitle("Settings")
         }
+    }
+}
+
+private struct SourcesAttributionView: View {
+    var body: some View {
+        List {
+            Section {
+                Text("DeveloperNews aggregates publicly available developer content. We display headlines, short excerpts, and links — full articles open in the publisher's website inside the app.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Articles") {
+                Text("Curated RSS feeds from independent and company engineering blogs.")
+                    .font(.footnote)
+                attributionRow("Swift with Majid", url: "https://swiftwithmajid.com")
+                attributionRow("InfoQ", url: "https://www.infoq.com")
+                attributionRow("GitHub Blog", url: "https://github.blog")
+                attributionRow("Mozilla Hacks", url: "https://hacks.mozilla.org")
+                attributionRow("Cloudflare Blog", url: "https://blog.cloudflare.com")
+                attributionRow("Lobsters", url: "https://lobste.rs")
+                attributionRow("Stripe Engineering", url: "https://stripe.com/blog")
+                attributionRow("Netflix Tech Blog", url: "https://netflixtechblog.com")
+                attributionRow("High Scalability", url: "https://www.highscalability.com")
+                attributionRow("Stack Overflow Blog", url: "https://stackoverflow.blog")
+                attributionRow("CSS-Tricks", url: "https://css-tricks.com")
+                attributionRow("Hacking with Swift", url: "https://www.hackingwithswift.com")
+                attributionRow("Donny Wals", url: "https://www.donnywals.com")
+            }
+
+            Section("Hacker News") {
+                Text("Headlines from the public Hacker News API operated by Y Combinator.")
+                    .font(.footnote)
+                attributionRow("Hacker News", url: "https://news.ycombinator.com")
+            }
+
+            Section("GitHub Trending") {
+                Text("Trending repositories from the public GitHub Search API.")
+                    .font(.footnote)
+                attributionRow("GitHub", url: "https://github.com")
+            }
+
+            Section("Reddit") {
+                Text("Link posts from a curated set of developer subreddits via Reddit's public listing JSON.")
+                    .font(.footnote)
+                attributionRow("Reddit", url: "https://www.reddit.com")
+            }
+
+            Section {
+                Text("All trademarks and logos belong to their respective owners. DeveloperNews is not affiliated with or endorsed by any of the listed sources.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle("Content sources")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder
+    private func attributionRow(_ name: String, url: String) -> some View {
+        if let resolved = URL(string: url) {
+            Link(destination: resolved) {
+                HStack {
+                    Text(name)
+                    Spacer()
+                    Image(systemName: "arrow.up.right.square")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        else {
+            Text(name)
+        }
+    }
+}
+
+private struct PrivacyPolicyView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Group {
+                    sectionHeader("What we collect")
+                    sectionBody("DeveloperNews collects no personal information. We do not run analytics, telemetry, or any third party tracking SDK that identifies you.")
+
+                    sectionHeader("On-device storage")
+                    sectionBody("Your selected topics, saved stories, and preferences are stored only on your device using the system defaults database. They never leave the device unless iCloud sync is enabled by you in iOS settings.")
+
+                    sectionHeader("Network requests")
+                    sectionBody("To populate the feed the app requests publicly available content from RSS feeds, the Hacker News API, and the GitHub API. These services may log your IP address and User-Agent like any other web request.")
+
+                    sectionHeader("Article web view")
+                    sectionBody("When you open a story the original publisher's web page loads inside an in-app browser. The publisher's own cookies, scripts, and trackers run as if you visited the page in Safari.")
+
+                    sectionHeader("Advertising")
+                    sectionBody("If a future version of the app includes advertising, an additional consent screen will be shown before any advertising SDK collects identifiers, in line with Apple's App Tracking Transparency policy.")
+
+                    sectionHeader("Contact")
+                    sectionBody("Questions about this policy can be sent through the feedback link in Settings.")
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .navigationTitle("Privacy policy")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func sectionHeader(_ text: String) -> some View {
+        Text(text)
+            .font(.headline)
+    }
+
+    private func sectionBody(_ text: String) -> some View {
+        Text(text)
+            .font(.body)
+            .foregroundStyle(.secondary)
+    }
+}
+
+private struct TermsOfUseView: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Group {
+                    sectionHeader("Use of the app")
+                    sectionBody("DeveloperNews is provided as is, without warranty of any kind. You use the app at your own discretion.")
+
+                    sectionHeader("Third party content")
+                    sectionBody("Headlines, summaries, thumbnails, and links surfaced inside the app belong to their original publishers. The full article content remains hosted by the publisher and is opened in the publisher's own page when you tap a story.")
+
+                    sectionHeader("Acceptable use")
+                    sectionBody("You may not attempt to reverse engineer, redistribute, or scrape content from the app. Use the in-app browser only for personal, non commercial reading.")
+
+                    sectionHeader("Limitation of liability")
+                    sectionBody("DeveloperNews is not responsible for the accuracy, availability, or behavior of third party content surfaced through the app, including any links opened in the in-app browser.")
+
+                    sectionHeader("Changes")
+                    sectionBody("These terms may be updated when meaningful product changes ship. Continued use of the app after an update constitutes acceptance of the revised terms.")
+                }
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .navigationTitle("Terms of use")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func sectionHeader(_ text: String) -> some View {
+        Text(text)
+            .font(.headline)
+    }
+
+    private func sectionBody(_ text: String) -> some View {
+        Text(text)
+            .font(.body)
+            .foregroundStyle(.secondary)
     }
 }
 
