@@ -53,6 +53,10 @@ Carthage/Build/
 .DS_Store
 */.DS_Store
 
+# AI tooling
+.codex/
+.agents/
+
 # fastlane
 #
 # It is recommended to not store the screenshots in the git repo.
