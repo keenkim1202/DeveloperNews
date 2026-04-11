@@ -112,6 +112,36 @@ extension RSSSourceClient {
             sourceName: "Cloudflare Blog",
             feedURL: URL(string: "https://blog.cloudflare.com/rss/")!,
             defaultTopics: [.backend, .devops, .security]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Lobsters",
+            feedURL: URL(string: "https://lobste.rs/rss")!,
+            defaultTopics: [.web, .backend, .product]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Stripe Engineering",
+            feedURL: URL(string: "https://stripe.com/blog/feed.rss")!,
+            defaultTopics: [.backend, .product]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Netflix Tech Blog",
+            feedURL: URL(string: "https://netflixtechblog.com/feed")!,
+            defaultTopics: [.backend, .devops, .ai]
+        ),
+        RSSFeedDefinition(
+            sourceName: "High Scalability",
+            feedURL: URL(string: "https://highscalability.com/rss.xml")!,
+            defaultTopics: [.backend, .devops]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Stack Overflow Blog",
+            feedURL: URL(string: "https://stackoverflow.blog/feed/")!,
+            defaultTopics: [.product, .backend]
+        ),
+        RSSFeedDefinition(
+            sourceName: "CSS-Tricks",
+            feedURL: URL(string: "https://css-tricks.com/feed/")!,
+            defaultTopics: [.web]
         )
     ]
 }
