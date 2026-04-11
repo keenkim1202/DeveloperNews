@@ -123,35 +123,15 @@ private struct HomeView: View {
                     )
                 }
                 else {
-                    List(appState.personalizedItems) { item in
-                        NavigationLink {
-                            ArticleDetailView(appState: appState, item: item)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 8) {
-                                FeedItemMetaView(item: item)
-
-                                Text(item.title)
-                                    .font(.headline)
-
-                                Text(item.summary)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(2)
-
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 8) {
-                                        ForEach(item.topics) { topic in
-                                            Text(topic.title)
-                                                .font(.caption.weight(.medium))
-                                                .padding(.horizontal, 10)
-                                                .padding(.vertical, 6)
-                                                .background(Color(.secondarySystemBackground))
-                                                .clipShape(Capsule())
-                                        }
-                                    }
-                                }
-                            }
-                            .padding(.vertical, 6)
+                    FeedSectionListView(
+                        appState: appState,
+                        articleItems: appState.articleItems,
+                        discussionItems: appState.discussionItems
+                    )
+                    .overlay {
+                        if appState.isLoading {
+                            ProgressView()
+                                .controlSize(.regular)
                         }
                     }
                 }
@@ -178,21 +158,87 @@ private struct SavedView: View {
                     )
                 }
                 else {
-                    List(appState.savedItems) { item in
-                        NavigationLink {
-                            ArticleDetailView(appState: appState, item: item)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                FeedItemMetaView(item: item)
-                                Text(item.title)
-                                    .font(.headline)
-                            }
-                            .padding(.vertical, 4)
+                    FeedSectionListView(
+                        appState: appState,
+                        articleItems: appState.savedArticleItems,
+                        discussionItems: appState.savedDiscussionItems,
+                        showsSummary: false
+                    )
+                }
+            }
+            .navigationTitle("Saved")
+        }
+    }
+}
+
+private struct FeedSectionListView: View {
+    let appState: AppState
+    let articleItems: [ContentItem]
+    let discussionItems: [ContentItem]
+    var showsSummary = true
+
+    var body: some View {
+        List {
+            if showsSummary {
+                Section {
+                    Text("\(articleItems.count + discussionItems.count) stories across your selected topics")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                }
+            }
+
+            if !articleItems.isEmpty {
+                Section("Top Stories") {
+                    ForEach(articleItems) { item in
+                        FeedItemRow(appState: appState, item: item)
+                    }
+                }
+            }
+
+            if !discussionItems.isEmpty {
+                Section("Discussions") {
+                    ForEach(discussionItems) { item in
+                        FeedItemRow(appState: appState, item: item)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct FeedItemRow: View {
+    let appState: AppState
+    let item: ContentItem
+
+    var body: some View {
+        NavigationLink {
+            ArticleDetailView(appState: appState, item: item)
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                FeedItemMetaView(item: item)
+
+                Text(item.title)
+                    .font(.headline)
+
+                Text(item.summary)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(item.topics) { topic in
+                            Text(topic.title)
+                                .font(.caption.weight(.medium))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color(.secondarySystemBackground))
+                                .clipShape(Capsule())
                         }
                     }
                 }
             }
-            .navigationTitle("Saved")
+            .padding(.vertical, 6)
         }
     }
 }

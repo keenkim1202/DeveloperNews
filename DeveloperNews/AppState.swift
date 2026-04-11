@@ -48,6 +48,22 @@ final class AppState {
         allItems.filter { savedItemIDs.contains($0.id) }
     }
 
+    var articleItems: [ContentItem] {
+        personalizedItems.filter { $0.kind == .article }
+    }
+
+    var discussionItems: [ContentItem] {
+        personalizedItems.filter { $0.kind == .discussion }
+    }
+
+    var savedArticleItems: [ContentItem] {
+        savedItems.filter { $0.kind == .article }
+    }
+
+    var savedDiscussionItems: [ContentItem] {
+        savedItems.filter { $0.kind == .discussion }
+    }
+
     var hasLoadedContent: Bool {
         !allItems.isEmpty
     }
