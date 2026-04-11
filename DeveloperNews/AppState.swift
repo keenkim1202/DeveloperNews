@@ -19,6 +19,7 @@ final class AppState {
 
     var selectedTopics: Set<Topic> = []
     var focusedTopic: Topic?
+    var currentTab: AppTab = .home
     var savedItemTimestamps: [ContentItem.ID: Date] = [:]
     var savedSortOrder: SavedSortOrder = .recentlySaved
     var notificationsEnabled = false
