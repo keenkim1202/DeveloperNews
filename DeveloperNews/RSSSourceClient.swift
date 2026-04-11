@@ -19,15 +19,19 @@ struct RSSSourceClient: ContentSourceClient {
     }
 
     func fetchItems() async throws -> [ContentItem] {
-        var collectedItems: [ContentItem] = []
-
-        for feed in feeds {
-            if let items = try? await fetchItems(for: feed) {
-                collectedItems.append(contentsOf: items)
+        await withTaskGroup(of: [ContentItem].self) { group in
+            for feed in feeds {
+                group.addTask {
+                    (try? await fetchItems(for: feed)) ?? []
+                }
             }
-        }
 
-        return collectedItems
+            var combined: [ContentItem] = []
+            for await items in group {
+                combined.append(contentsOf: items)
+            }
+            return combined
+        }
     }
 
     private func fetchItems(for feed: RSSFeedDefinition) async throws -> [ContentItem] {
