@@ -32,20 +32,56 @@ struct CompositeContentSourceClient: ContentSourceClient {
     }
 
     private func deduplicatedItems(from items: [ContentItem]) -> [ContentItem] {
-        var seenURLs: Set<String> = []
-        var deduplicated: [ContentItem] = []
+        let byURL = collapseExactURLDuplicates(items)
+        let groups = Dictionary(grouping: byURL) { titleKey(for: $0.title) }
 
-        for item in items.sorted(by: sortItemsDescending) {
-            let urlKey = item.url.absoluteString
-            if seenURLs.contains(urlKey) {
-                continue
+        let merged = groups.values.map { group -> ContentItem in
+            guard group.count > 1 else {
+                return group[0]
             }
-
-            seenURLs.insert(urlKey)
-            deduplicated.append(item)
+            return mergedItem(from: group)
         }
 
-        return deduplicated
+        return merged.sorted(by: sortItemsDescending)
+    }
+
+    private func collapseExactURLDuplicates(_ items: [ContentItem]) -> [ContentItem] {
+        var byURL: [String: ContentItem] = [:]
+        for item in items {
+            let key = item.url.absoluteString
+            if let existing = byURL[key] {
+                byURL[key] = item.trendScore > existing.trendScore ? item : existing
+            }
+            else {
+                byURL[key] = item
+            }
+        }
+        return Array(byURL.values)
+    }
+
+    private func mergedItem(from group: [ContentItem]) -> ContentItem {
+        let primary = group.max(by: { $0.trendScore < $1.trendScore }) ?? group[0]
+        let mentionBoost = (group.count - 1) * 4
+        let unionedTopics = Array(Set(group.flatMap(\.topics)))
+
+        return ContentItem(
+            id: primary.id,
+            kind: primary.kind,
+            title: primary.title,
+            summary: primary.summary,
+            sourceName: primary.sourceName,
+            authorName: primary.authorName,
+            url: primary.url,
+            publishedAt: primary.publishedAt,
+            topics: unionedTopics,
+            trendScore: min(100, primary.trendScore + mentionBoost)
+        )
+    }
+
+    private func titleKey(for title: String) -> String {
+        let lowered = title.lowercased()
+        let scalars = lowered.unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) }
+        return String(String.UnicodeScalarView(scalars))
     }
 
     private func sortItemsDescending(lhs: ContentItem, rhs: ContentItem) -> Bool {
