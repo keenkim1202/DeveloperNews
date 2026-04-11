@@ -9,6 +9,7 @@ final class AppState {
         static let selectedTopics = "selectedTopics"
         static let savedItemIDs = "savedItemIDs"
         static let notificationsEnabled = "notificationsEnabled"
+        static let disabledSourceCategories = "disabledSourceCategories"
     }
 
     private let contentSourceClient: any ContentSourceClient
@@ -16,6 +17,7 @@ final class AppState {
     var selectedTopics: Set<Topic> = []
     var savedItemIDs: Set<ContentItem.ID> = []
     var notificationsEnabled = false
+    var disabledSourceCategories: Set<SourceCategory> = []
     var allItems: [ContentItem] = []
     var isLoading = false
     var errorMessage: String?
@@ -30,12 +32,13 @@ final class AppState {
     }
 
     var personalizedItems: [ContentItem] {
+        let enabledByCategory = allItems.filter { !disabledSourceCategories.contains($0.sourceCategory) }
         let filteredItems: [ContentItem]
         if selectedTopics.isEmpty {
-            filteredItems = allItems
+            filteredItems = enabledByCategory
         }
         else {
-            filteredItems = allItems.filter { item in
+            filteredItems = enabledByCategory.filter { item in
                 !selectedTopics.isDisjoint(with: item.topics)
             }
         }
@@ -50,6 +53,20 @@ final class AppState {
 
     var savedItems: [ContentItem] {
         allItems.filter { savedItemIDs.contains($0.id) }
+    }
+
+    func isSourceCategoryEnabled(_ category: SourceCategory) -> Bool {
+        !disabledSourceCategories.contains(category)
+    }
+
+    func setSourceCategory(_ category: SourceCategory, enabled: Bool) {
+        if enabled {
+            disabledSourceCategories.remove(category)
+        }
+        else {
+            disabledSourceCategories.insert(category)
+        }
+        persistState()
     }
 
     var articleItems: [ContentItem] {
@@ -150,16 +167,22 @@ final class AppState {
         if defaults.object(forKey: StorageKey.notificationsEnabled) != nil {
             notificationsEnabled = defaults.bool(forKey: StorageKey.notificationsEnabled)
         }
+
+        if let storedDisabled = defaults.stringArray(forKey: StorageKey.disabledSourceCategories) {
+            disabledSourceCategories = Set(storedDisabled.compactMap(SourceCategory.init(rawValue:)))
+        }
     }
 
     private func persistState() {
         let defaults = UserDefaults.standard
         let topicValues = selectedTopics.map(\.rawValue).sorted()
         let savedIDs = savedItemIDs.map(\.uuidString).sorted()
+        let disabledCategoryValues = disabledSourceCategories.map(\.rawValue).sorted()
 
         defaults.set(topicValues, forKey: StorageKey.selectedTopics)
         defaults.set(savedIDs, forKey: StorageKey.savedItemIDs)
         defaults.set(notificationsEnabled, forKey: StorageKey.notificationsEnabled)
+        defaults.set(disabledCategoryValues, forKey: StorageKey.disabledSourceCategories)
     }
 
     private static func defaultContentSourceClient() -> any ContentSourceClient {
