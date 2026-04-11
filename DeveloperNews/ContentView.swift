@@ -329,6 +329,18 @@ private struct FeedItemMetaView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
+            if let linkLabel = externalLinkLabel(for: item) {
+                Text("·")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+
+                Text(linkLabel)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+
             Spacer()
 
             Text(relativeDateFormatter.localizedString(for: item.publishedAt, relativeTo: .now))
@@ -336,6 +348,21 @@ private struct FeedItemMetaView: View {
                 .foregroundStyle(.secondary)
         }
     }
+}
+
+private func externalLinkLabel(for item: ContentItem) -> String? {
+    guard let host = item.url.host else {
+        return nil
+    }
+
+    let cleaned = host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+    let normalizedSource = item.sourceName.lowercased().replacingOccurrences(of: " ", with: "")
+
+    if cleaned.lowercased().replacingOccurrences(of: ".", with: "").contains(normalizedSource) {
+        return nil
+    }
+
+    return cleaned
 }
 
 private let appVersionString: String = {
