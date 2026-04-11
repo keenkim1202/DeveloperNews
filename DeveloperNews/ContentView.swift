@@ -16,17 +16,14 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if !appState.hasSeenIntro {
-                IntroView(appState: appState)
-            }
-            else if !appState.isOnboardingComplete {
-                TopicSelectionView(appState: appState)
-            }
-            else {
+            if appState.isOnboardingComplete {
                 MainTabView(appState: appState)
                     .task {
                         await appState.loadIfNeeded()
                     }
+            }
+            else {
+                TopicSelectionView(appState: appState)
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
@@ -42,84 +39,6 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-}
-
-private struct IntroView: View {
-    let appState: AppState
-
-    private struct FeatureRow: View {
-        let systemImage: String
-        let title: String
-        let description: String
-
-        var body: some View {
-            HStack(alignment: .top, spacing: 16) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 32))
-                    .foregroundStyle(Color.accentColor)
-                    .frame(width: 44, alignment: .center)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.headline)
-                    Text(description)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer(minLength: 0)
-            }
-        }
-    }
-
-    var body: some View {
-        VStack(spacing: 32) {
-            VStack(spacing: 12) {
-                Text("Welcome to DeveloperNews")
-                    .font(.largeTitle.bold())
-                    .multilineTextAlignment(.center)
-
-                Text("Trending stories from the developer world, in one place.")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.top, 40)
-
-            VStack(alignment: .leading, spacing: 24) {
-                FeatureRow(
-                    systemImage: "sparkles",
-                    title: "Pick your interests",
-                    description: "Choose up to five topics to shape your feed."
-                )
-                FeatureRow(
-                    systemImage: "flame",
-                    title: "Skim what's trending",
-                    description: "We pull from RSS feeds, Hacker News, and Reddit so you do not have to."
-                )
-                FeatureRow(
-                    systemImage: "bookmark",
-                    title: "Save what matters",
-                    description: "Bookmark stories to read later, sorted by recency or trend."
-                )
-            }
-            .padding(.horizontal, 8)
-
-            Spacer()
-
-            Button {
-                appState.markIntroSeen()
-            } label: {
-                Text("Get started")
-                    .fontWeight(.semibold)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-        }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 32)
-    }
 }
 
 private struct TopicSelectionView: View {
@@ -218,13 +137,22 @@ private struct HomeView: View {
     let appState: AppState
 
     var body: some View {
+        let topItem = shouldShowTopStory ? appState.personalizedItems.first : nil
+
         NavigationStack {
             VStack(spacing: 0) {
                 if appState.selectedTopics.count > 1 {
                     HomeTopicFocusBar(appState: appState)
                 }
 
-                feedContent
+                if let topItem {
+                    HomeTopStoryCard(appState: appState, item: topItem)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                        .padding(.bottom, 12)
+                }
+
+                feedContent(excluding: topItem)
             }
             .navigationTitle("Trending")
             .refreshable {
@@ -233,8 +161,13 @@ private struct HomeView: View {
         }
     }
 
+    private var shouldShowTopStory: Bool {
+        guard !appState.personalizedItems.isEmpty else { return false }
+        return !appState.isLoading || appState.hasLoadedContent
+    }
+
     @ViewBuilder
-    private var feedContent: some View {
+    private func feedContent(excluding topItem: ContentItem?) -> some View {
         Group {
             if appState.isLoading && !appState.hasLoadedContent {
                     ContentUnavailableView(
@@ -267,10 +200,17 @@ private struct HomeView: View {
                     )
                 }
                 else {
+                    let articleItems = topItem.map { top in
+                        appState.articleItems.filter { $0.id != top.id }
+                    } ?? appState.articleItems
+                    let discussionItems = topItem.map { top in
+                        appState.discussionItems.filter { $0.id != top.id }
+                    } ?? appState.discussionItems
+
                     FeedSectionListView(
                         appState: appState,
-                        articleItems: appState.articleItems,
-                        discussionItems: appState.discussionItems
+                        articleItems: articleItems,
+                        discussionItems: discussionItems
                     )
                     .overlay {
                         if appState.isLoading {
@@ -462,6 +402,68 @@ private struct FeedSectionListView: View {
                 }
             }
         }
+    }
+}
+
+private struct HomeTopStoryCard: View {
+    let appState: AppState
+    let item: ContentItem
+
+    var body: some View {
+        NavigationLink {
+            ArticleDetailView(appState: appState, item: item)
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Top story", systemImage: "sparkles")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tint)
+
+                if let thumbnailURL = item.thumbnailURL {
+                    AsyncImage(url: thumbnailURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                        case .failure:
+                            Color(.tertiarySystemFill)
+                                .overlay {
+                                    Image(systemName: "photo")
+                                        .foregroundStyle(.secondary)
+                                }
+                        case .empty:
+                            Color(.tertiarySystemFill)
+                                .overlay { ProgressView() }
+                        @unknown default:
+                            Color(.tertiarySystemFill)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 160)
+                    .clipped()
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+
+                Text(item.title)
+                    .font(.title3.bold())
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+
+                HStack(spacing: 6) {
+                    Text(item.sourceName)
+                    Text("·")
+                    Text(relativeDateFormatter.localizedString(for: item.publishedAt, relativeTo: .now))
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.accentColor.opacity(0.08))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 }
 
