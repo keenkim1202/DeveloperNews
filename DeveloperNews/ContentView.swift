@@ -145,8 +145,24 @@ private struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if appState.isLoading && !appState.hasLoadedContent {
+            VStack(spacing: 0) {
+                if appState.selectedTopics.count > 1 {
+                    HomeTopicFocusBar(appState: appState)
+                }
+
+                feedContent
+            }
+            .navigationTitle("Trending")
+            .refreshable {
+                await appState.reload()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var feedContent: some View {
+        Group {
+            if appState.isLoading && !appState.hasLoadedContent {
                     ContentUnavailableView(
                         "Loading stories",
                         systemImage: "newspaper",
@@ -189,12 +205,62 @@ private struct HomeView: View {
                         }
                     }
                 }
-            }
-            .navigationTitle("Trending")
-            .refreshable {
-                await appState.reload()
-            }
         }
+    }
+}
+
+private struct HomeTopicFocusBar: View {
+    let appState: AppState
+
+    private var orderedTopics: [Topic] {
+        Topic.allCases.filter { appState.selectedTopics.contains($0) }
+    }
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                FocusChip(
+                    title: "All",
+                    systemImage: "square.grid.2x2",
+                    isSelected: appState.focusedTopic == nil
+                ) {
+                    appState.focusedTopic = nil
+                }
+
+                ForEach(orderedTopics) { topic in
+                    FocusChip(
+                        title: topic.title,
+                        systemImage: topic.symbolName,
+                        isSelected: appState.focusedTopic == topic
+                    ) {
+                        appState.toggleFocusedTopic(topic)
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        }
+        .background(.bar)
+    }
+}
+
+private struct FocusChip: View {
+    let title: String
+    let systemImage: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isSelected ? Color.accentColor.opacity(0.2) : Color(.secondarySystemBackground))
+                .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 }
 

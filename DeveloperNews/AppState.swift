@@ -18,6 +18,7 @@ final class AppState {
     private let contentSourceClient: any ContentSourceClient
 
     var selectedTopics: Set<Topic> = []
+    var focusedTopic: Topic?
     var savedItemTimestamps: [ContentItem.ID: Date] = [:]
     var savedSortOrder: SavedSortOrder = .recentlySaved
     var notificationsEnabled = false
@@ -42,13 +43,21 @@ final class AppState {
 
     var personalizedItems: [ContentItem] {
         let enabledByCategory = allItems.filter { !disabledSourceCategories.contains($0.sourceCategory) }
+        let activeTopics: Set<Topic>
+        if let focusedTopic, selectedTopics.contains(focusedTopic) {
+            activeTopics = [focusedTopic]
+        }
+        else {
+            activeTopics = selectedTopics
+        }
+
         let filteredItems: [ContentItem]
-        if selectedTopics.isEmpty {
+        if activeTopics.isEmpty {
             filteredItems = enabledByCategory
         }
         else {
             filteredItems = enabledByCategory.filter { item in
-                !selectedTopics.isDisjoint(with: item.topics)
+                !activeTopics.isDisjoint(with: item.topics)
             }
         }
 
@@ -137,6 +146,9 @@ final class AppState {
     func toggleTopic(_ topic: Topic) {
         if selectedTopics.contains(topic) {
             selectedTopics.remove(topic)
+            if focusedTopic == topic {
+                focusedTopic = nil
+            }
         }
         else {
             guard canSelectMoreTopics else {
@@ -146,6 +158,15 @@ final class AppState {
         }
 
         persistState()
+    }
+
+    func toggleFocusedTopic(_ topic: Topic) {
+        if focusedTopic == topic {
+            focusedTopic = nil
+        }
+        else if selectedTopics.contains(topic) {
+            focusedTopic = topic
+        }
     }
 
     func toggleSaved(itemID: ContentItem.ID) {
@@ -169,6 +190,7 @@ final class AppState {
 
     func resetTopics() {
         selectedTopics.removeAll()
+        focusedTopic = nil
         persistState()
     }
 
