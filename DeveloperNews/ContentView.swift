@@ -176,15 +176,24 @@ private struct SettingsView: View {
         NavigationStack {
             List {
                 Section("Your topics") {
+                    Text("\(appState.selectedTopics.count) selected")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
                     ForEach(Topic.allCases) { topic in
-                        HStack {
-                            Label(topic.title, systemImage: topic.symbolName)
-                            Spacer()
-                            if appState.selectedTopics.contains(topic) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.tint)
+                        Button {
+                            appState.toggleTopic(topic)
+                        } label: {
+                            HStack {
+                                Label(topic.title, systemImage: topic.symbolName)
+                                Spacer()
+                                if appState.selectedTopics.contains(topic) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.tint)
+                                }
                             }
                         }
+                        .buttonStyle(.plain)
                     }
                 }
 
