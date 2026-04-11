@@ -10,6 +10,7 @@ final class AppState {
         static let savedItemIDs = "savedItemIDs"
         static let notificationsEnabled = "notificationsEnabled"
         static let disabledSourceCategories = "disabledSourceCategories"
+        static let lastUpdatedAt = "lastUpdatedAt"
     }
 
     private let contentSourceClient: any ContentSourceClient
@@ -21,6 +22,7 @@ final class AppState {
     var allItems: [ContentItem] = []
     var isLoading = false
     var errorMessage: String?
+    var lastUpdatedAt: Date?
 
     init(contentSourceClient: (any ContentSourceClient)? = nil) {
         self.contentSourceClient = contentSourceClient ?? Self.defaultContentSourceClient()
@@ -162,6 +164,8 @@ final class AppState {
 
         do {
             allItems = try await contentSourceClient.fetchItems()
+            lastUpdatedAt = .now
+            persistState()
         }
         catch {
             errorMessage = "Unable to load stories right now."
@@ -188,6 +192,10 @@ final class AppState {
         if let storedDisabled = defaults.stringArray(forKey: StorageKey.disabledSourceCategories) {
             disabledSourceCategories = Set(storedDisabled.compactMap(SourceCategory.init(rawValue:)))
         }
+
+        if let storedTimestamp = defaults.object(forKey: StorageKey.lastUpdatedAt) as? Date {
+            lastUpdatedAt = storedTimestamp
+        }
     }
 
     private func persistState() {
@@ -200,6 +208,7 @@ final class AppState {
         defaults.set(savedIDs, forKey: StorageKey.savedItemIDs)
         defaults.set(notificationsEnabled, forKey: StorageKey.notificationsEnabled)
         defaults.set(disabledCategoryValues, forKey: StorageKey.disabledSourceCategories)
+        defaults.set(lastUpdatedAt, forKey: StorageKey.lastUpdatedAt)
     }
 
     private static func defaultContentSourceClient() -> any ContentSourceClient {
