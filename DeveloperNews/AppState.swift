@@ -8,11 +8,15 @@ final class AppState {
         static let savedItemIDs = "savedItemIDs"
     }
 
+    private let contentSourceClient: any ContentSourceClient
+
     var selectedTopics: Set<Topic> = []
     var savedItemIDs: Set<ContentItem.ID> = []
-    let allItems = SampleData.items
+    let allItems: [ContentItem]
 
-    init() {
+    init(contentSourceClient: any ContentSourceClient = MockContentSourceClient()) {
+        self.contentSourceClient = contentSourceClient
+        self.allItems = contentSourceClient.fetchItems()
         loadPersistedState()
     }
 
