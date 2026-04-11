@@ -449,6 +449,21 @@ private struct SettingsView: View {
                 }
 
                 Section {
+                    ForEach(SourceCategory.allCases) { category in
+                        Toggle(isOn: Binding(
+                            get: { appState.isSourceCategoryEnabled(category) },
+                            set: { appState.setSourceCategory(category, enabled: $0) }
+                        )) {
+                            Label(category.title, systemImage: category.symbolName)
+                        }
+                    }
+                } header: {
+                    Text("Sources")
+                } footer: {
+                    Text("Turn off a source to hide it from the home feed.")
+                }
+
+                Section {
                     Toggle("Daily trending alerts", isOn: Binding(
                         get: { appState.notificationsEnabled },
                         set: { appState.setNotificationsEnabled($0) }

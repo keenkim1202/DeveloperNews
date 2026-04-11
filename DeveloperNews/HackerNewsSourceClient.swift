@@ -52,6 +52,7 @@ struct HackerNewsSourceClient: ContentSourceClient {
             title: title,
             summary: "Trending discussion from Hacker News.",
             sourceName: "Hacker News",
+            sourceCategory: .hackerNews,
             authorName: story.by,
             url: link,
             publishedAt: publishedAt,

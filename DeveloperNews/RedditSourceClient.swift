@@ -71,6 +71,7 @@ struct RedditSourceClient: ContentSourceClient {
                 title: post.title,
                 summary: finalSummary,
                 sourceName: "Reddit",
+                sourceCategory: .reddit,
                 authorName: "r/\(feed.subreddit)",
                 url: link,
                 publishedAt: publishedAt,

@@ -41,6 +41,7 @@ struct RSSSourceClient: ContentSourceClient {
                 title: item.title,
                 summary: item.summary,
                 sourceName: feed.sourceName,
+                sourceCategory: .article,
                 authorName: item.author,
                 url: item.link,
                 publishedAt: item.publishedAt,

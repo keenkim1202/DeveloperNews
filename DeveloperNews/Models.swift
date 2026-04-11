@@ -44,6 +44,30 @@ struct EngagementMetrics: Hashable {
     let commentCount: Int
 }
 
+enum SourceCategory: String, CaseIterable, Identifiable, Hashable {
+    case article
+    case hackerNews
+    case reddit
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .article: "Articles"
+        case .hackerNews: "Hacker News"
+        case .reddit: "Reddit"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .article: "newspaper"
+        case .hackerNews: "flame"
+        case .reddit: "bubble.left.and.bubble.right"
+        }
+    }
+}
+
 struct ContentItem: Identifiable, Hashable {
     enum Kind: String {
         case article
@@ -69,6 +93,7 @@ struct ContentItem: Identifiable, Hashable {
     let title: String
     let summary: String
     let sourceName: String
+    let sourceCategory: SourceCategory
     let authorName: String?
     let url: URL
     let publishedAt: Date
@@ -83,6 +108,7 @@ struct ContentItem: Identifiable, Hashable {
         title: String,
         summary: String,
         sourceName: String,
+        sourceCategory: SourceCategory,
         authorName: String?,
         url: URL,
         publishedAt: Date,
@@ -96,6 +122,7 @@ struct ContentItem: Identifiable, Hashable {
         self.title = title
         self.summary = summary
         self.sourceName = sourceName
+        self.sourceCategory = sourceCategory
         self.authorName = authorName
         self.url = url
         self.publishedAt = publishedAt
