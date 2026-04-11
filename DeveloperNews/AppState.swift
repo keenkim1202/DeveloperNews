@@ -13,6 +13,7 @@ final class AppState {
         static let notificationsEnabled = "notificationsEnabled"
         static let disabledSourceCategories = "disabledSourceCategories"
         static let lastUpdatedAt = "lastUpdatedAt"
+        static let hasSeenIntro = "hasSeenIntro"
     }
 
     private let contentSourceClient: any ContentSourceClient
@@ -28,6 +29,7 @@ final class AppState {
     var isLoading = false
     var errorMessage: String?
     var lastUpdatedAt: Date?
+    var hasSeenIntro = false
 
     var savedItemIDs: Set<ContentItem.ID> {
         Set(savedItemTimestamps.keys)
@@ -189,6 +191,11 @@ final class AppState {
         persistState()
     }
 
+    func markIntroSeen() {
+        hasSeenIntro = true
+        persistState()
+    }
+
     func resetTopics() {
         selectedTopics.removeAll()
         focusedTopic = nil
@@ -275,6 +282,10 @@ final class AppState {
         if let storedTimestamp = defaults.object(forKey: StorageKey.lastUpdatedAt) as? Date {
             lastUpdatedAt = storedTimestamp
         }
+
+        if defaults.object(forKey: StorageKey.hasSeenIntro) != nil {
+            hasSeenIntro = defaults.bool(forKey: StorageKey.hasSeenIntro)
+        }
     }
 
     private func persistState() {
@@ -291,6 +302,7 @@ final class AppState {
         defaults.set(notificationsEnabled, forKey: StorageKey.notificationsEnabled)
         defaults.set(disabledCategoryValues, forKey: StorageKey.disabledSourceCategories)
         defaults.set(lastUpdatedAt, forKey: StorageKey.lastUpdatedAt)
+        defaults.set(hasSeenIntro, forKey: StorageKey.hasSeenIntro)
     }
 
     private static func defaultContentSourceClient() -> any ContentSourceClient {
