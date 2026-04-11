@@ -8,6 +8,8 @@ final class AppState {
     private enum StorageKey {
         static let selectedTopics = "selectedTopics"
         static let savedItemIDs = "savedItemIDs"
+        static let savedItemTimestamps = "savedItemTimestamps"
+        static let savedSortOrder = "savedSortOrder"
         static let notificationsEnabled = "notificationsEnabled"
         static let disabledSourceCategories = "disabledSourceCategories"
         static let lastUpdatedAt = "lastUpdatedAt"
@@ -16,13 +18,18 @@ final class AppState {
     private let contentSourceClient: any ContentSourceClient
 
     var selectedTopics: Set<Topic> = []
-    var savedItemIDs: Set<ContentItem.ID> = []
+    var savedItemTimestamps: [ContentItem.ID: Date] = [:]
+    var savedSortOrder: SavedSortOrder = .recentlySaved
     var notificationsEnabled = false
     var disabledSourceCategories: Set<SourceCategory> = []
     var allItems: [ContentItem] = []
     var isLoading = false
     var errorMessage: String?
     var lastUpdatedAt: Date?
+
+    var savedItemIDs: Set<ContentItem.ID> {
+        Set(savedItemTimestamps.keys)
+    }
 
     init(contentSourceClient: (any ContentSourceClient)? = nil) {
         self.contentSourceClient = contentSourceClient ?? Self.defaultContentSourceClient()
@@ -71,7 +78,22 @@ final class AppState {
     }
 
     var savedItems: [ContentItem] {
-        allItems.filter { savedItemIDs.contains($0.id) }
+        let items = allItems.filter { savedItemTimestamps[$0.id] != nil }
+        switch savedSortOrder {
+        case .recentlySaved:
+            return items.sorted { lhs, rhs in
+                let lhsDate = savedItemTimestamps[lhs.id] ?? .distantPast
+                let rhsDate = savedItemTimestamps[rhs.id] ?? .distantPast
+                return lhsDate > rhsDate
+            }
+        case .trending:
+            return items.sorted { lhs, rhs in
+                if lhs.trendScore == rhs.trendScore {
+                    return lhs.publishedAt > rhs.publishedAt
+                }
+                return lhs.trendScore > rhs.trendScore
+            }
+        }
     }
 
     func isSourceCategoryEnabled(_ category: SourceCategory) -> Bool {
@@ -127,13 +149,21 @@ final class AppState {
     }
 
     func toggleSaved(itemID: ContentItem.ID) {
-        if savedItemIDs.contains(itemID) {
-            savedItemIDs.remove(itemID)
+        if savedItemTimestamps[itemID] != nil {
+            savedItemTimestamps[itemID] = nil
         }
         else {
-            savedItemIDs.insert(itemID)
+            savedItemTimestamps[itemID] = .now
         }
 
+        persistState()
+    }
+
+    func setSavedSortOrder(_ order: SavedSortOrder) {
+        guard savedSortOrder != order else {
+            return
+        }
+        savedSortOrder = order
         persistState()
     }
 
@@ -193,8 +223,22 @@ final class AppState {
             selectedTopics = Set(storedTopicValues.compactMap(Topic.init(rawValue:)))
         }
 
-        if let storedSavedIDs = defaults.stringArray(forKey: StorageKey.savedItemIDs) {
-            savedItemIDs = Set(storedSavedIDs.compactMap(UUID.init(uuidString:)))
+        if let storedTimestamps = defaults.dictionary(forKey: StorageKey.savedItemTimestamps) as? [String: Double] {
+            savedItemTimestamps = Dictionary(uniqueKeysWithValues: storedTimestamps.compactMap { key, value in
+                guard let id = UUID(uuidString: key) else {
+                    return nil
+                }
+                return (id, Date(timeIntervalSince1970: value))
+            })
+        }
+        else if let storedSavedIDs = defaults.stringArray(forKey: StorageKey.savedItemIDs) {
+            let migrated = storedSavedIDs.compactMap(UUID.init(uuidString:))
+            savedItemTimestamps = Dictionary(uniqueKeysWithValues: migrated.map { ($0, Date.distantPast) })
+        }
+
+        if let storedSortOrder = defaults.string(forKey: StorageKey.savedSortOrder),
+           let order = SavedSortOrder(rawValue: storedSortOrder) {
+            savedSortOrder = order
         }
 
         if defaults.object(forKey: StorageKey.notificationsEnabled) != nil {
@@ -213,11 +257,14 @@ final class AppState {
     private func persistState() {
         let defaults = UserDefaults.standard
         let topicValues = selectedTopics.map(\.rawValue).sorted()
-        let savedIDs = savedItemIDs.map(\.uuidString).sorted()
+        let timestampDict: [String: Double] = Dictionary(uniqueKeysWithValues: savedItemTimestamps.map { id, date in
+            (id.uuidString, date.timeIntervalSince1970)
+        })
         let disabledCategoryValues = disabledSourceCategories.map(\.rawValue).sorted()
 
         defaults.set(topicValues, forKey: StorageKey.selectedTopics)
-        defaults.set(savedIDs, forKey: StorageKey.savedItemIDs)
+        defaults.set(timestampDict, forKey: StorageKey.savedItemTimestamps)
+        defaults.set(savedSortOrder.rawValue, forKey: StorageKey.savedSortOrder)
         defaults.set(notificationsEnabled, forKey: StorageKey.notificationsEnabled)
         defaults.set(disabledCategoryValues, forKey: StorageKey.disabledSourceCategories)
         defaults.set(lastUpdatedAt, forKey: StorageKey.lastUpdatedAt)

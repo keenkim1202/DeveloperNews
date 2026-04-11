@@ -230,6 +230,24 @@ private struct SavedView: View {
                 }
             }
             .navigationTitle("Saved")
+            .toolbar {
+                if !appState.savedItems.isEmpty {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Picker("Sort", selection: Binding(
+                                get: { appState.savedSortOrder },
+                                set: { appState.setSavedSortOrder($0) }
+                            )) {
+                                ForEach(SavedSortOrder.allCases) { order in
+                                    Text(order.title).tag(order)
+                                }
+                            }
+                        } label: {
+                            Label("Sort", systemImage: "arrow.up.arrow.down.circle")
+                        }
+                    }
+                }
+            }
         }
     }
 }
