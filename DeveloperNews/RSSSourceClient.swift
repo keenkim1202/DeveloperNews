@@ -44,6 +44,8 @@ struct RSSSourceClient: ContentSourceClient {
                 kind: .article,
                 title: item.title,
                 summary: item.summary,
+                summaryHTML: item.summaryHTML,
+                summaryIsTruncated: item.summaryIsTruncated,
                 sourceName: feed.sourceName,
                 sourceCategory: .article,
                 authorName: item.author,
@@ -130,7 +132,7 @@ extension RSSSourceClient {
         ),
         RSSFeedDefinition(
             sourceName: "High Scalability",
-            feedURL: URL(string: "https://highscalability.com/rss.xml")!,
+            feedURL: URL(string: "https://www.highscalability.com/feed")!,
             defaultTopics: [.backend, .devops]
         ),
         RSSFeedDefinition(
@@ -142,6 +144,16 @@ extension RSSSourceClient {
             sourceName: "CSS-Tricks",
             feedURL: URL(string: "https://css-tricks.com/feed/")!,
             defaultTopics: [.web]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Hacking with Swift",
+            feedURL: URL(string: "https://www.hackingwithswift.com/articles/rss")!,
+            defaultTopics: [.ios]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Donny Wals",
+            feedURL: URL(string: "https://www.donnywals.com/feed/")!,
+            defaultTopics: [.ios]
         )
     ]
 }
@@ -149,6 +161,8 @@ extension RSSSourceClient {
 private struct ParsedRSSItem {
     let title: String
     let summary: String
+    let summaryHTML: String?
+    let summaryIsTruncated: Bool
     let link: URL
     let author: String?
     let publishedAt: Date
@@ -158,14 +172,22 @@ private struct ParsedRSSItem {
 private final class RSSFeedParser: NSObject, XMLParserDelegate {
     private enum Element: String {
         case item
+        case entry
         case title
         case description
+        case summary
+        case content
         case encoded = "content:encoded"
         case link
         case author
+        case name
         case creator = "dc:creator"
         case pubDate
+        case published
+        case updated
     }
+
+    private static let itemElementNames: Set<String> = ["item", "entry"]
 
     private static let imageElementNames: Set<String> = [
         "media:thumbnail",
@@ -207,13 +229,24 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?, attributes attributeDict: [String : String] = [:]) {
         currentText = ""
 
-        if elementName == Element.item.rawValue {
+        if Self.itemElementNames.contains(elementName) {
             currentItem = PartialItem()
         }
 
         if Self.imageElementNames.contains(elementName), var item = currentItem, item.imageURL == nil {
             if let candidate = imageURL(from: elementName, attributes: attributeDict) {
                 item.imageURL = candidate
+                currentItem = item
+            }
+        }
+
+        if elementName == "link",
+           var item = currentItem,
+           let href = attributeDict["href"],
+           !href.isEmpty {
+            let rel = attributeDict["rel"] ?? "alternate"
+            if rel == "alternate", item.link.isEmpty {
+                item.link = href
                 currentItem = item
             }
         }
@@ -253,7 +286,7 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
             return
         }
 
-        if elementName == Element.item.rawValue {
+        if Self.itemElementNames.contains(elementName) {
             if
                 let publishedAt = item.publishedAt,
                 let link = URL(string: item.link),
@@ -263,10 +296,19 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
                     ?? firstImageURL(in: item.encodedContent)
                     ?? firstImageURL(in: item.description)
 
+                let lead = leadingParagraphsHTML(in: item.encodedContent)
+                let leadCardSummary = lead.paragraphs.first.map { sanitizedSummary(from: $0) }
+                    ?? sanitizedSummary(from: item.description)
+                let leadBodyHTML: String? = lead.paragraphs.isEmpty
+                    ? nil
+                    : lead.paragraphs.map { "<p>\($0)</p>" }.joined()
+
                 parsedItems.append(
                     ParsedRSSItem(
                         title: item.title,
-                        summary: sanitizedSummary(from: item.description),
+                        summary: leadCardSummary,
+                        summaryHTML: leadBodyHTML,
+                        summaryIsTruncated: lead.hasMore,
                         link: link,
                         author: item.author.isEmpty ? nil : item.author,
                         publishedAt: publishedAt,
@@ -290,16 +332,36 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
         case .title:
             item.title = trimmedText
         case .description:
-            item.description = trimmedText
+            if item.description.isEmpty {
+                item.description = trimmedText
+            }
+        case .summary:
+            if item.description.isEmpty {
+                item.description = trimmedText
+            }
+        case .content:
+            if item.encodedContent.isEmpty {
+                item.encodedContent = trimmedText
+            }
         case .encoded:
             item.encodedContent = trimmedText
         case .link:
-            item.link = trimmedText
+            if item.link.isEmpty {
+                item.link = trimmedText
+            }
         case .author, .creator:
-            item.author = trimmedText
-        case .pubDate:
-            item.publishedAt = parsedDate(from: trimmedText)
-        case .item:
+            if item.author.isEmpty {
+                item.author = trimmedText
+            }
+        case .name:
+            if item.author.isEmpty {
+                item.author = trimmedText
+            }
+        case .pubDate, .published, .updated:
+            if item.publishedAt == nil {
+                item.publishedAt = parsedDate(from: trimmedText)
+            }
+        case .item, .entry:
             break
         }
 
@@ -309,7 +371,7 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
     }
 
     private func parsedDate(from string: String) -> Date? {
-        let formatters: [DateFormatter] = [
+        let rfcFormatters: [DateFormatter] = [
             {
                 let formatter = DateFormatter()
                 formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -324,13 +386,85 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
             }()
         ]
 
-        for formatter in formatters {
+        for formatter in rfcFormatters {
             if let date = formatter.date(from: string) {
                 return date
             }
         }
 
+        let isoStandard = ISO8601DateFormatter()
+        isoStandard.formatOptions = [.withInternetDateTime]
+        if let date = isoStandard.date(from: string) {
+            return date
+        }
+
+        let isoFractional = ISO8601DateFormatter()
+        isoFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoFractional.date(from: string) {
+            return date
+        }
+
         return nil
+    }
+
+    private func leadingParagraphsHTML(in html: String, maxCount: Int = 8) -> (paragraphs: [String], hasMore: Bool) {
+        guard !html.isEmpty else {
+            return ([], false)
+        }
+
+        let pattern = #"<p[^>]*>([\s\S]*?)</p>"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {
+            return ([], false)
+        }
+
+        let range = NSRange(html.startIndex..., in: html)
+        let matches = regex.matches(in: html, range: range)
+
+        var collected: [String] = []
+        var startedCollecting = false
+        var totalAccepted = 0
+        for match in matches {
+            guard
+                match.numberOfRanges >= 2,
+                let inner = Range(match.range(at: 1), in: html)
+            else {
+                continue
+            }
+            let raw = String(html[inner])
+            if !startedCollecting {
+                if isMeaningfulParagraph(raw) {
+                    startedCollecting = true
+                    totalAccepted += 1
+                    collected.append(raw)
+                }
+            }
+            else {
+                totalAccepted += 1
+                if collected.count < maxCount {
+                    collected.append(raw)
+                }
+            }
+        }
+
+        let hasMore = totalAccepted > collected.count
+        return (collected, hasMore)
+    }
+
+    private func isMeaningfulParagraph(_ rawHTML: String) -> Bool {
+        let cleaned = sanitizedSummary(from: rawHTML)
+        guard cleaned.count >= 50 else {
+            return false
+        }
+
+        let lowered = cleaned.lowercased()
+        if lowered.hasPrefix("by ") {
+            return false
+        }
+        if lowered == "comments" || lowered.hasPrefix("read more") || lowered.hasPrefix("continue reading") {
+            return false
+        }
+
+        return true
     }
 
     private func firstImageURL(in html: String) -> URL? {
@@ -369,11 +503,69 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
             options: .regularExpression
         )
 
-        return collapsedWhitespace
-            .replacingOccurrences(of: "&amp;", with: "&")
-            .replacingOccurrences(of: "&lt;", with: "<")
-            .replacingOccurrences(of: "&gt;", with: ">")
-            .replacingOccurrences(of: "&quot;", with: "\"")
+        return decodingHTMLEntities(collapsedWhitespace)
             .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func decodingHTMLEntities(_ string: String) -> String {
+        let named: [(String, String)] = [
+            ("&amp;", "&"),
+            ("&lt;", "<"),
+            ("&gt;", ">"),
+            ("&quot;", "\""),
+            ("&apos;", "'"),
+            ("&nbsp;", " "),
+            ("&hellip;", "…"),
+            ("&mdash;", "—"),
+            ("&ndash;", "–"),
+            ("&lsquo;", "‘"),
+            ("&rsquo;", "’"),
+            ("&ldquo;", "“"),
+            ("&rdquo;", "”")
+        ]
+        var result = string
+        for (entity, replacement) in named {
+            if result.contains(entity) {
+                result = result.replacingOccurrences(of: entity, with: replacement)
+            }
+        }
+
+        result = decodingNumericEntities(result, prefix: "&#", radix: 10)
+        result = decodingNumericEntities(result, prefix: "&#x", radix: 16)
+        return result
+    }
+
+    private func decodingNumericEntities(_ string: String, prefix: String, radix: Int) -> String {
+        let pattern: String
+        switch radix {
+        case 10: pattern = #"&#(\d+);"#
+        case 16: pattern = #"&#x([0-9a-fA-F]+);"#
+        default: return string
+        }
+
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return string
+        }
+
+        let nsString = string as NSString
+        let matches = regex.matches(in: string, range: NSRange(location: 0, length: nsString.length))
+        guard !matches.isEmpty else {
+            return string
+        }
+
+        var result = string
+        for match in matches.reversed() {
+            guard
+                match.numberOfRanges >= 2,
+                let codeRange = Range(match.range(at: 1), in: result),
+                let code = Int(result[codeRange], radix: radix),
+                let scalar = Unicode.Scalar(code),
+                let fullRange = Range(match.range, in: result)
+            else {
+                continue
+            }
+            result.replaceSubrange(fullRange, with: String(Character(scalar)))
+        }
+        return result
     }
 }

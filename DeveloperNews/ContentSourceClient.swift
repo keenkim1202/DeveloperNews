@@ -70,6 +70,8 @@ struct CompositeContentSourceClient: ContentSourceClient {
                         kind: item.kind,
                         title: item.title,
                         summary: item.summary,
+                        summaryHTML: item.summaryHTML,
+                        summaryIsTruncated: item.summaryIsTruncated,
                         sourceName: item.sourceName,
                         sourceCategory: item.sourceCategory,
                         authorName: item.authorName,
@@ -98,6 +100,8 @@ struct CompositeContentSourceClient: ContentSourceClient {
             kind: item.kind,
             title: item.title,
             summary: item.summary,
+            summaryHTML: item.summaryHTML,
+            summaryIsTruncated: item.summaryIsTruncated,
             sourceName: item.sourceName,
             sourceCategory: item.sourceCategory,
             authorName: item.authorName,
@@ -144,12 +148,15 @@ struct CompositeContentSourceClient: ContentSourceClient {
         let unionedTopics = Array(Set(group.flatMap(\.topics)))
         let thumbnail = primary.thumbnailURL ?? group.lazy.compactMap(\.thumbnailURL).first
         let engagement = primary.engagement ?? group.lazy.compactMap(\.engagement).first
+        let summaryHTML = primary.summaryHTML ?? group.lazy.compactMap(\.summaryHTML).first
 
         return ContentItem(
             id: primary.id,
             kind: primary.kind,
             title: primary.title,
             summary: primary.summary,
+            summaryHTML: summaryHTML,
+            summaryIsTruncated: primary.summaryIsTruncated,
             sourceName: primary.sourceName,
             sourceCategory: primary.sourceCategory,
             authorName: primary.authorName,

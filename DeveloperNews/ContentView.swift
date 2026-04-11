@@ -1,5 +1,5 @@
-import SafariServices
 import SwiftUI
+import WebKit
 
 private let relativeDateFormatter: RelativeDateTimeFormatter = {
     let formatter = RelativeDateTimeFormatter()
@@ -283,13 +283,19 @@ private struct FocusChip: View {
 private struct SavedView: View {
     let appState: AppState
     @State private var searchQuery = ""
+    @State private var topicFilters: Set<Topic> = []
+
+    private var availableTopics: [Topic] {
+        let union = Set(appState.savedItems.flatMap(\.topics))
+        return Topic.allCases.filter { union.contains($0) }
+    }
 
     private var matchingArticleItems: [ContentItem] {
-        filtered(appState.savedArticleItems)
+        applyFilters(to: appState.savedArticleItems)
     }
 
     private var matchingDiscussionItems: [ContentItem] {
-        filtered(appState.savedDiscussionItems)
+        applyFilters(to: appState.savedDiscussionItems)
     }
 
     private var hasAnyMatches: Bool {
@@ -298,33 +304,15 @@ private struct SavedView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if appState.savedItems.isEmpty {
-                    ContentUnavailableView {
-                        Label("No saved stories yet", systemImage: "bookmark")
-                    } description: {
-                        Text("Open a story you want to come back to and tap save. It will show up here.")
-                    } actions: {
-                        Button {
-                            appState.currentTab = .home
-                        } label: {
-                            Text("Browse trending")
-                                .fontWeight(.semibold)
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                }
-                else if !hasAnyMatches {
-                    ContentUnavailableView.search(text: searchQuery)
-                }
-                else {
-                    FeedSectionListView(
-                        appState: appState,
-                        articleItems: matchingArticleItems,
-                        discussionItems: matchingDiscussionItems,
-                        showsSummary: false
+            VStack(spacing: 0) {
+                if !appState.savedItems.isEmpty && availableTopics.count > 1 {
+                    SavedTopicFilterBar(
+                        availableTopics: availableTopics,
+                        selectedFilters: $topicFilters
                     )
                 }
+
+                content
             }
             .navigationTitle("Saved")
             .searchable(text: $searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search saved stories")
@@ -349,7 +337,51 @@ private struct SavedView: View {
         }
     }
 
-    private func filtered(_ items: [ContentItem]) -> [ContentItem] {
+    @ViewBuilder
+    private var content: some View {
+        if appState.savedItems.isEmpty {
+            ContentUnavailableView {
+                Label("No saved stories yet", systemImage: "bookmark")
+            } description: {
+                Text("Open a story you want to come back to and tap save. It will show up here.")
+            } actions: {
+                Button {
+                    appState.currentTab = .home
+                } label: {
+                    Text("Browse trending")
+                        .fontWeight(.semibold)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        else if !hasAnyMatches {
+            if searchQuery.isEmpty {
+                ContentUnavailableView(
+                    "No saved stories in selected topics",
+                    systemImage: "tray",
+                    description: Text("Tap All to clear the topic filter or pick different topics above.")
+                )
+            }
+            else {
+                ContentUnavailableView.search(text: searchQuery)
+            }
+        }
+        else {
+            FeedSectionListView(
+                appState: appState,
+                articleItems: matchingArticleItems,
+                discussionItems: matchingDiscussionItems,
+                showsSummary: false
+            )
+        }
+    }
+
+    private func applyFilters(to items: [ContentItem]) -> [ContentItem] {
+        let bySearch = searchFiltered(items)
+        return topicFiltered(bySearch)
+    }
+
+    private func searchFiltered(_ items: [ContentItem]) -> [ContentItem] {
         let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {
             return items
@@ -361,6 +393,51 @@ private struct SavedView: View {
                 || item.summary.lowercased().contains(needle)
                 || item.sourceName.lowercased().contains(needle)
         }
+    }
+
+    private func topicFiltered(_ items: [ContentItem]) -> [ContentItem] {
+        guard !topicFilters.isEmpty else {
+            return items
+        }
+        return items.filter { !topicFilters.isDisjoint(with: $0.topics) }
+    }
+}
+
+private struct SavedTopicFilterBar: View {
+    let availableTopics: [Topic]
+    @Binding var selectedFilters: Set<Topic>
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                FocusChip(
+                    title: "All",
+                    systemImage: "square.grid.2x2",
+                    isSelected: selectedFilters.isEmpty
+                ) {
+                    selectedFilters.removeAll()
+                }
+
+                ForEach(availableTopics) { topic in
+                    FocusChip(
+                        title: topic.title,
+                        systemImage: topic.symbolName,
+                        isSelected: selectedFilters.contains(topic)
+                    ) {
+                        if selectedFilters.contains(topic) {
+                            selectedFilters.remove(topic)
+                        }
+                        else {
+                            selectedFilters.insert(topic)
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 2)
+            .padding(.bottom, 8)
+        }
+        .background(.bar)
     }
 }
 
@@ -605,6 +682,67 @@ private struct EngagementSummaryView: View {
     }
 }
 
+private struct ArticleWebView: UIViewRepresentable {
+    let url: URL
+    @Binding var isLoading: Bool
+    @Binding var loadError: String?
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    func makeUIView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        webView.navigationDelegate = context.coordinator
+        webView.allowsBackForwardNavigationGestures = true
+        return webView
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        guard context.coordinator.loadedURL != url else {
+            return
+        }
+        context.coordinator.loadedURL = url
+        webView.load(URLRequest(url: url))
+    }
+
+    final class Coordinator: NSObject, WKNavigationDelegate {
+        let parent: ArticleWebView
+        var loadedURL: URL?
+
+        init(parent: ArticleWebView) {
+            self.parent = parent
+        }
+
+        func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            DispatchQueue.main.async {
+                self.parent.isLoading = true
+                self.parent.loadError = nil
+            }
+        }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            DispatchQueue.main.async {
+                self.parent.isLoading = false
+            }
+        }
+
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            DispatchQueue.main.async {
+                self.parent.isLoading = false
+                self.parent.loadError = error.localizedDescription
+            }
+        }
+
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            DispatchQueue.main.async {
+                self.parent.isLoading = false
+                self.parent.loadError = error.localizedDescription
+            }
+        }
+    }
+}
+
 private struct EngagementInline: View {
     let systemImage: String
     let value: Int
@@ -619,35 +757,6 @@ private struct EngagementInline: View {
     }
 }
 
-private struct DetailHeroImageView: View {
-    let url: URL
-
-    var body: some View {
-        AsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFill()
-            case .failure:
-                Color(.tertiarySystemFill)
-                    .overlay {
-                        Image(systemName: "photo")
-                            .font(.title2)
-                            .foregroundStyle(.secondary)
-                    }
-            case .empty:
-                Color(.tertiarySystemFill)
-                    .overlay { ProgressView() }
-            @unknown default:
-                Color(.tertiarySystemFill)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 200)
-        .clipped()
-    }
-}
 
 private struct FeedItemThumbnailView: View {
     let url: URL
@@ -763,6 +872,8 @@ private struct SettingsView: View {
                                         .foregroundStyle(.tint)
                                 }
                             }
+                            .frame(maxWidth: .infinity)
+                            .contentShape(Rectangle())
                             .opacity(isDisabled ? 0.4 : 1)
                         }
                         .buttonStyle(.plain)
@@ -821,131 +932,65 @@ private struct ArticleDetailView: View {
     let appState: AppState
     let item: ContentItem
 
-    @Environment(\.dismiss) private var dismiss
-    @State private var isShowingSourceBrowser = false
+    @State private var isLoading = true
+    @State private var loadError: String?
 
     var body: some View {
-        List {
-            if let thumbnailURL = item.thumbnailURL {
-                Section {
-                    DetailHeroImageView(url: thumbnailURL)
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
-                }
+        ZStack {
+            ArticleWebView(url: item.url, isLoading: $isLoading, loadError: $loadError)
+                .opacity(loadError == nil ? 1 : 0)
+                .ignoresSafeArea(edges: .bottom)
+
+            if isLoading && loadError == nil {
+                ProgressView()
+                    .controlSize(.large)
             }
 
-            Section {
-                VStack(alignment: .leading, spacing: 12) {
+            if let loadError {
+                ContentUnavailableView {
+                    Label("Could not load article", systemImage: "wifi.exclamationmark")
+                } description: {
+                    Text(loadError)
+                } actions: {
+                    ShareLink(item: item.url, subject: Text(item.title)) {
+                        Text("Open elsewhere")
+                            .fontWeight(.semibold)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .background(Color(.systemBackground))
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 0) {
                     Text(item.title)
-                        .font(.title2.bold())
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 8) {
-                            Label(item.kind.title, systemImage: item.kind.symbolName)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-
-                            Text("·")
-                                .foregroundStyle(.tertiary)
-
-                            Text(item.sourceName)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-
-                            Text("·")
-                                .foregroundStyle(.tertiary)
-
-                            Text(relativeDateFormatter.localizedString(for: item.publishedAt, relativeTo: .now))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-
-                            if let engagement = item.engagement {
-                                Text("·")
-                                    .foregroundStyle(.tertiary)
-
-                                EngagementInline(systemImage: "arrow.up", value: engagement.reactionCount)
-                                EngagementInline(systemImage: "bubble.left", value: engagement.commentCount)
-                            }
-                        }
-
-                        if let authorName = item.authorName {
-                            Text("By \(authorName)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    Text(item.summary)
-                        .font(.body)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Text(item.sourceName)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
-                .padding(.vertical, 4)
             }
 
-            Section("Topics") {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(item.topics) { topic in
-                            let canFocus = appState.selectedTopics.contains(topic)
-                            Button {
-                                guard canFocus else { return }
-                                appState.focusedTopic = topic
-                                appState.currentTab = .home
-                                dismiss()
-                            } label: {
-                                Text(topic.title)
-                                    .font(.caption.weight(.medium))
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(Color(.secondarySystemBackground))
-                                    .clipShape(Capsule())
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(!canFocus)
-                        }
-                    }
-                }
-                .listRowInsets(EdgeInsets(top: 12, leading: 20, bottom: 12, trailing: 20))
-            }
-
-            Section("Actions") {
+            ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     appState.toggleSaved(itemID: item.id)
                 } label: {
-                    let isSaved = appState.savedItemIDs.contains(item.id)
-                    Label(
-                        isSaved ? "Remove from saved items" : "Save to saved items",
-                        systemImage: isSaved ? "bookmark.slash" : "bookmark"
-                    )
+                    Image(systemName: appState.savedItemIDs.contains(item.id) ? "bookmark.fill" : "bookmark")
                 }
+                .accessibilityLabel(appState.savedItemIDs.contains(item.id) ? "Remove from saved" : "Save story")
+            }
 
-                Button {
-                    isShowingSourceBrowser = true
-                } label: {
-                    Label("Read original source", systemImage: "safari")
-                }
-
+            ToolbarItem(placement: .topBarTrailing) {
                 ShareLink(item: item.url, subject: Text(item.title)) {
-                    Label("Share story link", systemImage: "square.and.arrow.up")
+                    Image(systemName: "square.and.arrow.up")
                 }
             }
         }
-        .navigationTitle("Story")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $isShowingSourceBrowser) {
-            SafariBrowserView(url: item.url)
-                .ignoresSafeArea()
-        }
+        .toolbar(.hidden, for: .tabBar)
     }
-}
-
-private struct SafariBrowserView: UIViewControllerRepresentable {
-    let url: URL
-
-    func makeUIViewController(context: Context) -> SFSafariViewController {
-        let configuration = SFSafariViewController.Configuration()
-        configuration.entersReaderIfAvailable = false
-        return SFSafariViewController(url: url, configuration: configuration)
-    }
-
-    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
 }

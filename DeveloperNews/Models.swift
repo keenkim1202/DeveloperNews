@@ -112,6 +112,8 @@ struct ContentItem: Identifiable, Hashable {
     let kind: Kind
     let title: String
     let summary: String
+    let summaryHTML: String?
+    let summaryIsTruncated: Bool
     let sourceName: String
     let sourceCategory: SourceCategory
     let authorName: String?
@@ -127,6 +129,8 @@ struct ContentItem: Identifiable, Hashable {
         kind: Kind,
         title: String,
         summary: String,
+        summaryHTML: String? = nil,
+        summaryIsTruncated: Bool = false,
         sourceName: String,
         sourceCategory: SourceCategory,
         authorName: String?,
@@ -141,6 +145,8 @@ struct ContentItem: Identifiable, Hashable {
         self.kind = kind
         self.title = title
         self.summary = summary
+        self.summaryHTML = summaryHTML
+        self.summaryIsTruncated = summaryIsTruncated
         self.sourceName = sourceName
         self.sourceCategory = sourceCategory
         self.authorName = authorName
