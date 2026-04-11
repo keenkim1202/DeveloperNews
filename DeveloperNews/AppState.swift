@@ -4,6 +4,7 @@ import Observation
 @Observable
 final class AppState {
     static let maxSelectedTopics = 5
+    static let pageSize = 30
 
     private enum StorageKey {
         static let selectedTopics = "selectedTopics"
@@ -34,6 +35,10 @@ final class AppState {
     var lastUpdatedAt: Date?
     var hasSeenIntro = false
     var topStoryDismissedAt: Date?
+    var visibleItemLimit: Int = pageSize
+    var homeScrollToTopTrigger = 0
+    var savedScrollToTopTrigger = 0
+    var settingsScrollToTopTrigger = 0
 
     var isTopStoryHidden: Bool {
         guard let topStoryDismissedAt else {
@@ -130,6 +135,7 @@ final class AppState {
         else {
             disabledSourceCategories.insert(category)
         }
+        resetPagination()
         persistState()
     }
 
@@ -139,6 +145,31 @@ final class AppState {
 
     var discussionItems: [ContentItem] {
         personalizedItems.filter { $0.kind == .discussion }
+    }
+
+    var pagedPersonalizedItems: [ContentItem] {
+        Array(personalizedItems.prefix(visibleItemLimit))
+    }
+
+    var pagedArticleItems: [ContentItem] {
+        pagedPersonalizedItems.filter { $0.kind == .article }
+    }
+
+    var pagedDiscussionItems: [ContentItem] {
+        pagedPersonalizedItems.filter { $0.kind == .discussion }
+    }
+
+    var hasMorePages: Bool {
+        personalizedItems.count > visibleItemLimit
+    }
+
+    func loadMore() {
+        guard hasMorePages else { return }
+        visibleItemLimit += Self.pageSize
+    }
+
+    private func resetPagination() {
+        visibleItemLimit = Self.pageSize
     }
 
     var savedArticleItems: [ContentItem] {
@@ -171,6 +202,7 @@ final class AppState {
             selectedTopics.insert(topic)
         }
 
+        resetPagination()
         persistState()
     }
 
@@ -181,6 +213,12 @@ final class AppState {
         else if selectedTopics.contains(topic) {
             focusedTopic = topic
         }
+        resetPagination()
+    }
+
+    func clearFocusedTopic() {
+        focusedTopic = nil
+        resetPagination()
     }
 
     func toggleSaved(itemID: ContentItem.ID) {
@@ -215,7 +253,21 @@ final class AppState {
     func resetTopics() {
         selectedTopics.removeAll()
         focusedTopic = nil
+        resetPagination()
         persistState()
+    }
+
+    func notifyTabSelected(_ tab: AppTab) {
+        if tab == currentTab {
+            switch tab {
+            case .home: homeScrollToTopTrigger &+= 1
+            case .saved: savedScrollToTopTrigger &+= 1
+            case .settings: settingsScrollToTopTrigger &+= 1
+            }
+        }
+        else {
+            currentTab = tab
+        }
     }
 
     func setNotificationsEnabled(_ isEnabled: Bool) {
@@ -253,6 +305,7 @@ final class AppState {
         do {
             allItems = try await contentSourceClient.fetchItems()
             lastUpdatedAt = .now
+            resetPagination()
             persistState()
         }
         catch {
