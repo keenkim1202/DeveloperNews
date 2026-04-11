@@ -44,6 +44,20 @@ struct EngagementMetrics: Hashable {
     let commentCount: Int
 }
 
+enum SavedSortOrder: String, CaseIterable, Identifiable, Hashable {
+    case recentlySaved
+    case trending
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .recentlySaved: "Recently saved"
+        case .trending: "Trending"
+        }
+    }
+}
+
 enum SourceCategory: String, CaseIterable, Identifiable, Hashable {
     case article
     case hackerNews
