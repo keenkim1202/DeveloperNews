@@ -43,12 +43,29 @@ final class AppState {
             }
         }
 
-        return filteredItems.sorted {
-            if $0.trendScore == $1.trendScore {
-                return $0.publishedAt > $1.publishedAt
+        let savedSourceCounts = savedSourceNameCounts()
+
+        return filteredItems.sorted { lhs, rhs in
+            let leftScore = personalizedScore(for: lhs, savedSourceCounts: savedSourceCounts)
+            let rightScore = personalizedScore(for: rhs, savedSourceCounts: savedSourceCounts)
+            if leftScore == rightScore {
+                return lhs.publishedAt > rhs.publishedAt
             }
-            return $0.trendScore > $1.trendScore
+            return leftScore > rightScore
         }
+    }
+
+    private func personalizedScore(for item: ContentItem, savedSourceCounts: [String: Int]) -> Int {
+        let saveBonus = min(8, (savedSourceCounts[item.sourceName] ?? 0) * 2)
+        return min(100, item.trendScore + saveBonus)
+    }
+
+    private func savedSourceNameCounts() -> [String: Int] {
+        var counts: [String: Int] = [:]
+        for item in allItems where savedItemIDs.contains(item.id) {
+            counts[item.sourceName, default: 0] += 1
+        }
+        return counts
     }
 
     var savedItems: [ContentItem] {
