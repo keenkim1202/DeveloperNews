@@ -280,6 +280,23 @@ private struct EngagementSummaryView: View {
     }
 }
 
+private struct DetailEngagementStat: View {
+    let systemImage: String
+    let value: Int
+    let caption: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Label("\(value)", systemImage: systemImage)
+                .font(.title3.weight(.semibold))
+                .labelStyle(.titleAndIcon)
+            Text(caption)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
 private struct DetailHeroImageView: View {
     let url: URL
 
@@ -512,6 +529,16 @@ private struct ArticleDetailView: View {
                         .font(.body)
                 }
                 .padding(.vertical, 4)
+            }
+
+            if let engagement = item.engagement {
+                Section("Community signal") {
+                    HStack(spacing: 24) {
+                        DetailEngagementStat(systemImage: "arrow.up", value: engagement.reactionCount, caption: "Upvotes")
+                        DetailEngagementStat(systemImage: "bubble.left", value: engagement.commentCount, caption: "Comments")
+                    }
+                    .padding(.vertical, 4)
+                }
             }
 
             Section("Topics") {
