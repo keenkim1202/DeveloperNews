@@ -1,5 +1,11 @@
 import SwiftUI
 
+private let relativeDateFormatter: RelativeDateTimeFormatter = {
+    let formatter = RelativeDateTimeFormatter()
+    formatter.unitsStyle = .short
+    return formatter
+}()
+
 struct ContentView: View {
     @State private var appState = AppState()
 
@@ -95,15 +101,7 @@ private struct HomeView: View {
                     ArticleDetailView(appState: appState, item: item)
                 } label: {
                     VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Text(item.sourceName)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text("Trend \(item.trendScore)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+                        FeedItemMetaView(item: item)
 
                         Text(item.title)
                             .font(.headline)
@@ -153,11 +151,9 @@ private struct SavedView: View {
                             ArticleDetailView(appState: appState, item: item)
                         } label: {
                             VStack(alignment: .leading, spacing: 6) {
+                                FeedItemMetaView(item: item)
                                 Text(item.title)
                                     .font(.headline)
-                                Text(item.sourceName)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
                             }
                             .padding(.vertical, 4)
                         }
@@ -165,6 +161,32 @@ private struct SavedView: View {
                 }
             }
             .navigationTitle("Saved")
+        }
+    }
+}
+
+private struct FeedItemMetaView: View {
+    let item: ContentItem
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Label(item.kind.title, systemImage: item.kind.symbolName)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Text("•")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+
+            Text(item.sourceName)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Text(relativeDateFormatter.localizedString(for: item.publishedAt, relativeTo: .now))
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 }
