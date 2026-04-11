@@ -168,6 +168,11 @@ extension RSSSourceClient {
             sourceName: "JetBrains Kotlin Blog",
             feedURL: URL(string: "https://blog.jetbrains.com/kotlin/feed/")!,
             defaultTopics: [.android]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Apple Developer News",
+            feedURL: URL(string: "https://developer.apple.com/news/rss/news.rss")!,
+            defaultTopics: [.ios]
         )
     ]
 }
