@@ -180,11 +180,24 @@ private struct HomeView: View {
     private func feedContent(excluding topItem: ContentItem?) -> some View {
         Group {
             if appState.isLoading && !appState.hasLoadedContent {
-                    ContentUnavailableView(
-                        "Loading stories",
-                        systemImage: "newspaper",
-                        description: Text("Fetching the latest developer stories for your selected topics.")
-                    )
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .controlSize(.large)
+                            .tint(.accentColor)
+
+                        VStack(spacing: 4) {
+                            Text("Loading stories")
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
+
+                            Text("Fetching the latest developer stories for your selected topics...")
+                                .font(.footnote)
+                                .foregroundStyle(.tertiary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 40)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 else if let errorMessage = appState.errorMessage, !appState.hasLoadedContent {
                     ContentUnavailableView {
@@ -741,6 +754,8 @@ private struct ArticleWebView: UIViewRepresentable {
     let url: URL
     let isLoading: Binding<Bool>
     let loadError: Binding<String?>
+    let progress: Binding<Double>
+    let reloadTrigger: Int
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -750,35 +765,66 @@ private struct ArticleWebView: UIViewRepresentable {
         let webView = WKWebView()
         webView.navigationDelegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
+        webView.addObserver(context.coordinator, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
+        context.coordinator.observedWebView = webView
         return webView
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
-        guard context.coordinator.loadedURL != url else {
-            return
+        if context.coordinator.loadedURL != url {
+            context.coordinator.loadedURL = url
+            context.coordinator.lastReloadTrigger = reloadTrigger
+            webView.load(URLRequest(url: url))
         }
-        context.coordinator.loadedURL = url
-        webView.load(URLRequest(url: url))
+        else if context.coordinator.lastReloadTrigger != reloadTrigger {
+            context.coordinator.lastReloadTrigger = reloadTrigger
+            webView.reload()
+        }
+    }
+
+    static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
+        if let observed = coordinator.observedWebView {
+            observed.removeObserver(coordinator, forKeyPath: #keyPath(WKWebView.estimatedProgress))
+            coordinator.observedWebView = nil
+        }
     }
 
     final class Coordinator: NSObject, WKNavigationDelegate {
         let parent: ArticleWebView
         var loadedURL: URL?
+        var lastReloadTrigger: Int
+        weak var observedWebView: WKWebView?
 
         init(parent: ArticleWebView) {
             self.parent = parent
+            self.lastReloadTrigger = parent.reloadTrigger
+        }
+
+        override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey: Any]?, context: UnsafeMutableRawPointer?) {
+            guard
+                keyPath == #keyPath(WKWebView.estimatedProgress),
+                let webView = object as? WKWebView
+            else {
+                return
+            }
+            let value = webView.estimatedProgress
+            DispatchQueue.main.async {
+                self.parent.progress.wrappedValue = value
+            }
         }
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             DispatchQueue.main.async {
                 self.parent.isLoading.wrappedValue = true
                 self.parent.loadError.wrappedValue = nil
+                self.parent.progress.wrappedValue = 0
             }
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             DispatchQueue.main.async {
                 self.parent.isLoading.wrappedValue = false
+                self.parent.progress.wrappedValue = 1
             }
         }
 
@@ -1170,33 +1216,52 @@ private struct ArticleDetailView: View {
 
     @State private var isLoading = true
     @State private var loadError: String?
+    @State private var loadProgress: Double = 0
+    @State private var reloadTrigger = 0
 
     var body: some View {
-        ZStack {
-            ArticleWebView(url: item.url, isLoading: $isLoading, loadError: $loadError)
-                .opacity(loadError == nil ? 1 : 0)
-                .ignoresSafeArea(edges: .bottom)
+        ZStack(alignment: .top) {
+            ArticleWebView(
+                url: item.url,
+                isLoading: $isLoading,
+                loadError: $loadError,
+                progress: $loadProgress,
+                reloadTrigger: reloadTrigger
+            )
+            .opacity(loadError == nil ? 1 : 0)
+            .ignoresSafeArea(edges: .bottom)
 
-            if isLoading && loadError == nil {
-                ProgressView()
-                    .controlSize(.large)
+            if isLoading && loadProgress < 1 {
+                ProgressView(value: max(loadProgress, 0.05))
+                    .progressViewStyle(.linear)
+                    .tint(.accentColor)
+                    .frame(height: 2)
+                    .transition(.opacity)
             }
 
-            if let loadError {
+            if let message = loadError {
                 ContentUnavailableView {
                     Label("Could not load article", systemImage: "wifi.exclamationmark")
                 } description: {
-                    Text(loadError)
+                    Text(message)
                 } actions: {
-                    ShareLink(item: item.url, subject: Text(item.title)) {
-                        Text("Open elsewhere")
+                    Button {
+                        loadError = nil
+                        reloadTrigger &+= 1
+                    } label: {
+                        Text("Try again")
                             .fontWeight(.semibold)
                     }
                     .buttonStyle(.borderedProminent)
+
+                    ShareLink(item: item.url, subject: Text(item.title)) {
+                        Text("Open elsewhere")
+                    }
                 }
                 .background(Color(.systemBackground))
             }
         }
+        .animation(.easeInOut(duration: 0.2), value: isLoading)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 VStack(spacing: 0) {
@@ -1218,6 +1283,16 @@ private struct ArticleDetailView: View {
                     Image(systemName: appState.savedItemIDs.contains(item.id) ? "bookmark.fill" : "bookmark")
                 }
                 .accessibilityLabel(appState.savedItemIDs.contains(item.id) ? "Remove from saved" : "Save story")
+            }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    reloadTrigger &+= 1
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .disabled(isLoading)
+                .accessibilityLabel("Reload article")
             }
 
             ToolbarItem(placement: .topBarTrailing) {
