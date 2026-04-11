@@ -318,7 +318,12 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
             return nil
         }
 
-        return URL(string: String(html[range]))
+        let raw = String(html[range])
+        let decoded = raw
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&#x27;", with: "'")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+        return URL(string: decoded)
     }
 
     private func sanitizedSummary(from rawHTML: String) -> String {
