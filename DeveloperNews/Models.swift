@@ -43,6 +43,20 @@ struct ContentItem: Identifiable, Hashable {
     enum Kind: String {
         case article
         case discussion
+
+        var title: String {
+            switch self {
+            case .article: "Article"
+            case .discussion: "Discussion"
+            }
+        }
+
+        var symbolName: String {
+            switch self {
+            case .article: "newspaper"
+            case .discussion: "bubble.left.and.bubble.right"
+            }
+        }
     }
 
     let id: UUID
