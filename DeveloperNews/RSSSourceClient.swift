@@ -91,6 +91,21 @@ extension RSSSourceClient {
             sourceName: "InfoQ",
             feedURL: URL(string: "https://feed.infoq.com")!,
             defaultTopics: [.backend, .ai, .product]
+        ),
+        RSSFeedDefinition(
+            sourceName: "GitHub Blog",
+            feedURL: URL(string: "https://github.blog/feed/")!,
+            defaultTopics: [.devops, .product]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Mozilla Hacks",
+            feedURL: URL(string: "https://hacks.mozilla.org/feed/")!,
+            defaultTopics: [.web, .security]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Cloudflare Blog",
+            feedURL: URL(string: "https://blog.cloudflare.com/rss/")!,
+            defaultTopics: [.backend, .devops, .security]
         )
     ]
 }
