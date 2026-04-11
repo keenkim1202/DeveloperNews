@@ -241,9 +241,31 @@ private struct ArticleDetailView: View {
                     Text(item.title)
                         .font(.title2.bold())
 
-                    Label(item.sourceName, systemImage: item.kind == .article ? "newspaper" : "bubble.left.and.bubble.right")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label(item.kind.title, systemImage: item.kind.symbolName)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        HStack(spacing: 8) {
+                            Text(item.sourceName)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+
+                            Text("•")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+
+                            Text(relativeDateFormatter.localizedString(for: item.publishedAt, relativeTo: .now))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if let authorName = item.authorName {
+                            Text("By \(authorName)")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
 
                     Text(item.summary)
                         .font(.body)
@@ -268,11 +290,11 @@ private struct ArticleDetailView: View {
             }
 
             Section("Actions") {
-                Button(appState.savedItemIDs.contains(item.id) ? "Remove from saved" : "Save for later") {
+                Button(appState.savedItemIDs.contains(item.id) ? "Remove from saved items" : "Save to saved items") {
                     appState.toggleSaved(itemID: item.id)
                 }
 
-                Link("Open original source", destination: item.url)
+                Link("Read original source", destination: item.url)
             }
         }
         .navigationTitle("Story")
