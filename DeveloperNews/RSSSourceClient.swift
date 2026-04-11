@@ -45,7 +45,8 @@ struct RSSSourceClient: ContentSourceClient {
                 url: item.link,
                 publishedAt: item.publishedAt,
                 topics: inferredTopics(for: item.title + " " + item.summary, fallback: feed.defaultTopics),
-                trendScore: trendScore(for: item.publishedAt)
+                trendScore: trendScore(for: item.publishedAt),
+                thumbnailURL: item.imageURL
             )
         }
     }
@@ -116,6 +117,7 @@ private struct ParsedRSSItem {
     let link: URL
     let author: String?
     let publishedAt: Date
+    let imageURL: URL?
 }
 
 private final class RSSFeedParser: NSObject, XMLParserDelegate {
@@ -123,18 +125,27 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
         case item
         case title
         case description
+        case encoded = "content:encoded"
         case link
         case author
         case creator = "dc:creator"
         case pubDate
     }
 
+    private static let imageElementNames: Set<String> = [
+        "media:thumbnail",
+        "media:content",
+        "enclosure"
+    ]
+
     private struct PartialItem {
         var title = ""
         var description = ""
+        var encodedContent = ""
         var link = ""
         var author = ""
         var publishedAt: Date?
+        var imageURL: URL?
     }
 
     private var parsedItems: [ParsedRSSItem] = []
@@ -165,7 +176,33 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
             currentItem = PartialItem()
         }
 
+        if Self.imageElementNames.contains(elementName), var item = currentItem, item.imageURL == nil {
+            if let candidate = imageURL(from: elementName, attributes: attributeDict) {
+                item.imageURL = candidate
+                currentItem = item
+            }
+        }
+
         currentElement = Element(rawValue: elementName)
+    }
+
+    private func imageURL(from elementName: String, attributes: [String: String]) -> URL? {
+        if elementName == "enclosure" {
+            guard let type = attributes["type"], type.hasPrefix("image/") else {
+                return nil
+            }
+        }
+
+        if elementName == "media:content" {
+            if let medium = attributes["medium"], medium != "image" {
+                return nil
+            }
+        }
+
+        guard let raw = attributes["url"], let url = URL(string: raw) else {
+            return nil
+        }
+        return url
     }
 
     func parser(_ parser: XMLParser, foundCharacters string: String) {
@@ -187,13 +224,18 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
                 let link = URL(string: item.link),
                 !item.title.isEmpty
             {
+                let imageURL = item.imageURL
+                    ?? firstImageURL(in: item.encodedContent)
+                    ?? firstImageURL(in: item.description)
+
                 parsedItems.append(
                     ParsedRSSItem(
                         title: item.title,
                         summary: sanitizedSummary(from: item.description),
                         link: link,
                         author: item.author.isEmpty ? nil : item.author,
-                        publishedAt: publishedAt
+                        publishedAt: publishedAt,
+                        imageURL: imageURL
                     )
                 )
             }
@@ -214,6 +256,8 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
             item.title = trimmedText
         case .description:
             item.description = trimmedText
+        case .encoded:
+            item.encodedContent = trimmedText
         case .link:
             item.link = trimmedText
         case .author, .creator:
@@ -252,6 +296,24 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
         }
 
         return nil
+    }
+
+    private func firstImageURL(in html: String) -> URL? {
+        guard !html.isEmpty else {
+            return nil
+        }
+
+        let pattern = #"<img[^>]+src=["']([^"']+)["']"#
+        guard
+            let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+            let match = regex.firstMatch(in: html, range: NSRange(html.startIndex..., in: html)),
+            match.numberOfRanges >= 2,
+            let range = Range(match.range(at: 1), in: html)
+        else {
+            return nil
+        }
+
+        return URL(string: String(html[range]))
     }
 
     private func sanitizedSummary(from rawHTML: String) -> String {
