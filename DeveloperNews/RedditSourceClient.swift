@@ -75,9 +75,23 @@ struct RedditSourceClient: ContentSourceClient {
                 url: link,
                 publishedAt: publishedAt,
                 topics: topics,
-                trendScore: trendScore(score: post.score, commentCount: post.numComments, publishedAt: publishedAt)
+                trendScore: trendScore(score: post.score, commentCount: post.numComments, publishedAt: publishedAt),
+                thumbnailURL: thumbnailURL(from: post)
             )
         }
+    }
+
+    private func thumbnailURL(from post: RedditPost) -> URL? {
+        let placeholders: Set<String> = ["self", "default", "nsfw", "spoiler", "image", ""]
+        guard
+            let raw = post.thumbnail,
+            !placeholders.contains(raw),
+            raw.hasPrefix("https://") || raw.hasPrefix("http://"),
+            let url = URL(string: raw)
+        else {
+            return nil
+        }
+        return url
     }
 
     private func inferredTopics(for text: String, fallback: [Topic]) -> [Topic] {
@@ -146,6 +160,7 @@ private struct RedditPost: Decodable {
     let stickied: Bool
     let locked: Bool
     let quarantine: Bool
+    let thumbnail: String?
 
     enum CodingKeys: String, CodingKey {
         case title
@@ -160,6 +175,7 @@ private struct RedditPost: Decodable {
         case stickied
         case locked
         case quarantine
+        case thumbnail
     }
 
     init(from decoder: Decoder) throws {
@@ -176,5 +192,6 @@ private struct RedditPost: Decodable {
         stickied = try container.decodeIfPresent(Bool.self, forKey: .stickied) ?? false
         locked = try container.decodeIfPresent(Bool.self, forKey: .locked) ?? false
         quarantine = try container.decodeIfPresent(Bool.self, forKey: .quarantine) ?? false
+        thumbnail = try container.decodeIfPresent(String.self, forKey: .thumbnail)
     }
 }

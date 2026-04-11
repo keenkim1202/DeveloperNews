@@ -219,32 +219,66 @@ private struct FeedItemRow: View {
         NavigationLink {
             ArticleDetailView(appState: appState, item: item)
         } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                FeedItemMetaView(item: item)
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    FeedItemMetaView(item: item)
 
-                Text(item.title)
-                    .font(.headline)
+                    Text(item.title)
+                        .font(.headline)
 
-                Text(item.summary)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
+                    Text(item.summary)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(item.topics) { topic in
-                            Text(topic.title)
-                                .font(.caption.weight(.medium))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(Color(.secondarySystemBackground))
-                                .clipShape(Capsule())
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(item.topics) { topic in
+                                Text(topic.title)
+                                    .font(.caption.weight(.medium))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Color(.secondarySystemBackground))
+                                    .clipShape(Capsule())
+                            }
                         }
                     }
+                }
+
+                if let thumbnailURL = item.thumbnailURL {
+                    FeedItemThumbnailView(url: thumbnailURL)
                 }
             }
             .padding(.vertical, 6)
         }
+    }
+}
+
+private struct FeedItemThumbnailView: View {
+    let url: URL
+
+    var body: some View {
+        AsyncImage(url: url) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .scaledToFill()
+            case .failure:
+                Color(.tertiarySystemFill)
+                    .overlay {
+                        Image(systemName: "photo")
+                            .foregroundStyle(.secondary)
+                    }
+            case .empty:
+                Color(.tertiarySystemFill)
+                    .overlay { ProgressView().controlSize(.small) }
+            @unknown default:
+                Color(.tertiarySystemFill)
+            }
+        }
+        .frame(width: 72, height: 72)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 
