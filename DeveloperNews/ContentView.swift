@@ -634,6 +634,10 @@ private struct ArticleDetailView: View {
                 } label: {
                     Label("Read original source", systemImage: "safari")
                 }
+
+                ShareLink(item: item.url, subject: Text(item.title)) {
+                    Label("Share story link", systemImage: "square.and.arrow.up")
+                }
             }
         }
         .navigationTitle("Story")
