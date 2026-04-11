@@ -126,7 +126,8 @@ final class AppState {
         CompositeContentSourceClient(
             clients: [
                 RSSSourceClient(),
-                HackerNewsSourceClient()
+                HackerNewsSourceClient(),
+                RedditSourceClient()
             ],
             fallbackClient: MockContentSourceClient()
         )
