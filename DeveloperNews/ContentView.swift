@@ -16,14 +16,17 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if appState.isOnboardingComplete {
+            if !appState.hasSeenIntro {
+                IntroView(appState: appState)
+            }
+            else if !appState.isOnboardingComplete {
+                TopicSelectionView(appState: appState)
+            }
+            else {
                 MainTabView(appState: appState)
                     .task {
                         await appState.loadIfNeeded()
                     }
-            }
-            else {
-                TopicSelectionView(appState: appState)
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
@@ -39,6 +42,84 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+}
+
+private struct IntroView: View {
+    let appState: AppState
+
+    private struct FeatureRow: View {
+        let systemImage: String
+        let title: String
+        let description: String
+
+        var body: some View {
+            HStack(alignment: .top, spacing: 16) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 32))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 44, alignment: .center)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                    Text(description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 0)
+            }
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 32) {
+            VStack(spacing: 12) {
+                Text("Welcome to DeveloperNews")
+                    .font(.largeTitle.bold())
+                    .multilineTextAlignment(.center)
+
+                Text("Trending stories from the developer world, in one place.")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.top, 40)
+
+            VStack(alignment: .leading, spacing: 24) {
+                FeatureRow(
+                    systemImage: "sparkles",
+                    title: "Pick your interests",
+                    description: "Choose up to five topics to shape your feed."
+                )
+                FeatureRow(
+                    systemImage: "flame",
+                    title: "Skim what's trending",
+                    description: "We pull from RSS feeds, Hacker News, and Reddit so you do not have to."
+                )
+                FeatureRow(
+                    systemImage: "bookmark",
+                    title: "Save what matters",
+                    description: "Bookmark stories to read later, sorted by recency or trend."
+                )
+            }
+            .padding(.horizontal, 8)
+
+            Spacer()
+
+            Button {
+                appState.markIntroSeen()
+            } label: {
+                Text("Get started")
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 32)
+    }
 }
 
 private struct TopicSelectionView: View {
