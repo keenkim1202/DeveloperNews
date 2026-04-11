@@ -10,13 +10,21 @@ private let relativeDateFormatter: RelativeDateTimeFormatter = {
 @MainActor
 struct ContentView: View {
     @State private var appState = AppState()
+    @State private var showSplash = true
     @Environment(\.scenePhase) private var scenePhase
 
     private static let staleThreshold: TimeInterval = 15 * 60
 
     var body: some View {
         Group {
-            if appState.isOnboardingComplete {
+            if showSplash {
+                SplashView(appState: appState) {
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        showSplash = false
+                    }
+                }
+            }
+            else if appState.isOnboardingComplete {
                 MainTabView(appState: appState)
                     .task {
                         await appState.loadIfNeeded()
@@ -32,6 +40,36 @@ struct ContentView: View {
             }
             Task {
                 await appState.refreshIfStale(maxAge: Self.staleThreshold)
+            }
+        }
+    }
+}
+
+private struct SplashView: View {
+    let appState: AppState
+    let onComplete: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Image("LaunchIcon")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 140, height: 140)
+                .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+                .shadow(color: .black.opacity(0.18), radius: 16, y: 8)
+
+            Text("DeveloperNews")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.primary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground).ignoresSafeArea())
+        .onAppear {
+            Task {
+                await appState.loadIfNeeded()
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                onComplete()
             }
         }
     }
@@ -701,9 +739,10 @@ private struct FeedItemRow: View {
                             ForEach(item.topics) { topic in
                                 Text(topic.title)
                                     .font(.caption2.weight(.medium))
+                                    .foregroundStyle(Color.accentColor)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(Color(.secondarySystemBackground))
+                                    .background(Color.accentColor.opacity(0.15))
                                     .clipShape(Capsule())
                             }
                         }
