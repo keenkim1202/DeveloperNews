@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 
+@MainActor
 @Observable
 final class AppState {
     private enum StorageKey {
@@ -12,11 +13,12 @@ final class AppState {
 
     var selectedTopics: Set<Topic> = []
     var savedItemIDs: Set<ContentItem.ID> = []
-    let allItems: [ContentItem]
+    var allItems: [ContentItem] = []
+    var isLoading = false
+    var errorMessage: String?
 
     init(contentSourceClient: any ContentSourceClient = MockContentSourceClient()) {
         self.contentSourceClient = contentSourceClient
-        self.allItems = contentSourceClient.fetchItems()
         loadPersistedState()
     }
 
@@ -47,6 +49,10 @@ final class AppState {
         allItems.filter { savedItemIDs.contains($0.id) }
     }
 
+    var hasLoadedContent: Bool {
+        !allItems.isEmpty
+    }
+
     func toggleTopic(_ topic: Topic) {
         if selectedTopics.contains(topic) {
             selectedTopics.remove(topic)
@@ -72,6 +78,28 @@ final class AppState {
     func resetTopics() {
         selectedTopics.removeAll()
         persistState()
+    }
+
+    func loadIfNeeded() async {
+        guard !hasLoadedContent, !isLoading else {
+            return
+        }
+
+        await reload()
+    }
+
+    func reload() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            allItems = try await contentSourceClient.fetchItems()
+        }
+        catch {
+            errorMessage = "Unable to load stories right now."
+        }
+
+        isLoading = false
     }
 
     private func loadPersistedState() {

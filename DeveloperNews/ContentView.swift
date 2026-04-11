@@ -6,12 +6,16 @@ private let relativeDateFormatter: RelativeDateTimeFormatter = {
     return formatter
 }()
 
+@MainActor
 struct ContentView: View {
     @State private var appState = AppState()
 
     var body: some View {
         if appState.isOnboardingComplete {
             MainTabView(appState: appState)
+                .task {
+                    await appState.loadIfNeeded()
+                }
         }
         else {
             TopicSelectionView(appState: appState)
@@ -96,38 +100,66 @@ private struct HomeView: View {
 
     var body: some View {
         NavigationStack {
-            List(appState.personalizedItems) { item in
-                NavigationLink {
-                    ArticleDetailView(appState: appState, item: item)
-                } label: {
-                    VStack(alignment: .leading, spacing: 8) {
-                        FeedItemMetaView(item: item)
+            Group {
+                if appState.isLoading && !appState.hasLoadedContent {
+                    ContentUnavailableView(
+                        "Loading stories",
+                        systemImage: "newspaper",
+                        description: Text("Fetching the latest developer stories for your selected topics.")
+                    )
+                }
+                else if let errorMessage = appState.errorMessage, !appState.hasLoadedContent {
+                    ContentUnavailableView(
+                        "Could not load stories",
+                        systemImage: "wifi.exclamationmark",
+                        description: Text(errorMessage)
+                    )
+                }
+                else if appState.personalizedItems.isEmpty {
+                    ContentUnavailableView(
+                        "No stories for current topics",
+                        systemImage: "tray",
+                        description: Text("Try choosing a few more topics or refresh again in a moment.")
+                    )
+                }
+                else {
+                    List(appState.personalizedItems) { item in
+                        NavigationLink {
+                            ArticleDetailView(appState: appState, item: item)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 8) {
+                                FeedItemMetaView(item: item)
 
-                        Text(item.title)
-                            .font(.headline)
+                                Text(item.title)
+                                    .font(.headline)
 
-                        Text(item.summary)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
+                                Text(item.summary)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2)
 
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(item.topics) { topic in
-                                    Text(topic.title)
-                                        .font(.caption.weight(.medium))
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 6)
-                                        .background(Color(.secondarySystemBackground))
-                                        .clipShape(Capsule())
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 8) {
+                                        ForEach(item.topics) { topic in
+                                            Text(topic.title)
+                                                .font(.caption.weight(.medium))
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 6)
+                                                .background(Color(.secondarySystemBackground))
+                                                .clipShape(Capsule())
+                                        }
+                                    }
                                 }
                             }
+                            .padding(.vertical, 6)
                         }
                     }
-                    .padding(.vertical, 6)
                 }
             }
             .navigationTitle("Trending")
+            .refreshable {
+                await appState.reload()
+            }
         }
     }
 }
