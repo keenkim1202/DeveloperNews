@@ -405,7 +405,7 @@ private struct SavedView: View {
 
 private struct SavedTopicFilterBar: View {
     let availableTopics: [Topic]
-    @Binding var selectedFilters: Set<Topic>
+    let selectedFilters: Binding<Set<Topic>>
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -413,22 +413,22 @@ private struct SavedTopicFilterBar: View {
                 FocusChip(
                     title: "All",
                     systemImage: "square.grid.2x2",
-                    isSelected: selectedFilters.isEmpty
+                    isSelected: selectedFilters.wrappedValue.isEmpty
                 ) {
-                    selectedFilters.removeAll()
+                    selectedFilters.wrappedValue.removeAll()
                 }
 
                 ForEach(availableTopics) { topic in
                     FocusChip(
                         title: topic.title,
                         systemImage: topic.symbolName,
-                        isSelected: selectedFilters.contains(topic)
+                        isSelected: selectedFilters.wrappedValue.contains(topic)
                     ) {
-                        if selectedFilters.contains(topic) {
-                            selectedFilters.remove(topic)
+                        if selectedFilters.wrappedValue.contains(topic) {
+                            selectedFilters.wrappedValue.remove(topic)
                         }
                         else {
-                            selectedFilters.insert(topic)
+                            selectedFilters.wrappedValue.insert(topic)
                         }
                     }
                 }
@@ -684,8 +684,8 @@ private struct EngagementSummaryView: View {
 
 private struct ArticleWebView: UIViewRepresentable {
     let url: URL
-    @Binding var isLoading: Bool
-    @Binding var loadError: String?
+    let isLoading: Binding<Bool>
+    let loadError: Binding<String?>
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -716,28 +716,28 @@ private struct ArticleWebView: UIViewRepresentable {
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
             DispatchQueue.main.async {
-                self.parent.isLoading = true
-                self.parent.loadError = nil
+                self.parent.isLoading.wrappedValue = true
+                self.parent.loadError.wrappedValue = nil
             }
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             DispatchQueue.main.async {
-                self.parent.isLoading = false
+                self.parent.isLoading.wrappedValue = false
             }
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
             DispatchQueue.main.async {
-                self.parent.isLoading = false
-                self.parent.loadError = error.localizedDescription
+                self.parent.isLoading.wrappedValue = false
+                self.parent.loadError.wrappedValue = error.localizedDescription
             }
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
             DispatchQueue.main.async {
-                self.parent.isLoading = false
-                self.parent.loadError = error.localizedDescription
+                self.parent.isLoading.wrappedValue = false
+                self.parent.loadError.wrappedValue = error.localizedDescription
             }
         }
     }
