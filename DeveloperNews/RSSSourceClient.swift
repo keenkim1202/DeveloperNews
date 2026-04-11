@@ -44,8 +44,6 @@ struct RSSSourceClient: ContentSourceClient {
                 kind: .article,
                 title: item.title,
                 summary: item.summary,
-                summaryHTML: item.summaryHTML,
-                summaryIsTruncated: item.summaryIsTruncated,
                 sourceName: feed.sourceName,
                 sourceCategory: .article,
                 authorName: item.author,
@@ -161,8 +159,6 @@ extension RSSSourceClient {
 private struct ParsedRSSItem {
     let title: String
     let summary: String
-    let summaryHTML: String?
-    let summaryIsTruncated: Bool
     let link: URL
     let author: String?
     let publishedAt: Date
@@ -296,19 +292,13 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
                     ?? firstImageURL(in: item.encodedContent)
                     ?? firstImageURL(in: item.description)
 
-                let lead = leadingParagraphsHTML(in: item.encodedContent)
-                let leadCardSummary = lead.paragraphs.first.map { sanitizedSummary(from: $0) }
+                let resolvedSummary = firstMeaningfulParagraph(in: item.encodedContent)
                     ?? sanitizedSummary(from: item.description)
-                let leadBodyHTML: String? = lead.paragraphs.isEmpty
-                    ? nil
-                    : lead.paragraphs.map { "<p>\($0)</p>" }.joined()
 
                 parsedItems.append(
                     ParsedRSSItem(
                         title: item.title,
-                        summary: leadCardSummary,
-                        summaryHTML: leadBodyHTML,
-                        summaryIsTruncated: lead.hasMore,
+                        summary: resolvedSummary,
                         link: link,
                         author: item.author.isEmpty ? nil : item.author,
                         publishedAt: publishedAt,
@@ -407,22 +397,19 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
         return nil
     }
 
-    private func leadingParagraphsHTML(in html: String, maxCount: Int = 8) -> (paragraphs: [String], hasMore: Bool) {
+    private func firstMeaningfulParagraph(in html: String) -> String? {
         guard !html.isEmpty else {
-            return ([], false)
+            return nil
         }
 
         let pattern = #"<p[^>]*>([\s\S]*?)</p>"#
         guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {
-            return ([], false)
+            return nil
         }
 
         let range = NSRange(html.startIndex..., in: html)
         let matches = regex.matches(in: html, range: range)
 
-        var collected: [String] = []
-        var startedCollecting = false
-        var totalAccepted = 0
         for match in matches {
             guard
                 match.numberOfRanges >= 2,
@@ -431,23 +418,12 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
                 continue
             }
             let raw = String(html[inner])
-            if !startedCollecting {
-                if isMeaningfulParagraph(raw) {
-                    startedCollecting = true
-                    totalAccepted += 1
-                    collected.append(raw)
-                }
-            }
-            else {
-                totalAccepted += 1
-                if collected.count < maxCount {
-                    collected.append(raw)
-                }
+            if isMeaningfulParagraph(raw) {
+                return sanitizedSummary(from: raw)
             }
         }
 
-        let hasMore = totalAccepted > collected.count
-        return (collected, hasMore)
+        return nil
     }
 
     private func isMeaningfulParagraph(_ rawHTML: String) -> Bool {
