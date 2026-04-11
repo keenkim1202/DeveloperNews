@@ -59,7 +59,7 @@ private struct SplashView: View {
                 .shadow(color: .black.opacity(0.18), radius: 16, y: 8)
 
             Text("DeveloperNews")
-                .font(.title2.weight(.semibold))
+                .font(.keenPixelTitle)
                 .foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
