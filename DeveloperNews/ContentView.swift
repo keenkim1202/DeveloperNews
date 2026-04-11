@@ -108,10 +108,19 @@ private struct TopicSelectionView: View {
 }
 
 private struct MainTabView: View {
-    @Bindable var appState: AppState
+    let appState: AppState
+
+    private var tabSelection: Binding<AppTab> {
+        Binding(
+            get: { appState.currentTab },
+            set: { newValue in
+                appState.notifyTabSelected(newValue)
+            }
+        )
+    }
 
     var body: some View {
-        TabView(selection: $appState.currentTab) {
+        TabView(selection: tabSelection) {
             HomeView(appState: appState)
                 .tabItem {
                     Label("Home", systemImage: "newspaper")
@@ -202,16 +211,19 @@ private struct HomeView: View {
                 }
                 else {
                     let articleItems = topItem.map { top in
-                        appState.articleItems.filter { $0.id != top.id }
-                    } ?? appState.articleItems
+                        appState.pagedArticleItems.filter { $0.id != top.id }
+                    } ?? appState.pagedArticleItems
                     let discussionItems = topItem.map { top in
-                        appState.discussionItems.filter { $0.id != top.id }
-                    } ?? appState.discussionItems
+                        appState.pagedDiscussionItems.filter { $0.id != top.id }
+                    } ?? appState.pagedDiscussionItems
 
                     FeedSectionListView(
                         appState: appState,
                         articleItems: articleItems,
-                        discussionItems: discussionItems
+                        discussionItems: discussionItems,
+                        hasMore: appState.hasMorePages,
+                        onLoadMore: { appState.loadMore() },
+                        scrollToTopTrigger: appState.homeScrollToTopTrigger
                     )
                     .overlay {
                         if appState.isLoading {
@@ -371,7 +383,8 @@ private struct SavedView: View {
                 appState: appState,
                 articleItems: matchingArticleItems,
                 discussionItems: matchingDiscussionItems,
-                showsSummary: false
+                showsSummary: false,
+                scrollToTopTrigger: appState.savedScrollToTopTrigger
             )
         }
     }
@@ -446,9 +459,30 @@ private struct FeedSectionListView: View {
     let articleItems: [ContentItem]
     let discussionItems: [ContentItem]
     var showsSummary = true
+    var hasMore: Bool = false
+    var onLoadMore: (() -> Void)? = nil
+    var scrollToTopTrigger: Int = 0
 
     var body: some View {
+        ScrollViewReader { proxy in
+            list
+                .onChange(of: scrollToTopTrigger) { _, _ in
+                    withAnimation {
+                        proxy.scrollTo("__feed_top__", anchor: .top)
+                    }
+                }
+        }
+    }
+
+    private var list: some View {
         List {
+            Color.clear
+                .frame(height: 0)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .id("__feed_top__")
+
             if showsSummary {
                 Section {
                     VStack(alignment: .leading, spacing: 2) {
@@ -478,6 +512,27 @@ private struct FeedSectionListView: View {
                 Section("Discussions") {
                     ForEach(discussionItems) { item in
                         FeedItemRow(appState: appState, item: item)
+                    }
+                }
+            }
+
+            if hasMore, let onLoadMore {
+                Section {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Loading more")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.vertical, 8)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .onAppear {
+                        onLoadMore()
                     }
                 }
             }
@@ -836,11 +891,30 @@ private struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section("Your topics") {
-                    Text("\(appState.selectedTopics.count) of \(AppState.maxSelectedTopics) selected")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+            ScrollViewReader { proxy in
+                settingsList
+                    .onChange(of: appState.settingsScrollToTopTrigger) { _, _ in
+                        withAnimation {
+                            proxy.scrollTo("__settings_top__", anchor: .top)
+                        }
+                    }
+            }
+        }
+    }
+
+    private var settingsList: some View {
+        List {
+            Color.clear
+                .frame(height: 0)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .id("__settings_top__")
+
+            Section("Your topics") {
+                Text("\(appState.selectedTopics.count) of \(AppState.maxSelectedTopics) selected")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
 
                     ForEach(Topic.allCases) { topic in
                         let isSelected = appState.selectedTopics.contains(topic)
@@ -932,7 +1006,6 @@ private struct SettingsView: View {
             }
             .navigationTitle("Settings")
         }
-    }
 }
 
 private struct SourcesAttributionView: View {
