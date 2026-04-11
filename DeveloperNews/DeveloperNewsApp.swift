@@ -1,10 +1,3 @@
-//
-//  DeveloperNewsApp.swift
-//  DeveloperNews
-//
-//  Created by KEEN on 4/11/26.
-//
-
 import Foundation
 import SwiftUI
 
