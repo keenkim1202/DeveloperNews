@@ -44,7 +44,47 @@ struct CompositeContentSourceClient: ContentSourceClient {
         }
 
         let weighted = collectedItems.map(applyingSourceTrust)
-        return deduplicatedItems(from: weighted)
+        let normalized = normalizingScoresPerSource(weighted)
+        return deduplicatedItems(from: normalized)
+    }
+
+    private func normalizingScoresPerSource(_ items: [ContentItem]) -> [ContentItem] {
+        let groups = Dictionary(grouping: items) { $0.sourceName }
+        var result: [ContentItem] = []
+        result.reserveCapacity(items.count)
+
+        for (_, group) in groups {
+            let sorted = group.sorted { $0.trendScore > $1.trendScore }
+            let count = sorted.count
+            for (rank, item) in sorted.enumerated() {
+                let score: Int
+                if count <= 1 {
+                    score = 100
+                }
+                else {
+                    score = 60 + Int((40.0 * Double(count - rank - 1) / Double(count - 1)).rounded())
+                }
+                result.append(
+                    ContentItem(
+                        id: item.id,
+                        kind: item.kind,
+                        title: item.title,
+                        summary: item.summary,
+                        sourceName: item.sourceName,
+                        sourceCategory: item.sourceCategory,
+                        authorName: item.authorName,
+                        url: item.url,
+                        publishedAt: item.publishedAt,
+                        topics: item.topics,
+                        trendScore: score,
+                        thumbnailURL: item.thumbnailURL,
+                        engagement: item.engagement
+                    )
+                )
+            }
+        }
+
+        return result
     }
 
     private func applyingSourceTrust(_ item: ContentItem) -> ContentItem {
