@@ -45,7 +45,7 @@ struct GitHubTrendingSourceClient: ContentSourceClient {
                 title: repo.fullName,
                 summary: repo.description ?? "Trending GitHub repository.",
                 sourceName: "GitHub Trending",
-                sourceCategory: .article,
+                sourceCategory: .github,
                 authorName: repo.owner.login,
                 url: link,
                 publishedAt: repo.pushedAt,
