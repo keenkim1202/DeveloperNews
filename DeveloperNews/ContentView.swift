@@ -138,11 +138,20 @@ private struct HomeView: View {
                     )
                 }
                 else if let errorMessage = appState.errorMessage, !appState.hasLoadedContent {
-                    ContentUnavailableView(
-                        "Could not load stories",
-                        systemImage: "wifi.exclamationmark",
-                        description: Text(errorMessage)
-                    )
+                    ContentUnavailableView {
+                        Label("Could not load stories", systemImage: "wifi.exclamationmark")
+                    } description: {
+                        Text(errorMessage)
+                    } actions: {
+                        Button {
+                            Task { await appState.reload() }
+                        } label: {
+                            Text("Try again")
+                                .fontWeight(.semibold)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(appState.isLoading)
+                    }
                 }
                 else if appState.personalizedItems.isEmpty {
                     ContentUnavailableView(
