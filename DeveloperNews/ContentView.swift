@@ -186,9 +186,17 @@ private struct FeedSectionListView: View {
         List {
             if showsSummary {
                 Section {
-                    Text("\(articleItems.count + discussionItems.count) stories across your selected topics")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\(articleItems.count + discussionItems.count) stories across your selected topics")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+
+                        if let lastUpdatedAt = appState.lastUpdatedAt {
+                            Text("Updated \(relativeDateFormatter.localizedString(for: lastUpdatedAt, relativeTo: .now))")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
                 }
             }
 
