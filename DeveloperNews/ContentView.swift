@@ -1,3 +1,4 @@
+import SafariServices
 import SwiftUI
 
 private let relativeDateFormatter: RelativeDateTimeFormatter = {
@@ -507,6 +508,8 @@ private struct ArticleDetailView: View {
     let appState: AppState
     let item: ContentItem
 
+    @State private var isShowingSourceBrowser = false
+
     var body: some View {
         List {
             if let thumbnailURL = item.thumbnailURL {
@@ -585,10 +588,30 @@ private struct ArticleDetailView: View {
                     appState.toggleSaved(itemID: item.id)
                 }
 
-                Link("Read original source", destination: item.url)
+                Button {
+                    isShowingSourceBrowser = true
+                } label: {
+                    Label("Read original source", systemImage: "safari")
+                }
             }
         }
         .navigationTitle("Story")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $isShowingSourceBrowser) {
+            SafariBrowserView(url: item.url)
+                .ignoresSafeArea()
+        }
     }
+}
+
+private struct SafariBrowserView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        let configuration = SFSafariViewController.Configuration()
+        configuration.entersReaderIfAvailable = false
+        return SFSafariViewController(url: url, configuration: configuration)
+    }
+
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
 }
