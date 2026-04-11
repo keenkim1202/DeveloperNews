@@ -274,6 +274,13 @@ private struct FeedItemMetaView: View {
     }
 }
 
+private let appVersionString: String = {
+    let info = Bundle.main.infoDictionary
+    let version = info?["CFBundleShortVersionString"] as? String ?? "0.0"
+    let build = info?["CFBundleVersion"] as? String ?? "0"
+    return "\(version) (\(build))"
+}()
+
 private struct SettingsView: View {
     let appState: AppState
 
@@ -307,10 +314,31 @@ private struct SettingsView: View {
                     }
                 }
 
-                Section("App") {
+                Section {
+                    Toggle("Daily trending alerts", isOn: Binding(
+                        get: { appState.notificationsEnabled },
+                        set: { appState.setNotificationsEnabled($0) }
+                    ))
+
+                    Text("Push delivery is coming soon. Your choice is saved on this device for now.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text("Notifications")
+                }
+
+                Section {
                     Button("Reset topic selection", role: .destructive) {
                         appState.resetTopics()
                     }
+                } header: {
+                    Text("App")
+                }
+
+                Section {
+                    LabeledContent("Version", value: appVersionString)
+                } header: {
+                    Text("About")
                 }
             }
             .navigationTitle("Settings")

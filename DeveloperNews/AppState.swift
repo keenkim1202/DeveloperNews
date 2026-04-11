@@ -8,12 +8,14 @@ final class AppState {
     private enum StorageKey {
         static let selectedTopics = "selectedTopics"
         static let savedItemIDs = "savedItemIDs"
+        static let notificationsEnabled = "notificationsEnabled"
     }
 
     private let contentSourceClient: any ContentSourceClient
 
     var selectedTopics: Set<Topic> = []
     var savedItemIDs: Set<ContentItem.ID> = []
+    var notificationsEnabled = false
     var allItems: [ContentItem] = []
     var isLoading = false
     var errorMessage: String?
@@ -104,6 +106,14 @@ final class AppState {
         persistState()
     }
 
+    func setNotificationsEnabled(_ isEnabled: Bool) {
+        guard notificationsEnabled != isEnabled else {
+            return
+        }
+        notificationsEnabled = isEnabled
+        persistState()
+    }
+
     func loadIfNeeded() async {
         guard !hasLoadedContent, !isLoading else {
             return
@@ -136,6 +146,10 @@ final class AppState {
         if let storedSavedIDs = defaults.stringArray(forKey: StorageKey.savedItemIDs) {
             savedItemIDs = Set(storedSavedIDs.compactMap(UUID.init(uuidString:)))
         }
+
+        if defaults.object(forKey: StorageKey.notificationsEnabled) != nil {
+            notificationsEnabled = defaults.bool(forKey: StorageKey.notificationsEnabled)
+        }
     }
 
     private func persistState() {
@@ -145,6 +159,7 @@ final class AppState {
 
         defaults.set(topicValues, forKey: StorageKey.selectedTopics)
         defaults.set(savedIDs, forKey: StorageKey.savedItemIDs)
+        defaults.set(notificationsEnabled, forKey: StorageKey.notificationsEnabled)
     }
 
     private static func defaultContentSourceClient() -> any ContentSourceClient {
