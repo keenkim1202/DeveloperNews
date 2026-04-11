@@ -398,6 +398,7 @@ final class AppState {
         CompositeContentSourceClient(
             clients: [
                 RSSSourceClient(),
+                DevToSourceClient(),
                 GitHubTrendingSourceClient(),
                 HackerNewsSourceClient(),
                 RedditSourceClient()
