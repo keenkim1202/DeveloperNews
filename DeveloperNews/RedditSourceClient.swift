@@ -92,12 +92,16 @@ struct RedditSourceClient: ContentSourceClient {
         guard
             let raw = post.thumbnail,
             !placeholders.contains(raw),
-            raw.hasPrefix("https://") || raw.hasPrefix("http://"),
-            let url = URL(string: raw)
+            raw.hasPrefix("https://") || raw.hasPrefix("http://")
         else {
             return nil
         }
-        return url
+
+        let decoded = raw
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&#x27;", with: "'")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+        return URL(string: decoded)
     }
 
     private func inferredTopics(for text: String, fallback: [Topic]) -> [Topic] {
