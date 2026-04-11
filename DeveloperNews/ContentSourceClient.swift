@@ -12,6 +12,15 @@ struct MockContentSourceClient: ContentSourceClient {
 }
 
 struct CompositeContentSourceClient: ContentSourceClient {
+    private static let sourceTrustBonus: [String: Int] = [
+        "GitHub Blog": 5,
+        "Swift with Majid": 4,
+        "Mozilla Hacks": 3,
+        "Cloudflare Blog": 3,
+        "InfoQ": 2,
+        "Hacker News": 2
+    ]
+
     let clients: [any ContentSourceClient]
     let fallbackClient: any ContentSourceClient
 
@@ -28,7 +37,30 @@ struct CompositeContentSourceClient: ContentSourceClient {
             return try await fallbackClient.fetchItems()
         }
 
-        return deduplicatedItems(from: collectedItems)
+        let weighted = collectedItems.map(applyingSourceTrust)
+        return deduplicatedItems(from: weighted)
+    }
+
+    private func applyingSourceTrust(_ item: ContentItem) -> ContentItem {
+        let bonus = Self.sourceTrustBonus[item.sourceName] ?? 0
+        guard bonus != 0 else {
+            return item
+        }
+
+        return ContentItem(
+            id: item.id,
+            kind: item.kind,
+            title: item.title,
+            summary: item.summary,
+            sourceName: item.sourceName,
+            authorName: item.authorName,
+            url: item.url,
+            publishedAt: item.publishedAt,
+            topics: item.topics,
+            trendScore: min(100, item.trendScore + bonus),
+            thumbnailURL: item.thumbnailURL,
+            engagement: item.engagement
+        )
     }
 
     private func deduplicatedItems(from items: [ContentItem]) -> [ContentItem] {
