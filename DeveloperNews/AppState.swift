@@ -1,7 +1,6 @@
 import Foundation
 import Observation
 
-@MainActor
 @Observable
 final class AppState {
     private enum StorageKey {
@@ -17,13 +16,8 @@ final class AppState {
     var isLoading = false
     var errorMessage: String?
 
-    init(
-        contentSourceClient: any ContentSourceClient = CompositeContentSourceClient(
-            clients: [RSSSourceClient()],
-            fallbackClient: MockContentSourceClient()
-        )
-    ) {
-        self.contentSourceClient = contentSourceClient
+    init(contentSourceClient: (any ContentSourceClient)? = nil) {
+        self.contentSourceClient = contentSourceClient ?? Self.defaultContentSourceClient()
         loadPersistedState()
     }
 
@@ -126,5 +120,15 @@ final class AppState {
 
         defaults.set(topicValues, forKey: StorageKey.selectedTopics)
         defaults.set(savedIDs, forKey: StorageKey.savedItemIDs)
+    }
+
+    private static func defaultContentSourceClient() -> any ContentSourceClient {
+        CompositeContentSourceClient(
+            clients: [
+                RSSSourceClient(),
+                HackerNewsSourceClient()
+            ],
+            fallbackClient: MockContentSourceClient()
+        )
     }
 }
