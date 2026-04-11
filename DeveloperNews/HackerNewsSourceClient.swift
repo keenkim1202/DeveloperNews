@@ -31,13 +31,17 @@ struct HackerNewsSourceClient: ContentSourceClient {
 
     private func fetchTopStoryIDs() async throws -> [Int] {
         let url = URL(string: "https://hacker-news.firebaseio.com/v0/topstories.json")!
-        let (data, _) = try await session.data(from: url)
+        var request = URLRequest(url: url)
+        request.setValue(AppContact.userAgent, forHTTPHeaderField: "User-Agent")
+        let (data, _) = try await session.data(for: request)
         return try JSONDecoder().decode([Int].self, from: data)
     }
 
     private func fetchStory(id: Int) async throws -> ContentItem? {
         let url = URL(string: "https://hacker-news.firebaseio.com/v0/item/\(id).json")!
-        let (data, _) = try await session.data(from: url)
+        var request = URLRequest(url: url)
+        request.setValue(AppContact.userAgent, forHTTPHeaderField: "User-Agent")
+        let (data, _) = try await session.data(for: request)
         let story = try JSONDecoder().decode(HNStory.self, from: data)
 
         guard
@@ -77,9 +81,8 @@ struct HackerNewsSourceClient: ContentSourceClient {
             (.ios, ["swift", "swiftui", "ios", "xcode"]),
             (.android, ["android", "kotlin", "jetpack", "gradle"]),
             (.web, ["web", "javascript", "typescript", "react", "browser"]),
-            (.backend, ["server", "database", "backend", "api", "postgres"]),
+            (.backend, ["server", "database", "backend", "api", "postgres", "docker", "kubernetes", "deploy", "infrastructure", "ci"]),
             (.ai, ["ai", "llm", "model", "agent", "rag", "openai"]),
-            (.devops, ["docker", "kubernetes", "deploy", "infrastructure", "ci"]),
             (.security, ["security", "auth", "token", "oauth", "vulnerability"]),
             (.product, ["product", "design", "startup", "team", "roadmap"])
         ]

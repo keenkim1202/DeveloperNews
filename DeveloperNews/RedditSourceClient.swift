@@ -39,7 +39,7 @@ struct RedditSourceClient: ContentSourceClient {
     private func fetchItems(for feed: RedditFeedDefinition) async throws -> [ContentItem] {
         let url = URL(string: "https://www.reddit.com/r/\(feed.subreddit).json")!
         var request = URLRequest(url: url)
-        request.setValue("DeveloperNews/1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue(AppContact.userAgent, forHTTPHeaderField: "User-Agent")
 
         let (data, _) = try await session.data(for: request)
         let response = try JSONDecoder().decode(RedditListingResponse.self, from: data)
@@ -112,9 +112,8 @@ struct RedditSourceClient: ContentSourceClient {
             (.ios, ["swift", "swiftui", "ios", "xcode"]),
             (.android, ["android", "kotlin", "jetpack", "gradle"]),
             (.web, ["web", "javascript", "typescript", "react", "browser"]),
-            (.backend, ["server", "database", "backend", "api", "postgres"]),
+            (.backend, ["server", "database", "backend", "api", "postgres", "docker", "kubernetes", "deploy", "infrastructure", "ci"]),
             (.ai, ["ai", "llm", "model", "agent", "rag", "openai", "machine learning"]),
-            (.devops, ["docker", "kubernetes", "deploy", "infrastructure", "ci"]),
             (.security, ["security", "auth", "token", "oauth", "vulnerability"]),
             (.product, ["product", "design", "startup", "team", "roadmap"])
         ]
@@ -140,13 +139,65 @@ extension RedditSourceClient {
         RedditFeedDefinition(subreddit: "programming", defaultTopics: [.web, .backend]),
         RedditFeedDefinition(subreddit: "webdev", defaultTopics: [.web, .product]),
         RedditFeedDefinition(subreddit: "iosprogramming", defaultTopics: [.ios]),
+        RedditFeedDefinition(subreddit: "ios", defaultTopics: [.ios]),
+        RedditFeedDefinition(subreddit: "swift", defaultTopics: [.ios]),
+        RedditFeedDefinition(subreddit: "swiftui", defaultTopics: [.ios]),
+        RedditFeedDefinition(subreddit: "apple", defaultTopics: [.ios, .product]),
+        RedditFeedDefinition(subreddit: "Xcode", defaultTopics: [.ios]),
+        RedditFeedDefinition(subreddit: "VisionPro", defaultTopics: [.ios]),
+        RedditFeedDefinition(subreddit: "WWDC", defaultTopics: [.ios]),
         RedditFeedDefinition(subreddit: "androiddev", defaultTopics: [.android]),
-        RedditFeedDefinition(subreddit: "MachineLearning", defaultTopics: [.ai]),
-        RedditFeedDefinition(subreddit: "rust", defaultTopics: [.backend, .devops]),
-        RedditFeedDefinition(subreddit: "golang", defaultTopics: [.backend, .devops]),
+        RedditFeedDefinition(subreddit: "android", defaultTopics: [.android]),
+        RedditFeedDefinition(subreddit: "Kotlin", defaultTopics: [.android]),
+        RedditFeedDefinition(subreddit: "jetpackcompose", defaultTopics: [.android]),
+        RedditFeedDefinition(subreddit: "Flutter", defaultTopics: [.android, .ios]),
+        RedditFeedDefinition(subreddit: "AndroidStudio", defaultTopics: [.android]),
+        RedditFeedDefinition(subreddit: "Kotlin_Multiplatform", defaultTopics: [.android, .ios]),
+        RedditFeedDefinition(subreddit: "javascript", defaultTopics: [.web]),
         RedditFeedDefinition(subreddit: "typescript", defaultTopics: [.web]),
-        RedditFeedDefinition(subreddit: "kubernetes", defaultTopics: [.devops, .backend]),
-        RedditFeedDefinition(subreddit: "netsec", defaultTopics: [.security])
+        RedditFeedDefinition(subreddit: "reactjs", defaultTopics: [.web]),
+        RedditFeedDefinition(subreddit: "nextjs", defaultTopics: [.web]),
+        RedditFeedDefinition(subreddit: "vuejs", defaultTopics: [.web]),
+        RedditFeedDefinition(subreddit: "sveltejs", defaultTopics: [.web]),
+        RedditFeedDefinition(subreddit: "node", defaultTopics: [.web, .backend]),
+        RedditFeedDefinition(subreddit: "Bun", defaultTopics: [.web, .backend]),
+        RedditFeedDefinition(subreddit: "htmx", defaultTopics: [.web]),
+        RedditFeedDefinition(subreddit: "tailwindcss", defaultTopics: [.web]),
+        RedditFeedDefinition(subreddit: "Frontend", defaultTopics: [.web]),
+        RedditFeedDefinition(subreddit: "css", defaultTopics: [.web]),
+        RedditFeedDefinition(subreddit: "rust", defaultTopics: [.backend]),
+        RedditFeedDefinition(subreddit: "golang", defaultTopics: [.backend]),
+        RedditFeedDefinition(subreddit: "Python", defaultTopics: [.backend, .ai]),
+        RedditFeedDefinition(subreddit: "elixir", defaultTopics: [.backend]),
+        RedditFeedDefinition(subreddit: "Zig", defaultTopics: [.backend]),
+        RedditFeedDefinition(subreddit: "haskell", defaultTopics: [.backend]),
+        RedditFeedDefinition(subreddit: "PostgreSQL", defaultTopics: [.backend]),
+        RedditFeedDefinition(subreddit: "dataengineering", defaultTopics: [.backend, .ai]),
+        RedditFeedDefinition(subreddit: "kubernetes", defaultTopics: [.backend]),
+        RedditFeedDefinition(subreddit: "docker", defaultTopics: [.backend]),
+        RedditFeedDefinition(subreddit: "Terraform", defaultTopics: [.backend]),
+        RedditFeedDefinition(subreddit: "aws", defaultTopics: [.backend]),
+        RedditFeedDefinition(subreddit: "devops", defaultTopics: [.backend]),
+        RedditFeedDefinition(subreddit: "sysadmin", defaultTopics: [.backend]),
+        RedditFeedDefinition(subreddit: "MachineLearning", defaultTopics: [.ai]),
+        RedditFeedDefinition(subreddit: "LocalLLaMA", defaultTopics: [.ai]),
+        RedditFeedDefinition(subreddit: "ChatGPT", defaultTopics: [.ai]),
+        RedditFeedDefinition(subreddit: "ClaudeAI", defaultTopics: [.ai]),
+        RedditFeedDefinition(subreddit: "OpenAI", defaultTopics: [.ai]),
+        RedditFeedDefinition(subreddit: "GoogleGeminiAI", defaultTopics: [.ai]),
+        RedditFeedDefinition(subreddit: "StableDiffusion", defaultTopics: [.ai]),
+        RedditFeedDefinition(subreddit: "LangChain", defaultTopics: [.ai, .backend]),
+        RedditFeedDefinition(subreddit: "cursor", defaultTopics: [.ai, .product]),
+        RedditFeedDefinition(subreddit: "GithubCopilot", defaultTopics: [.ai, .product]),
+        RedditFeedDefinition(subreddit: "netsec", defaultTopics: [.security]),
+        RedditFeedDefinition(subreddit: "cybersecurity", defaultTopics: [.security]),
+        RedditFeedDefinition(subreddit: "AskNetsec", defaultTopics: [.security]),
+        RedditFeedDefinition(subreddit: "cryptography", defaultTopics: [.security]),
+        RedditFeedDefinition(subreddit: "ReverseEngineering", defaultTopics: [.security]),
+        RedditFeedDefinition(subreddit: "ExperiencedDevs", defaultTopics: [.product]),
+        RedditFeedDefinition(subreddit: "SideProject", defaultTopics: [.product]),
+        RedditFeedDefinition(subreddit: "startups", defaultTopics: [.product]),
+        RedditFeedDefinition(subreddit: "Entrepreneur", defaultTopics: [.product])
     ]
 }
 

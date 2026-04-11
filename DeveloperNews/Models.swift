@@ -6,7 +6,6 @@ enum Topic: String, CaseIterable, Identifiable, Hashable {
     case android
     case backend
     case ai
-    case devops
     case security
     case product
 
@@ -19,7 +18,6 @@ enum Topic: String, CaseIterable, Identifiable, Hashable {
         case .android: "Android"
         case .backend: "Backend"
         case .ai: "AI"
-        case .devops: "DevOps"
         case .security: "Security"
         case .product: "Product"
         }
@@ -32,7 +30,6 @@ enum Topic: String, CaseIterable, Identifiable, Hashable {
         case .android: "ladybug"
         case .backend: "server.rack"
         case .ai: "sparkles"
-        case .devops: "shippingbox"
         case .security: "lock.shield"
         case .product: "square.stack.3d.up"
         }

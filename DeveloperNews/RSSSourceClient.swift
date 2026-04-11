@@ -35,7 +35,9 @@ struct RSSSourceClient: ContentSourceClient {
     }
 
     private func fetchItems(for feed: RSSFeedDefinition) async throws -> [ContentItem] {
-        let (data, _) = try await session.data(from: feed.feedURL)
+        var request = URLRequest(url: feed.feedURL)
+        request.setValue(AppContact.userAgent, forHTTPHeaderField: "User-Agent")
+        let (data, _) = try await session.data(for: request)
         let parsedItems = try RSSFeedParser().parse(data: data)
 
         return parsedItems.prefix(8).map { item in
@@ -64,9 +66,8 @@ struct RSSSourceClient: ContentSourceClient {
             (.ios, ["swift", "swiftui", "ios", "xcode"]),
             (.android, ["android", "kotlin", "jetpack", "gradle"]),
             (.web, ["web", "javascript", "typescript", "react", "css"]),
-            (.backend, ["backend", "server", "database", "api", "postgres"]),
+            (.backend, ["backend", "server", "database", "api", "postgres", "docker", "kubernetes", "deploy", "ci", "cd", "infra"]),
             (.ai, ["ai", "llm", "model", "rag", "embedding", "openai"]),
-            (.devops, ["docker", "kubernetes", "deploy", "ci", "cd", "infra"]),
             (.security, ["security", "auth", "oauth", "token", "vulnerability"]),
             (.product, ["product", "design", "ux", "roadmap", "team"])
         ]
@@ -101,7 +102,7 @@ extension RSSSourceClient {
         RSSFeedDefinition(
             sourceName: "GitHub Blog",
             feedURL: URL(string: "https://github.blog/feed/")!,
-            defaultTopics: [.devops, .product]
+            defaultTopics: [.backend, .product]
         ),
         RSSFeedDefinition(
             sourceName: "Mozilla Hacks",
@@ -111,7 +112,7 @@ extension RSSSourceClient {
         RSSFeedDefinition(
             sourceName: "Cloudflare Blog",
             feedURL: URL(string: "https://blog.cloudflare.com/rss/")!,
-            defaultTopics: [.backend, .devops, .security]
+            defaultTopics: [.backend, .security]
         ),
         RSSFeedDefinition(
             sourceName: "Lobsters",
@@ -126,12 +127,12 @@ extension RSSSourceClient {
         RSSFeedDefinition(
             sourceName: "Netflix Tech Blog",
             feedURL: URL(string: "https://netflixtechblog.com/feed")!,
-            defaultTopics: [.backend, .devops, .ai]
+            defaultTopics: [.backend, .ai]
         ),
         RSSFeedDefinition(
             sourceName: "High Scalability",
             feedURL: URL(string: "https://www.highscalability.com/feed")!,
-            defaultTopics: [.backend, .devops]
+            defaultTopics: [.backend]
         ),
         RSSFeedDefinition(
             sourceName: "Stack Overflow Blog",
@@ -152,6 +153,21 @@ extension RSSSourceClient {
             sourceName: "Donny Wals",
             feedURL: URL(string: "https://www.donnywals.com/feed/")!,
             defaultTopics: [.ios]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Android Developers Blog",
+            feedURL: URL(string: "https://android-developers.googleblog.com/feeds/posts/default")!,
+            defaultTopics: [.android]
+        ),
+        RSSFeedDefinition(
+            sourceName: "ProAndroidDev",
+            feedURL: URL(string: "https://proandroiddev.com/feed")!,
+            defaultTopics: [.android]
+        ),
+        RSSFeedDefinition(
+            sourceName: "JetBrains Kotlin Blog",
+            feedURL: URL(string: "https://blog.jetbrains.com/kotlin/feed/")!,
+            defaultTopics: [.android]
         )
     ]
 }

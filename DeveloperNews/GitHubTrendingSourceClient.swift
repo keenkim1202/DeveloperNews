@@ -23,7 +23,7 @@ struct GitHubTrendingSourceClient: ContentSourceClient {
         }
 
         var request = URLRequest(url: url)
-        request.setValue("DeveloperNews/1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue(AppContact.userAgent, forHTTPHeaderField: "User-Agent")
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
 
         let (data, _) = try await session.data(for: request)
@@ -76,9 +76,8 @@ struct GitHubTrendingSourceClient: ContentSourceClient {
             (.ios, ["swift", "swiftui", "ios", "xcode"]),
             (.android, ["kotlin", "android", "jetpack"]),
             (.web, ["javascript", "typescript", "react", "vue", "svelte", "nextjs", "html", "css", "tailwind", "web"]),
-            (.backend, ["go", "golang", "rust", "python", "java", "ruby", "postgres", "mysql", "redis", "kafka", "microservice", "api"]),
+            (.backend, ["go", "golang", "rust", "python", "java", "ruby", "postgres", "mysql", "redis", "kafka", "microservice", "api", "docker", "kubernetes", "k8s", "terraform", "ansible", "ci", "cd", "devops", "deploy", "infrastructure"]),
             (.ai, ["ai", "llm", "ml", "machine-learning", "machinelearning", "transformer", "pytorch", "tensorflow", "embedding", "rag", "openai"]),
-            (.devops, ["docker", "kubernetes", "k8s", "terraform", "ansible", "ci", "cd", "devops", "deploy", "infrastructure"]),
             (.security, ["security", "crypto", "auth", "oauth", "vulnerability", "encryption"]),
             (.product, ["design", "ux", "ui", "productivity", "cli", "tool"])
         ]
