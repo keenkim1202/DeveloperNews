@@ -11,7 +11,7 @@ struct RSSSourceClient: ContentSourceClient {
     let session: URLSession
 
     init(
-        feeds: [RSSFeedDefinition] = RSSSourceClient.defaultFeeds,
+        feeds: [RSSFeedDefinition] = Self.defaultFeeds,
         session: URLSession = .shared
     ) {
         self.feeds = feeds
@@ -35,8 +35,7 @@ struct RSSSourceClient: ContentSourceClient {
         let parsedItems = try RSSFeedParser().parse(data: data)
 
         return parsedItems.prefix(8).map { item in
-            let topics = inferredTopics(for: item.title + " " + item.summary, fallback: feed.defaultTopics)
-            return ContentItem(
+            ContentItem(
                 id: UUID(),
                 kind: .article,
                 title: item.title,
@@ -45,7 +44,7 @@ struct RSSSourceClient: ContentSourceClient {
                 authorName: item.author,
                 url: item.link,
                 publishedAt: item.publishedAt,
-                topics: topics,
+                topics: inferredTopics(for: item.title + " " + item.summary, fallback: feed.defaultTopics),
                 trendScore: trendScore(for: item.publishedAt)
             )
         }
