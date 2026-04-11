@@ -3,9 +3,18 @@ import Observation
 
 @Observable
 final class AppState {
+    private enum StorageKey {
+        static let selectedTopics = "selectedTopics"
+        static let savedItemIDs = "savedItemIDs"
+    }
+
     var selectedTopics: Set<Topic> = []
     var savedItemIDs: Set<ContentItem.ID> = []
     let allItems = SampleData.items
+
+    init() {
+        loadPersistedState()
+    }
 
     var isOnboardingComplete: Bool {
         !selectedTopics.isEmpty
@@ -41,6 +50,8 @@ final class AppState {
         else {
             selectedTopics.insert(topic)
         }
+
+        persistState()
     }
 
     func toggleSaved(itemID: ContentItem.ID) {
@@ -50,9 +61,33 @@ final class AppState {
         else {
             savedItemIDs.insert(itemID)
         }
+
+        persistState()
     }
 
     func resetTopics() {
         selectedTopics.removeAll()
+        persistState()
+    }
+
+    private func loadPersistedState() {
+        let defaults = UserDefaults.standard
+
+        if let storedTopicValues = defaults.stringArray(forKey: StorageKey.selectedTopics) {
+            selectedTopics = Set(storedTopicValues.compactMap(Topic.init(rawValue:)))
+        }
+
+        if let storedSavedIDs = defaults.stringArray(forKey: StorageKey.savedItemIDs) {
+            savedItemIDs = Set(storedSavedIDs.compactMap(UUID.init(uuidString:)))
+        }
+    }
+
+    private func persistState() {
+        let defaults = UserDefaults.standard
+        let topicValues = selectedTopics.map(\.rawValue).sorted()
+        let savedIDs = savedItemIDs.map(\.uuidString).sorted()
+
+        defaults.set(topicValues, forKey: StorageKey.selectedTopics)
+        defaults.set(savedIDs, forKey: StorageKey.savedItemIDs)
     }
 }
