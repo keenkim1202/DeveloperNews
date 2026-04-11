@@ -44,6 +44,12 @@ struct EngagementMetrics: Hashable {
     let commentCount: Int
 }
 
+enum AppTab: String, Hashable {
+    case home
+    case saved
+    case settings
+}
+
 enum SavedSortOrder: String, CaseIterable, Identifiable, Hashable {
     case recentlySaved
     case trending

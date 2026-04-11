@@ -107,25 +107,18 @@ private struct TopicSelectionView: View {
     }
 }
 
-private enum AppTab: Hashable {
-    case home
-    case saved
-    case settings
-}
-
 private struct MainTabView: View {
-    let appState: AppState
-    @State private var selectedTab: AppTab = .home
+    @Bindable var appState: AppState
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $appState.currentTab) {
             HomeView(appState: appState)
                 .tabItem {
                     Label("Home", systemImage: "newspaper")
                 }
                 .tag(AppTab.home)
 
-            SavedView(appState: appState, selectedTab: $selectedTab)
+            SavedView(appState: appState)
                 .tabItem {
                     Label("Saved", systemImage: "bookmark")
                 }
@@ -266,7 +259,6 @@ private struct FocusChip: View {
 
 private struct SavedView: View {
     let appState: AppState
-    @Binding var selectedTab: AppTab
 
     var body: some View {
         NavigationStack {
@@ -278,7 +270,7 @@ private struct SavedView: View {
                         Text("Open a story you want to come back to and tap save. It will show up here.")
                     } actions: {
                         Button {
-                            selectedTab = .home
+                            appState.currentTab = .home
                         } label: {
                             Text("Browse trending")
                                 .fontWeight(.semibold)
@@ -649,6 +641,7 @@ private struct ArticleDetailView: View {
     let appState: AppState
     let item: ContentItem
 
+    @Environment(\.dismiss) private var dismiss
     @State private var isShowingSourceBrowser = false
 
     var body: some View {
@@ -712,12 +705,22 @@ private struct ArticleDetailView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(item.topics) { topic in
-                            Text(topic.title)
-                                .font(.caption.weight(.medium))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(Color(.secondarySystemBackground))
-                                .clipShape(Capsule())
+                            let canFocus = appState.selectedTopics.contains(topic)
+                            Button {
+                                guard canFocus else { return }
+                                appState.focusedTopic = topic
+                                appState.currentTab = .home
+                                dismiss()
+                            } label: {
+                                Text(topic.title)
+                                    .font(.caption.weight(.medium))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Color(.secondarySystemBackground))
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(!canFocus)
                         }
                     }
                 }
