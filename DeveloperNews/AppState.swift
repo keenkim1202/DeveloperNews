@@ -17,7 +17,12 @@ final class AppState {
     var isLoading = false
     var errorMessage: String?
 
-    init(contentSourceClient: any ContentSourceClient = MockContentSourceClient()) {
+    init(
+        contentSourceClient: any ContentSourceClient = CompositeContentSourceClient(
+            clients: [RSSSourceClient()],
+            fallbackClient: MockContentSourceClient()
+        )
+    ) {
         self.contentSourceClient = contentSourceClient
         loadPersistedState()
     }
