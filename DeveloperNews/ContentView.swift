@@ -10,16 +10,29 @@ private let relativeDateFormatter: RelativeDateTimeFormatter = {
 @MainActor
 struct ContentView: View {
     @State private var appState = AppState()
+    @Environment(\.scenePhase) private var scenePhase
+
+    private static let staleThreshold: TimeInterval = 15 * 60
 
     var body: some View {
-        if appState.isOnboardingComplete {
-            MainTabView(appState: appState)
-                .task {
-                    await appState.loadIfNeeded()
-                }
+        Group {
+            if appState.isOnboardingComplete {
+                MainTabView(appState: appState)
+                    .task {
+                        await appState.loadIfNeeded()
+                    }
+            }
+            else {
+                TopicSelectionView(appState: appState)
+            }
         }
-        else {
-            TopicSelectionView(appState: appState)
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active, appState.isOnboardingComplete else {
+                return
+            }
+            Task {
+                await appState.refreshIfStale(maxAge: Self.staleThreshold)
+            }
         }
     }
 }
