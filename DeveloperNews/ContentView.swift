@@ -1,4 +1,5 @@
 import AuthenticationServices
+import PhotosUI
 import SwiftUI
 import Translation
 import WebKit
@@ -1208,6 +1209,21 @@ private struct CommunityPostRow: View {
                     .lineLimit(2)
             }
 
+            if let imageURL = post.imageURL, let url = URL(string: imageURL) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxHeight: 150)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    default:
+                        EmptyView()
+                    }
+                }
+            }
+
             if !post.topics.isEmpty {
                 HStack(spacing: 4) {
                     ForEach(post.topics) { topic in
@@ -1289,6 +1305,23 @@ private struct CommunityPostDetailView: View {
 
                     Text(currentPost.description)
                         .font(.body)
+                }
+
+                if let imageURL = currentPost.imageURL, let url = URL(string: imageURL) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFit()
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        case .failure:
+                            EmptyView()
+                        default:
+                            ProgressView()
+                                .frame(maxWidth: .infinity, minHeight: 100)
+                        }
+                    }
                 }
 
                 if currentPost.hasLink, let url = currentPost.linkURL {
@@ -1375,6 +1408,9 @@ private struct CreatePostView: View {
     @State private var description = ""
     @State private var link = ""
     @State private var selectedTopics: Set<Topic> = []
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var selectedImage: UIImage?
+    @State private var isUploading = false
 
     private var isValid: Bool {
         let hasTitle = !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -1402,6 +1438,30 @@ private struct CreatePostView: View {
                         .frame(minHeight: 100)
                 } header: {
                     Text("save.description")
+                }
+
+                Section {
+                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                        if let selectedImage {
+                            Image(uiImage: selectedImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(maxHeight: 200)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        else {
+                            Label("community.addImage", systemImage: "photo")
+                        }
+                    }
+
+                    if selectedImage != nil {
+                        Button("community.removeImage", role: .destructive) {
+                            selectedPhoto = nil
+                            selectedImage = nil
+                        }
+                    }
+                } header: {
+                    Text("community.image")
                 }
 
                 Section {
@@ -1442,33 +1502,63 @@ private struct CreatePostView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("community.post") {
-                        createPost()
-                        dismiss()
+                        Task {
+                            await createPost()
+                            dismiss()
+                        }
                     }
-                    .disabled(!isValid)
+                    .disabled(!isValid || isUploading)
                 }
             }
             .scrollDismissesKeyboard(.interactively)
+            .onChange(of: selectedPhoto) { _, newValue in
+                Task {
+                    guard let newValue,
+                          let data = try? await newValue.loadTransferable(type: Data.self),
+                          let image = UIImage(data: data)
+                    else {
+                        selectedImage = nil
+                        return
+                    }
+                    selectedImage = image
+                }
+            }
+            .overlay {
+                if isUploading {
+                    Color.black.opacity(0.2)
+                        .ignoresSafeArea()
+                    ProgressView()
+                }
+            }
         }
     }
 
-    private func createPost() {
+    private func createPost() async {
         guard let user = appState.authService.user else { return }
+
+        isUploading = true
 
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedLink = link.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        Task {
-            await appState.communityService.createPost(
-                title: trimmedTitle,
-                description: trimmedDescription,
-                link: trimmedLink.isEmpty ? nil : trimmedLink,
-                topics: Topic.allCases.filter { selectedTopics.contains($0) },
-                author: user,
-                authorDisplayName: appState.profileService.displayName
-            )
+        var imageURL: String?
+        if let selectedImage {
+            let path = "posts/\(UUID().uuidString).jpg"
+            imageURL = try? await ImageUploadService.upload(selectedImage, path: path)
         }
+
+        await appState.communityService.createPost(
+            title: trimmedTitle,
+            description: trimmedDescription,
+            link: trimmedLink.isEmpty ? nil : trimmedLink,
+            imageURL: imageURL,
+            topics: Topic.allCases.filter { selectedTopics.contains($0) },
+            author: user,
+            authorDisplayName: appState.profileService.displayName
+        )
+
+        isUploading = false
     }
 }
 

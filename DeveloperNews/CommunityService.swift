@@ -9,6 +9,7 @@ struct CommunityPost: Identifiable, Hashable {
     let title: String
     let description: String
     let link: String?
+    let imageURL: String?
     let topics: [Topic]
     let likeCount: Int
     let likedBy: Set<String>
@@ -71,15 +72,16 @@ final class CommunityService {
         listenerRegistration = nil
     }
 
-    func createPost(title: String, description: String, link: String?, topics: [Topic], author: FirebaseAuth.User, authorDisplayName: String) async {
+    func createPost(title: String, description: String, link: String?, imageURL: String?, topics: [Topic], author: FirebaseAuth.User, authorDisplayName: String) async {
         errorMessage = nil
 
-        let data: [String: Any] = [
+        var data: [String: Any] = [
             "authorId": author.uid,
             "authorName": authorDisplayName,
             "title": title,
             "description": description,
             "link": link ?? "",
+            "imageURL": imageURL ?? "",
             "topics": topics.map(\.rawValue),
             "likeCount": 0,
             "likedBy": [String](),
@@ -143,6 +145,7 @@ final class CommunityService {
             title: title,
             description: data["description"] as? String ?? "",
             link: (data["link"] as? String).flatMap { $0.isEmpty ? nil : $0 },
+            imageURL: (data["imageURL"] as? String).flatMap { $0.isEmpty ? nil : $0 },
             topics: topics,
             likeCount: data["likeCount"] as? Int ?? 0,
             likedBy: Set(likedByArray),
