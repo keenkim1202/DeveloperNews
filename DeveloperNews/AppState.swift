@@ -23,6 +23,8 @@ final class AppState {
 
     private let contentSourceClient: any ContentSourceClient
 
+    let translator = ContentTranslator()
+
     var selectedTopics: Set<Topic> = []
     var focusedTopic: Topic?
     var currentTab: AppTab = .home
