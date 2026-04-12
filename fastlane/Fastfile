@@ -1,0 +1,87 @@
+require "shellwords"
+
+default_platform(:ios)
+
+private_lane :asc_api_key do
+  app_store_connect_api_key(
+    key_id: ENV.fetch("APP_STORE_CONNECT_KEY_ID"),
+    issuer_id: ENV.fetch("APP_STORE_CONNECT_ISSUER_ID"),
+    key_filepath: ENV.fetch("APP_STORE_CONNECT_KEY_FILE")
+  )
+end
+
+private_lane :xcode_auth_args do
+  key_id = ENV["APP_STORE_CONNECT_KEY_ID"]
+  issuer_id = ENV["APP_STORE_CONNECT_ISSUER_ID"]
+  key_filepath = ENV["APP_STORE_CONNECT_KEY_FILE"]
+
+  next "" if [key_id, issuer_id, key_filepath].any?(&:nil?)
+
+  [
+    "-allowProvisioningUpdates",
+    "-authenticationKeyPath #{key_filepath.shellescape}",
+    "-authenticationKeyID #{key_id.shellescape}",
+    "-authenticationKeyIssuerID #{issuer_id.shellescape}"
+  ].join(" ")
+end
+
+platform :ios do
+  desc "Build the app for iOS Simulator"
+  lane :simulator_build do
+    build_ios_app(
+      project: "DeveloperNews.xcodeproj",
+      scheme: "DeveloperNews",
+      clean: true,
+      skip_archive: true,
+      sdk: "iphonesimulator",
+      destination: "generic/platform=iOS Simulator",
+      derived_data_path: "fastlane/DerivedData"
+    )
+  end
+
+  desc "Archive the app for device distribution"
+  lane :archive do
+    build_ios_app(
+      project: "DeveloperNews.xcodeproj",
+      scheme: "DeveloperNews",
+      clean: true,
+      output_directory: "build",
+      output_name: "DeveloperNews.ipa",
+      export_method: ENV.fetch("FL_EXPORT_METHOD", "app-store"),
+      derived_data_path: "fastlane/DerivedData",
+      xcargs: xcode_auth_args,
+      export_xcargs: xcode_auth_args
+    )
+  end
+
+  desc "Upload a new TestFlight build"
+  lane :beta do
+    api_key = asc_api_key
+    archive
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Increment the build number using the current timestamp"
+  lane :bump_build do
+    increment_build_number(
+      xcodeproj: "DeveloperNews.xcodeproj",
+      build_number: Time.now.strftime("%Y%m%d%H%M")
+    )
+  end
+
+  desc "Archive and upload a release build to App Store Connect"
+  lane :release do
+    api_key = asc_api_key
+    archive
+    upload_to_app_store(
+      api_key: api_key,
+      skip_metadata: true,
+      skip_screenshots: true,
+      submit_for_review: false,
+      automatic_release: false
+    )
+  end
+end
