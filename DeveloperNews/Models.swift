@@ -43,6 +43,7 @@ struct EngagementMetrics: Hashable, Codable {
 
 enum AppTab: String, Hashable {
     case home
+    case community
     case saved
     case settings
 }

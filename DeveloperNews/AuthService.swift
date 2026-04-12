@@ -15,6 +15,7 @@ final class AuthService {
     private var authStateHandle: AuthStateDidChangeListenerHandle?
 
     var isSignedIn: Bool { user != nil }
+    var userId: String? { user?.uid }
 
     var displayName: String? { user?.displayName }
     var email: String? { user?.email }
