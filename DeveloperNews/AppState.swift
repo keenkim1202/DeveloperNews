@@ -236,6 +236,24 @@ final class AppState {
         resetPagination()
     }
 
+    func addSavedItem(_ item: ContentItem) {
+        savedItemSnapshots[item.url] = item
+        savedItemTimestampsByURL[item.url] = .now
+        persistState()
+    }
+
+    func updateSavedItem(_ item: ContentItem) {
+        guard savedItemSnapshots[item.url] != nil else { return }
+        savedItemSnapshots[item.url] = item
+        persistState()
+    }
+
+    func removeSavedItem(at url: URL) {
+        savedItemSnapshots[url] = nil
+        savedItemTimestampsByURL[url] = nil
+        persistState()
+    }
+
     func toggleSaved(_ item: ContentItem) {
         if savedItemSnapshots[item.url] != nil {
             savedItemSnapshots[item.url] = nil

@@ -369,6 +369,7 @@ private struct SavedView: View {
     let appState: AppState
     @State private var searchQuery = ""
     @State private var topicFilters: Set<Topic> = []
+    @State private var showAddItem = false
 
     private var availableTopics: [Topic] {
         let union = Set(appState.savedItems.flatMap(\.topics))
@@ -403,22 +404,33 @@ private struct SavedView: View {
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search saved stories")
             .toolbar {
-                if !appState.savedItems.isEmpty {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Menu {
-                            Picker("Sort", selection: Binding(
-                                get: { appState.savedSortOrder },
-                                set: { appState.setSavedSortOrder($0) }
-                            )) {
-                                ForEach(SavedSortOrder.allCases) { order in
-                                    Text(order.title).tag(order)
-                                }
-                            }
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 12) {
+                        Button {
+                            showAddItem = true
                         } label: {
-                            Label("Sort", systemImage: "arrow.up.arrow.down.circle")
+                            Image(systemName: "plus")
+                        }
+
+                        if !appState.savedItems.isEmpty {
+                            Menu {
+                                Picker("Sort", selection: Binding(
+                                    get: { appState.savedSortOrder },
+                                    set: { appState.setSavedSortOrder($0) }
+                                )) {
+                                    ForEach(SavedSortOrder.allCases) { order in
+                                        Text(order.title).tag(order)
+                                    }
+                                }
+                            } label: {
+                                Image(systemName: "arrow.up.arrow.down.circle")
+                            }
                         }
                     }
                 }
+            }
+            .sheet(isPresented: $showAddItem) {
+                AddSavedItemView(appState: appState)
             }
         }
     }
@@ -658,7 +670,12 @@ private struct HomeTopStoryCard: View {
             }
 
             NavigationLink {
-                ArticleDetailView(appState: appState, item: item)
+                if item.isUserCreated {
+                    BookmarkDetailView(appState: appState, item: item)
+                }
+                else {
+                    ArticleDetailView(appState: appState, item: item)
+                }
             } label: {
                 HStack(alignment: .top, spacing: 10) {
                     HomeTopStoryThumbnail(url: item.thumbnailURL)
@@ -781,7 +798,12 @@ private struct FeedItemRow: View {
 
     var body: some View {
         NavigationLink {
-            ArticleDetailView(appState: appState, item: item)
+            if item.isUserCreated {
+                BookmarkDetailView(appState: appState, item: item)
+            }
+            else {
+                ArticleDetailView(appState: appState, item: item)
+            }
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 FeedItemMetaView(item: item)
@@ -1075,6 +1097,125 @@ private let appVersionString: String = {
     let build = info?["CFBundleVersion"] as? String ?? "0"
     return "\(version) (\(build))"
 }()
+
+private struct AddSavedItemView: View {
+    let appState: AppState
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var title = ""
+    @State private var description = ""
+    @State private var link = ""
+    @State private var selectedTopics: Set<Topic> = []
+
+    private var isValid: Bool {
+        let hasTitle = !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasLink = !link.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasDescription = !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return hasTitle && !selectedTopics.isEmpty && (hasLink || hasDescription)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("save.titlePlaceholder", text: $title)
+                    TextField("save.linkPlaceholder", text: $link)
+                        .textContentType(.URL)
+                        .keyboardType(.URL)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                } header: {
+                    Text("save.details")
+                }
+
+                Section {
+                    TextEditor(text: $description)
+                        .frame(minHeight: 100)
+                } header: {
+                    Text("save.description")
+                }
+
+                Section {
+                    ForEach(Topic.allCases) { topic in
+                        Button {
+                            if selectedTopics.contains(topic) {
+                                selectedTopics.remove(topic)
+                            }
+                            else {
+                                selectedTopics.insert(topic)
+                            }
+                        } label: {
+                            HStack {
+                                Label {
+                                    Text(topic.title)
+                                } icon: {
+                                    Image(systemName: topic.symbolName)
+                                }
+                                Spacer()
+                                if selectedTopics.contains(topic) {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Text("save.topic")
+                }
+            }
+            .navigationTitle("save.addItem")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        saveItem()
+                        dismiss()
+                    }
+                    .disabled(!isValid)
+                }
+            }
+            .scrollDismissesKeyboard(.interactively)
+        }
+    }
+
+    private func saveItem() {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLink = link.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let itemURL: URL
+        if let parsed = URL(string: trimmedLink), !trimmedLink.isEmpty {
+            itemURL = parsed
+        }
+        else {
+            itemURL = URL(string: "devnews://saved/\(UUID().uuidString)")!
+        }
+
+        let item = ContentItem(
+            id: UUID(),
+            kind: .article,
+            title: trimmedTitle,
+            summary: trimmedDescription,
+            sourceName: appState.profileService.displayName.isEmpty
+                ? String(localized: "save.myBookmark")
+                : appState.profileService.displayName,
+            sourceCategory: .article,
+            authorName: nil,
+            url: itemURL,
+            publishedAt: .now,
+            topics: Topic.allCases.filter { selectedTopics.contains($0) },
+            trendScore: 0,
+            isUserCreated: true
+        )
+
+        appState.addSavedItem(item)
+    }
+}
 
 private struct SettingsView: View {
     let appState: AppState
@@ -1618,6 +1759,261 @@ private struct TermsOfUseView: View {
         Text(text)
             .font(.body)
             .foregroundStyle(.secondary)
+    }
+}
+
+private struct BookmarkDetailView: View {
+    let appState: AppState
+    let item: ContentItem
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var showEdit = false
+    @State private var showDeleteConfirm = false
+
+    private var currentItem: ContentItem {
+        appState.savedItemSnapshots[item.url] ?? item
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(currentItem.title)
+                    .font(.title2.bold())
+
+                HStack(spacing: 8) {
+                    Text(currentItem.sourceName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if !currentItem.topics.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(currentItem.topics) { topic in
+                            Label {
+                                Text(topic.title)
+                            } icon: {
+                                Image(systemName: topic.symbolName)
+                            }
+                            .font(.caption2.weight(.medium))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(Capsule())
+                        }
+                    }
+                }
+
+                if !currentItem.summary.isEmpty {
+                    Divider()
+
+                    Text(currentItem.summary)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                }
+
+                if currentItem.hasExternalLink {
+                    Divider()
+
+                    NavigationLink {
+                        ArticleDetailView(appState: appState, item: currentItem)
+                    } label: {
+                        HStack {
+                            Label("bookmark.openLink", systemImage: "safari")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(12)
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 4) {
+                        Text("bookmark.createdAt")
+                        Text(currentItem.publishedAt, style: .date)
+                        Text(currentItem.publishedAt, style: .time)
+                    }
+                    if let updatedAt = currentItem.updatedAt {
+                        HStack(spacing: 4) {
+                            Text("bookmark.updatedAt")
+                            Text(updatedAt, style: .date)
+                            Text(updatedAt, style: .time)
+                        }
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+
+                Button("bookmark.delete", role: .destructive) {
+                    showDeleteConfirm = true
+                }
+                .font(.footnote)
+                .padding(.top, 8)
+            }
+            .padding(20)
+        }
+        .navigationTitle("bookmark.detail")
+        .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog("bookmark.deleteConfirm", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                appState.removeSavedItem(at: currentItem.url)
+                dismiss()
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showEdit = true
+                } label: {
+                    Image(systemName: "pencil")
+                }
+            }
+        }
+        .sheet(isPresented: $showEdit) {
+            EditBookmarkView(appState: appState, item: currentItem)
+        }
+    }
+}
+
+private struct EditBookmarkView: View {
+    let appState: AppState
+    let item: ContentItem
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var title: String
+    @State private var description: String
+    @State private var link: String
+    @State private var selectedTopics: Set<Topic>
+
+    init(appState: AppState, item: ContentItem) {
+        self.appState = appState
+        self.item = item
+        _title = State(initialValue: item.title)
+        _description = State(initialValue: item.summary)
+        _link = State(initialValue: item.hasExternalLink ? item.url.absoluteString : "")
+        _selectedTopics = State(initialValue: Set(item.topics))
+    }
+
+    private var isValid: Bool {
+        let hasTitle = !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasLink = !link.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasDescription = !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return hasTitle && !selectedTopics.isEmpty && (hasLink || hasDescription)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("save.titlePlaceholder", text: $title)
+                    TextField("save.linkPlaceholder", text: $link)
+                        .textContentType(.URL)
+                        .keyboardType(.URL)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                } header: {
+                    Text("save.details")
+                }
+
+                Section {
+                    TextEditor(text: $description)
+                        .frame(minHeight: 100)
+                } header: {
+                    Text("save.description")
+                }
+
+                Section {
+                    ForEach(Topic.allCases) { topic in
+                        Button {
+                            if selectedTopics.contains(topic) {
+                                selectedTopics.remove(topic)
+                            }
+                            else {
+                                selectedTopics.insert(topic)
+                            }
+                        } label: {
+                            HStack {
+                                Label {
+                                    Text(topic.title)
+                                } icon: {
+                                    Image(systemName: topic.symbolName)
+                                }
+                                Spacer()
+                                if selectedTopics.contains(topic) {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Text("save.topic")
+                }
+            }
+            .navigationTitle("bookmark.edit")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        saveChanges()
+                        dismiss()
+                    }
+                    .disabled(!isValid)
+                }
+            }
+            .scrollDismissesKeyboard(.interactively)
+        }
+    }
+
+    private func saveChanges() {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLink = link.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let newURL: URL
+        if let parsed = URL(string: trimmedLink), !trimmedLink.isEmpty {
+            newURL = parsed
+        }
+        else if item.hasExternalLink {
+            newURL = URL(string: "devnews://saved/\(item.id.uuidString)")!
+        }
+        else {
+            newURL = item.url
+        }
+
+        var updated = ContentItem(
+            id: item.id,
+            kind: item.kind,
+            title: trimmedTitle,
+            summary: trimmedDescription,
+            sourceName: item.sourceName,
+            sourceCategory: item.sourceCategory,
+            authorName: item.authorName,
+            url: newURL,
+            publishedAt: item.publishedAt,
+            topics: Topic.allCases.filter { selectedTopics.contains($0) },
+            trendScore: item.trendScore,
+            isUserCreated: true,
+            updatedAt: .now
+        )
+
+        if newURL != item.url {
+            appState.removeSavedItem(at: item.url)
+            appState.addSavedItem(updated)
+        }
+        else {
+            appState.updateSavedItem(updated)
+        }
     }
 }
 

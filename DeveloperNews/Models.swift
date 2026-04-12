@@ -121,6 +121,8 @@ struct ContentItem: Identifiable, Hashable, Codable {
     let trendScore: Int
     let thumbnailURL: URL?
     let engagement: EngagementMetrics?
+    let isUserCreated: Bool
+    let updatedAt: Date?
 
     init(
         id: UUID,
@@ -135,7 +137,9 @@ struct ContentItem: Identifiable, Hashable, Codable {
         topics: [Topic],
         trendScore: Int,
         thumbnailURL: URL? = nil,
-        engagement: EngagementMetrics? = nil
+        engagement: EngagementMetrics? = nil,
+        isUserCreated: Bool = false,
+        updatedAt: Date? = nil
     ) {
         self.id = id
         self.kind = kind
@@ -150,5 +154,30 @@ struct ContentItem: Identifiable, Hashable, Codable {
         self.trendScore = trendScore
         self.thumbnailURL = thumbnailURL
         self.engagement = engagement
+        self.isUserCreated = isUserCreated
+        self.updatedAt = updatedAt
+    }
+
+    var hasExternalLink: Bool {
+        url.scheme == "https" || url.scheme == "http"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        kind = try container.decode(Kind.self, forKey: .kind)
+        title = try container.decode(String.self, forKey: .title)
+        summary = try container.decode(String.self, forKey: .summary)
+        sourceName = try container.decode(String.self, forKey: .sourceName)
+        sourceCategory = try container.decode(SourceCategory.self, forKey: .sourceCategory)
+        authorName = try container.decodeIfPresent(String.self, forKey: .authorName)
+        url = try container.decode(URL.self, forKey: .url)
+        publishedAt = try container.decode(Date.self, forKey: .publishedAt)
+        topics = try container.decode([Topic].self, forKey: .topics)
+        trendScore = try container.decode(Int.self, forKey: .trendScore)
+        thumbnailURL = try container.decodeIfPresent(URL.self, forKey: .thumbnailURL)
+        engagement = try container.decodeIfPresent(EngagementMetrics.self, forKey: .engagement)
+        isUserCreated = try container.decodeIfPresent(Bool.self, forKey: .isUserCreated) ?? false
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
     }
 }
