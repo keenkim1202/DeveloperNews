@@ -20,7 +20,7 @@ struct RedditSourceClient: ContentSourceClient {
         self.maxItemsPerFeed = maxItemsPerFeed
     }
 
-    func fetchItems() async throws -> [ContentItem] {
+    func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem] {
         await withTaskGroup(of: [ContentItem].self) { group in
             for feed in feeds {
                 group.addTask {

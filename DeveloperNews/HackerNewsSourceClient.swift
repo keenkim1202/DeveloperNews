@@ -9,11 +9,12 @@ struct HackerNewsSourceClient: ContentSourceClient {
         self.maxStories = maxStories
     }
 
-    func fetchItems() async throws -> [ContentItem] {
+    func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem] {
         let topStoryIDs = try await fetchTopStoryIDs()
+        let fetchCount = storyLimit(for: selectedTopics)
 
         return await withTaskGroup(of: ContentItem?.self) { group in
-            for id in topStoryIDs.prefix(maxStories) {
+            for id in topStoryIDs.prefix(fetchCount) {
                 group.addTask {
                     try? await fetchStory(id: id)
                 }
@@ -27,6 +28,10 @@ struct HackerNewsSourceClient: ContentSourceClient {
             }
             return combined
         }
+    }
+
+    private func storyLimit(for selectedTopics: Set<Topic>) -> Int {
+        selectedTopics.count == 1 ? max(30, maxStories) : maxStories
     }
 
     private func fetchTopStoryIDs() async throws -> [Int] {

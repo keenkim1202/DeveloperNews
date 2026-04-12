@@ -111,6 +111,28 @@ final class CommunityService {
         }
     }
 
+    func updatePost(_ post: CommunityPost, title: String, description: String, link: String?, topics: [Topic], editorId: String) async {
+        errorMessage = nil
+
+        guard post.authorId == editorId else {
+            errorMessage = "Only the author can edit this post."
+            return
+        }
+
+        do {
+            try await postsRef.document(post.id).updateData([
+                "title": title,
+                "description": description,
+                "link": (link ?? "") as Any,
+                "topics": topics.map(\.rawValue),
+                "updatedAt": FieldValue.serverTimestamp(),
+            ])
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func deletePost(_ post: CommunityPost) async {
         do {
             try await postsRef.document(post.id).delete()
