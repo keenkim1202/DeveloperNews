@@ -2,6 +2,7 @@ import Foundation
 
 enum AppContact {
     static let userAgent = "DeveloperNews/1.0 (https://github.com/keenkim1202/DeveloperNews)"
+    static let supportEmail = "keenkim1202@gmail.com"
     static let supportURL = URL(string: "https://github.com/keenkim1202/DeveloperNews/issues")!
     static let privacyPolicyURL = URL(string: "https://github.com/keenkim1202/DeveloperNews#privacy")!
     static let termsOfUseURL = URL(string: "https://github.com/keenkim1202/DeveloperNews#terms")!
