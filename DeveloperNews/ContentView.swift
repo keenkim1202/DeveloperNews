@@ -250,9 +250,10 @@ private struct MainTabView: View {
 
 private struct HomeView: View {
     let appState: AppState
+    @State private var searchQuery = ""
 
     var body: some View {
-        let topItem = shouldShowTopStory ? appState.personalizedItems.first : nil
+        let topItem = shouldShowTopStory && searchQuery.isEmpty ? appState.personalizedItems.first : nil
 
         NavigationStack {
             VStack(spacing: 0) {
@@ -264,9 +265,21 @@ private struct HomeView: View {
             }
             .navigationTitle("Trending")
             .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search stories")
             .refreshable {
                 await appState.reload()
             }
+        }
+    }
+
+    private func searchFiltered(_ items: [ContentItem]) -> [ContentItem] {
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return items }
+        let needle = query.lowercased()
+        return items.filter {
+            $0.title.lowercased().contains(needle) ||
+            $0.summary.lowercased().contains(needle) ||
+            $0.sourceName.lowercased().contains(needle)
         }
     }
 
@@ -323,12 +336,14 @@ private struct HomeView: View {
                     )
                 }
                 else {
+                    let filteredArticles = searchFiltered(appState.pagedArticleItems)
+                    let filteredDiscussions = searchFiltered(appState.pagedDiscussionItems)
                     let articleItems = topItem.map { top in
-                        appState.pagedArticleItems.filter { $0.id != top.id }
-                    } ?? appState.pagedArticleItems
+                        filteredArticles.filter { $0.id != top.id }
+                    } ?? filteredArticles
                     let discussionItems = topItem.map { top in
-                        appState.pagedDiscussionItems.filter { $0.id != top.id }
-                    } ?? appState.pagedDiscussionItems
+                        filteredDiscussions.filter { $0.id != top.id }
+                    } ?? filteredDiscussions
 
                     FeedSectionListView(
                         appState: appState,
@@ -879,7 +894,7 @@ private struct FeedItemRow: View {
             }
         } label: {
             VStack(alignment: .leading, spacing: 8) {
-                FeedItemMetaView(appState: appState, item: item, authorEmoji: followingPost?.authorEmoji) {
+                FeedItemMetaView(appState: appState, item: item, authorEmoji: followingPost.flatMap { appState.communityService.authorEmoji(for: $0.authorId) }) {
                     showAuthorProfile = true
                 }
 
@@ -887,6 +902,7 @@ private struct FeedItemRow: View {
                     HStack(alignment: .top, spacing: 10) {
                         Text(displayTitle)
                             .font(.headline)
+                            .foregroundStyle(appState.isRead(item) ? .secondary : .primary)
                             .lineLimit(3)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -959,7 +975,7 @@ private struct FeedItemRow: View {
         }
         .navigationDestination(isPresented: $showAuthorProfile) {
             if let post = followingPost {
-                UserProfileView(appState: appState, authorId: post.authorId, authorName: post.authorName, authorEmoji: post.authorEmoji)
+                UserProfileView(appState: appState, authorId: post.authorId, authorName: post.authorName, authorEmoji: appState.communityService.authorEmoji(for: post.authorId))
             }
         }
     }
@@ -1221,9 +1237,22 @@ private struct CommunityView: View {
     let appState: AppState
     @State private var showCreatePost = false
     @State private var selectedAuthor: AuthorInfo?
+    @State private var searchQuery = ""
 
     private var community: CommunityService { appState.communityService }
     private var currentUserId: String? { appState.authService.userId }
+
+    private var searchFilteredPosts: [CommunityPost] {
+        let posts = community.filteredPosts(excludingUserIds: appState.blockedUserIds)
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return posts }
+        let needle = query.lowercased()
+        return posts.filter {
+            $0.title.lowercased().contains(needle) ||
+            $0.description.lowercased().contains(needle) ||
+            $0.authorName.lowercased().contains(needle)
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -1238,6 +1267,7 @@ private struct CommunityView: View {
             }
             .navigationTitle("Community")
             .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "community.searchPrompt")
             .toolbar {
                 if appState.authService.isSignedIn {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -1270,12 +1300,12 @@ private struct CommunityView: View {
         }
         else {
             List {
-                ForEach(community.filteredPosts(excludingUserIds: appState.blockedUserIds)) { post in
+                ForEach(searchFilteredPosts) { post in
                     NavigationLink {
                         CommunityPostDetailView(appState: appState, post: post)
                     } label: {
                         CommunityPostRow(appState: appState, post: post) {
-                            selectedAuthor = AuthorInfo(id: post.authorId, name: post.authorName, emoji: post.authorEmoji)
+                            selectedAuthor = AuthorInfo(id: post.authorId, name: post.authorName, emoji: appState.communityService.authorEmoji(for: post.authorId))
                         }
                     }
                 }
@@ -1285,7 +1315,7 @@ private struct CommunityView: View {
                 UserProfileView(appState: appState, authorId: author.id, authorName: author.name, authorEmoji: author.emoji)
             }
             .refreshable {
-                community.startListening()
+                await community.refresh()
             }
         }
     }
@@ -1304,7 +1334,7 @@ private struct CommunityPostRow: View {
 
     @ViewBuilder
     private var authorIcon: some View {
-        if let emoji = post.authorEmoji {
+        if let emoji = appState.communityService.authorEmoji(for: post.authorId) {
             Text(emoji)
                 .font(.caption)
         }
@@ -1346,6 +1376,7 @@ private struct CommunityPostRow: View {
 
             Text(post.title)
                 .font(.subheadline.weight(.semibold))
+                .foregroundStyle(appState.isPostRead(post.id) ? .secondary : .primary)
                 .lineLimit(2)
 
             if !post.description.isEmpty {
@@ -1411,10 +1442,10 @@ private struct CommunityPostDetailView: View {
 
                 HStack(spacing: 8) {
                     NavigationLink {
-                        UserProfileView(appState: appState, authorId: currentPost.authorId, authorName: currentPost.authorName, authorEmoji: currentPost.authorEmoji)
+                        UserProfileView(appState: appState, authorId: currentPost.authorId, authorName: currentPost.authorName, authorEmoji: community.authorEmoji(for: currentPost.authorId))
                     } label: {
                         HStack(spacing: 4) {
-                            if let emoji = currentPost.authorEmoji {
+                            if let emoji = community.authorEmoji(for: currentPost.authorId) {
                                 Text(emoji)
                             }
                             Text(currentPost.authorName)
@@ -1612,6 +1643,8 @@ private struct CommunityPostDetailView: View {
             Text("community.blockConfirmMessage")
         }
         .onAppear {
+            appState.markPostAsRead(post.id)
+            appState.markURLAsRead("devnews://community/\(post.id)")
             Task {
                 guard let uid = currentUserId else { return }
                 alreadyReported = await community.hasReportedPost(post.id, reporterId: uid)
@@ -1863,8 +1896,7 @@ private struct CreatePostView: View {
                 link: trimmedLink.isEmpty ? nil : trimmedLink,
                 topics: Topic.allCases.filter { selectedTopics.contains($0) },
                 author: user,
-                authorDisplayName: appState.profileService.displayName,
-                authorEmoji: appState.profileService.profileEmoji
+                authorDisplayName: appState.profileService.displayName
             )
         }
     }
@@ -2724,6 +2756,9 @@ private struct BookmarkDetailView: View {
         .navigationTitle("bookmark.detail")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .onAppear {
+            appState.markAsRead(currentItem)
+        }
         .confirmationDialog("bookmark.deleteConfirm", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 appState.removeSavedItem(at: currentItem.url)
@@ -3015,6 +3050,9 @@ private struct ArticleDetailView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .onAppear {
+            appState.markAsRead(item)
+        }
     }
 
     private func translateWebPage(using session: TranslationSession) async {

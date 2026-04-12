@@ -791,6 +791,23 @@
         }
       }
     },
+    "community.searchPrompt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search posts"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "게시글 검색"
+          }
+        }
+      }
+    },
     "community.empty" : {
       "extractionState" : "manual",
       "localizations" : {

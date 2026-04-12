@@ -18,6 +18,8 @@ final class AppState {
         static let hasSeenIntro = "hasSeenIntro"
         static let topStoryDismissedAt = "topStoryDismissedAt"
         static let blockedUserIds = "blockedUserIds"
+        static let readItemURLs = "readItemURLs"
+        static let readPostIds = "readPostIds"
     }
 
     private static let topStoryDismissalWindow: TimeInterval = 24 * 60 * 60
@@ -38,6 +40,8 @@ final class AppState {
     var notificationsEnabled = false
     var disabledSourceCategories: Set<SourceCategory> = []
     var blockedUserIds: Set<String> = []
+    var readItemURLs: Set<String> = []
+    var readPostIds: Set<String> = []
     var allItems: [ContentItem] = []
     var isLoading = false
     var errorMessage: String?
@@ -284,6 +288,45 @@ final class AppState {
     }
 
 
+    private static let maxReadItems = 5000
+
+    func markURLAsRead(_ urlString: String) {
+        readItemURLs.insert(HashUtil.shortHash(urlString))
+        trimReadItems()
+        persistState()
+    }
+
+    func markAsRead(_ item: ContentItem) {
+        readItemURLs.insert(HashUtil.shortHash(item.url.absoluteString))
+        trimReadItems()
+        persistState()
+    }
+
+    func isRead(_ item: ContentItem) -> Bool {
+        readItemURLs.contains(HashUtil.shortHash(item.url.absoluteString))
+    }
+
+    func markPostAsRead(_ postId: String) {
+        readPostIds.insert(HashUtil.shortHash(postId))
+        trimReadItems()
+        persistState()
+    }
+
+    func isPostRead(_ postId: String) -> Bool {
+        readPostIds.contains(HashUtil.shortHash(postId))
+    }
+
+    private func trimReadItems() {
+        if readItemURLs.count > Self.maxReadItems {
+            let excess = readItemURLs.count - Self.maxReadItems
+            readItemURLs = Set(readItemURLs.dropFirst(excess))
+        }
+        if readPostIds.count > Self.maxReadItems {
+            let excess = readPostIds.count - Self.maxReadItems
+            readPostIds = Set(readPostIds.dropFirst(excess))
+        }
+    }
+
     func blockUser(_ userId: String) {
         blockedUserIds.insert(userId)
         persistState()
@@ -423,6 +466,14 @@ final class AppState {
             blockedUserIds = Set(storedBlocked)
         }
 
+        if let storedReadURLs = defaults.stringArray(forKey: StorageKey.readItemURLs) {
+            readItemURLs = Set(storedReadURLs)
+        }
+
+        if let storedReadPosts = defaults.stringArray(forKey: StorageKey.readPostIds) {
+            readPostIds = Set(storedReadPosts)
+        }
+
 
         if let storedTimestamp = defaults.object(forKey: StorageKey.lastUpdatedAt) as? Date {
             lastUpdatedAt = storedTimestamp
@@ -453,6 +504,8 @@ final class AppState {
         defaults.set(notificationsEnabled, forKey: StorageKey.notificationsEnabled)
         defaults.set(disabledCategoryValues, forKey: StorageKey.disabledSourceCategories)
         defaults.set(Array(blockedUserIds), forKey: StorageKey.blockedUserIds)
+        defaults.set(Array(readItemURLs), forKey: StorageKey.readItemURLs)
+        defaults.set(Array(readPostIds), forKey: StorageKey.readPostIds)
         defaults.set(lastUpdatedAt, forKey: StorageKey.lastUpdatedAt)
         defaults.set(hasSeenIntro, forKey: StorageKey.hasSeenIntro)
         defaults.set(topStoryDismissedAt, forKey: StorageKey.topStoryDismissedAt)
