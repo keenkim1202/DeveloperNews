@@ -59,6 +59,7 @@ struct ContentView: View {
             if let user = appState.authService.user {
                 appState.profileService.startListening(for: user)
             }
+            appState.communityService.startListening()
         }
     }
 }
@@ -182,6 +183,12 @@ private struct MainTabView: View {
                     Label("Home", systemImage: "newspaper")
                 }
                 .tag(AppTab.home)
+
+            CommunityView(appState: appState)
+                .tabItem {
+                    Label("Community", systemImage: "person.2")
+                }
+                .tag(AppTab.community)
 
             SavedView(appState: appState)
                 .tabItem {
@@ -1097,6 +1104,375 @@ private let appVersionString: String = {
     let build = info?["CFBundleVersion"] as? String ?? "0"
     return "\(version) (\(build))"
 }()
+
+// MARK: - Community
+
+private struct CommunityView: View {
+    let appState: AppState
+    @State private var showCreatePost = false
+
+    private var community: CommunityService { appState.communityService }
+    private var currentUserId: String? { appState.authService.userId }
+
+    var body: some View {
+        NavigationStack {
+            ScrollViewReader { proxy in
+                content
+                    .onChange(of: appState.communityScrollToTopTrigger) { _, _ in
+                        guard let anchor = community.posts.first?.id else { return }
+                        withAnimation {
+                            proxy.scrollTo(anchor, anchor: .top)
+                        }
+                    }
+            }
+            .navigationTitle("Community")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if appState.authService.isSignedIn {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showCreatePost = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $showCreatePost) {
+                CreatePostView(appState: appState)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if community.isLoading && community.posts.isEmpty {
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        else if community.posts.isEmpty {
+            ContentUnavailableView {
+                Label("community.empty", systemImage: "person.2")
+            } description: {
+                Text("community.emptyDescription")
+            }
+        }
+        else {
+            List {
+                ForEach(community.posts) { post in
+                    NavigationLink {
+                        CommunityPostDetailView(appState: appState, post: post)
+                    } label: {
+                        CommunityPostRow(appState: appState, post: post)
+                    }
+                }
+            }
+            .listStyle(.plain)
+            .refreshable {
+                community.startListening()
+            }
+        }
+    }
+}
+
+private struct CommunityPostRow: View {
+    let appState: AppState
+    let post: CommunityPost
+
+    private var currentUserId: String? { appState.authService.userId }
+    private var isLiked: Bool {
+        guard let uid = currentUserId else { return false }
+        return post.likedBy.contains(uid)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Text(post.authorName)
+                    .font(.caption.weight(.semibold))
+                Text("·")
+                    .foregroundStyle(.tertiary)
+                Text(relativeDateFormatter.localizedString(for: post.createdAt, relativeTo: .now))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(post.title)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(2)
+
+            if !post.description.isEmpty {
+                Text(post.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            if !post.topics.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(post.topics) { topic in
+                        Text(topic.title)
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(Capsule())
+                    }
+                }
+            }
+
+            HStack(spacing: 4) {
+                Image(systemName: isLiked ? "heart.fill" : "heart")
+                    .foregroundStyle(isLiked ? .red : .secondary)
+                Text("\(post.likeCount)")
+                    .foregroundStyle(.secondary)
+            }
+            .font(.caption)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+private struct CommunityPostDetailView: View {
+    let appState: AppState
+    let post: CommunityPost
+    @State private var showDeleteConfirm = false
+    @Environment(\.dismiss) private var dismiss
+
+    private var community: CommunityService { appState.communityService }
+    private var currentUserId: String? { appState.authService.userId }
+    private var isAuthor: Bool { currentUserId == post.authorId }
+    private var isLiked: Bool {
+        guard let uid = currentUserId else { return false }
+        return post.likedBy.contains(uid)
+    }
+
+    private var currentPost: CommunityPost {
+        community.posts.first { $0.id == post.id } ?? post
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(currentPost.title)
+                    .font(.title2.bold())
+
+                HStack(spacing: 8) {
+                    Text(currentPost.authorName)
+                        .font(.caption.weight(.semibold))
+                    Text("·")
+                        .foregroundStyle(.tertiary)
+                    Text(currentPost.createdAt, style: .date)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if !currentPost.topics.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(currentPost.topics) { topic in
+                            Label {
+                                Text(topic.title)
+                            } icon: {
+                                Image(systemName: topic.symbolName)
+                            }
+                            .font(.caption2.weight(.medium))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(Capsule())
+                        }
+                    }
+                }
+
+                if !currentPost.description.isEmpty {
+                    Divider()
+
+                    Text(currentPost.description)
+                        .font(.body)
+                }
+
+                if currentPost.hasLink, let url = currentPost.linkURL {
+                    Divider()
+
+                    let linkItem = ContentItem(
+                        id: UUID(),
+                        kind: .article,
+                        title: currentPost.title,
+                        summary: "",
+                        sourceName: currentPost.authorName,
+                        sourceCategory: .article,
+                        authorName: currentPost.authorName,
+                        url: url,
+                        publishedAt: currentPost.createdAt,
+                        topics: currentPost.topics,
+                        trendScore: 0
+                    )
+
+                    NavigationLink {
+                        ArticleDetailView(appState: appState, item: linkItem)
+                    } label: {
+                        HStack {
+                            Label("bookmark.openLink", systemImage: "safari")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(12)
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                }
+
+                Divider()
+
+                HStack {
+                    Button {
+                        guard let uid = currentUserId else { return }
+                        Task {
+                            await community.toggleLike(currentPost, userId: uid)
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: isLiked ? "heart.fill" : "heart")
+                                .foregroundStyle(isLiked ? .red : .secondary)
+                            Text("\(currentPost.likeCount)")
+                        }
+                        .font(.subheadline)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(currentUserId == nil)
+
+                    Spacer()
+                }
+
+                if isAuthor {
+                    Button("community.deletePost", role: .destructive) {
+                        showDeleteConfirm = true
+                    }
+                    .font(.footnote)
+                }
+            }
+            .padding(20)
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog("community.deleteConfirm", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                Task {
+                    await community.deletePost(currentPost)
+                    dismiss()
+                }
+            }
+        }
+    }
+}
+
+private struct CreatePostView: View {
+    let appState: AppState
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var title = ""
+    @State private var description = ""
+    @State private var link = ""
+    @State private var selectedTopics: Set<Topic> = []
+
+    private var isValid: Bool {
+        let hasTitle = !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasLink = !link.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasDescription = !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return hasTitle && !selectedTopics.isEmpty && (hasLink || hasDescription)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("save.titlePlaceholder", text: $title)
+                    TextField("save.linkPlaceholder", text: $link)
+                        .textContentType(.URL)
+                        .keyboardType(.URL)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                } header: {
+                    Text("save.details")
+                }
+
+                Section {
+                    TextEditor(text: $description)
+                        .frame(minHeight: 100)
+                } header: {
+                    Text("save.description")
+                }
+
+                Section {
+                    ForEach(Topic.allCases) { topic in
+                        Button {
+                            if selectedTopics.contains(topic) {
+                                selectedTopics.remove(topic)
+                            }
+                            else {
+                                selectedTopics.insert(topic)
+                            }
+                        } label: {
+                            HStack {
+                                Label {
+                                    Text(topic.title)
+                                } icon: {
+                                    Image(systemName: topic.symbolName)
+                                }
+                                Spacer()
+                                if selectedTopics.contains(topic) {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Text("save.topic")
+                }
+            }
+            .navigationTitle("community.newPost")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("community.post") {
+                        createPost()
+                        dismiss()
+                    }
+                    .disabled(!isValid)
+                }
+            }
+            .scrollDismissesKeyboard(.interactively)
+        }
+    }
+
+    private func createPost() {
+        guard let user = appState.authService.user else { return }
+
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLink = link.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        Task {
+            await appState.communityService.createPost(
+                title: trimmedTitle,
+                description: trimmedDescription,
+                link: trimmedLink.isEmpty ? nil : trimmedLink,
+                topics: Topic.allCases.filter { selectedTopics.contains($0) },
+                author: user,
+                authorDisplayName: appState.profileService.displayName
+            )
+        }
+    }
+}
+
+// MARK: - Saved
 
 private struct AddSavedItemView: View {
     let appState: AppState

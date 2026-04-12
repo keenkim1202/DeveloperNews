@@ -26,6 +26,7 @@ final class AppState {
     let translator = ContentTranslator()
     let authService = AuthService()
     let profileService = ProfileService()
+    let communityService = CommunityService()
 
     var selectedTopics: Set<Topic> = []
     var focusedTopic: Topic?
@@ -43,6 +44,7 @@ final class AppState {
     var topStoryDismissedAt: Date?
     var visibleItemLimit: Int = pageSize
     var homeScrollToTopTrigger = 0
+    var communityScrollToTopTrigger = 0
     var savedScrollToTopTrigger = 0
     var settingsScrollToTopTrigger = 0
 
@@ -296,6 +298,7 @@ final class AppState {
         if tab == currentTab {
             switch tab {
             case .home: homeScrollToTopTrigger &+= 1
+            case .community: communityScrollToTopTrigger &+= 1
             case .saved: savedScrollToTopTrigger &+= 1
             case .settings: settingsScrollToTopTrigger &+= 1
             }
