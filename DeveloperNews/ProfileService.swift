@@ -104,6 +104,7 @@ final class ProfileService {
                 "displayName": name,
                 "updatedAt": FieldValue.serverTimestamp(),
             ], merge: true)
+            await updateAuthorFieldInPosts(uid: uid, field: "authorName", value: name)
         }
         catch {
             errorMessage = error.localizedDescription
@@ -147,6 +148,21 @@ final class ProfileService {
         }
         catch {
             return 0
+        }
+    }
+
+    private func updateAuthorFieldInPosts(uid: String, field: String, value: String) async {
+        do {
+            let snapshot = try await db.collection("posts")
+                .whereField("authorId", isEqualTo: uid)
+                .getDocuments()
+
+            for doc in snapshot.documents {
+                try await doc.reference.updateData([field: value])
+            }
+        }
+        catch {
+            // Best effort — don't block profile update
         }
     }
 

@@ -6,7 +6,6 @@ struct CommunityPost: Identifiable, Hashable {
     let id: String
     let authorId: String
     let authorName: String
-    let authorEmoji: String?
     let title: String
     let description: String
     let link: String?
@@ -32,6 +31,7 @@ final class CommunityService {
     private(set) var posts: [CommunityPost] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?
+    private(set) var authorEmojiCache: [String: String] = [:]
 
     private let db = Firestore.firestore()
     private var listenerRegistration: ListenerRegistration?
@@ -64,7 +64,23 @@ final class CommunityService {
                 self.posts = documents.compactMap { doc in
                     Self.parsePost(doc)
                 }
+                Task { await self.fetchAuthorEmojis() }
             }
+    }
+
+    func refresh() async {
+        do {
+            let snapshot = try await postsRef
+                .order(by: "createdAt", descending: true)
+                .limit(to: 100)
+                .getDocuments()
+
+            posts = snapshot.documents.compactMap { Self.parsePost($0) }
+            await fetchAuthorEmojis()
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     func stopListening() {
@@ -72,13 +88,12 @@ final class CommunityService {
         listenerRegistration = nil
     }
 
-    func createPost(title: String, description: String, link: String?, topics: [Topic], author: FirebaseAuth.User, authorDisplayName: String, authorEmoji: String?) async {
+    func createPost(title: String, description: String, link: String?, topics: [Topic], author: FirebaseAuth.User, authorDisplayName: String) async {
         errorMessage = nil
 
         let data: [String: Any] = [
             "authorId": author.uid,
             "authorName": authorDisplayName,
-            "authorEmoji": authorEmoji ?? "",
             "title": title,
             "description": description,
             "link": link ?? "",
@@ -133,6 +148,27 @@ final class CommunityService {
         }
     }
 
+    func authorEmoji(for authorId: String) -> String? {
+        authorEmojiCache[authorId]
+    }
+
+    private func fetchAuthorEmojis() async {
+        let authorIds = Set(posts.map(\.authorId))
+        let idsToFetch = authorIds.filter { authorEmojiCache[$0] == nil }
+        guard !idsToFetch.isEmpty else { return }
+
+        for uid in idsToFetch {
+            do {
+                let snapshot = try await db.collection("users").document(uid).getDocument()
+                let emoji = (snapshot.data()?["profileEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+                authorEmojiCache[uid] = emoji
+            }
+            catch {
+                // skip
+            }
+        }
+    }
+
     func filteredPosts(excludingUserIds blockedIds: Set<String>) -> [CommunityPost] {
         guard !blockedIds.isEmpty else { return posts }
         return posts.filter { !blockedIds.contains($0.authorId) }
@@ -175,7 +211,6 @@ final class CommunityService {
             id: doc.documentID,
             authorId: authorId,
             authorName: data["authorName"] as? String ?? "",
-            authorEmoji: (data["authorEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 },
             title: title,
             description: data["description"] as? String ?? "",
             link: (data["link"] as? String).flatMap { $0.isEmpty ? nil : $0 },
