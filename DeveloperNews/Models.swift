@@ -11,15 +11,15 @@ enum Topic: String, CaseIterable, Identifiable, Hashable, Codable {
 
     var id: String { rawValue }
 
-    var title: String {
+    var title: LocalizedStringResource {
         switch self {
-        case .web: "Web"
-        case .ios: "iOS"
-        case .android: "Android"
-        case .backend: "Backend"
-        case .ai: "AI"
-        case .security: "Security"
-        case .product: "Product"
+        case .web: "topic.web"
+        case .ios: "topic.ios"
+        case .android: "topic.android"
+        case .backend: "topic.backend"
+        case .ai: "topic.ai"
+        case .security: "topic.security"
+        case .product: "topic.product"
         }
     }
 
@@ -53,10 +53,10 @@ enum SavedSortOrder: String, CaseIterable, Identifiable, Hashable {
 
     var id: String { rawValue }
 
-    var title: String {
+    var title: LocalizedStringResource {
         switch self {
-        case .recentlySaved: "Recently saved"
-        case .trending: "Trending"
+        case .recentlySaved: "savedSort.recentlySaved"
+        case .trending: "savedSort.trending"
         }
     }
 }
@@ -69,12 +69,12 @@ enum SourceCategory: String, CaseIterable, Identifiable, Hashable, Codable {
 
     var id: String { rawValue }
 
-    var title: String {
+    var title: LocalizedStringResource {
         switch self {
-        case .article: "Articles"
-        case .hackerNews: "Hacker News"
-        case .reddit: "Reddit"
-        case .github: "GitHub"
+        case .article: "source.articles"
+        case .hackerNews: "source.hackerNews"
+        case .reddit: "source.reddit"
+        case .github: "source.github"
         }
     }
 
@@ -93,10 +93,10 @@ struct ContentItem: Identifiable, Hashable, Codable {
         case article
         case discussion
 
-        var title: String {
+        var title: LocalizedStringResource {
             switch self {
-            case .article: "Article"
-            case .discussion: "Discussion"
+            case .article: "kind.article"
+            case .discussion: "kind.discussion"
             }
         }
 
