@@ -17,6 +17,7 @@ final class AppState {
         static let lastUpdatedAt = "lastUpdatedAt"
         static let hasSeenIntro = "hasSeenIntro"
         static let topStoryDismissedAt = "topStoryDismissedAt"
+        static let blockedUserIds = "blockedUserIds"
     }
 
     private static let topStoryDismissalWindow: TimeInterval = 24 * 60 * 60
@@ -36,6 +37,7 @@ final class AppState {
     var savedSortOrder: SavedSortOrder = .recentlySaved
     var notificationsEnabled = false
     var disabledSourceCategories: Set<SourceCategory> = []
+    var blockedUserIds: Set<String> = []
     var allItems: [ContentItem] = []
     var isLoading = false
     var errorMessage: String?
@@ -256,6 +258,17 @@ final class AppState {
         persistState()
     }
 
+
+    func blockUser(_ userId: String) {
+        blockedUserIds.insert(userId)
+        persistState()
+    }
+
+    func unblockUser(_ userId: String) {
+        blockedUserIds.remove(userId)
+        persistState()
+    }
+
     func toggleSaved(_ item: ContentItem) {
         if savedItemSnapshots[item.url] != nil {
             savedItemSnapshots[item.url] = nil
@@ -381,6 +394,11 @@ final class AppState {
             disabledSourceCategories = Set(storedDisabled.compactMap(SourceCategory.init(rawValue:)))
         }
 
+        if let storedBlocked = defaults.stringArray(forKey: StorageKey.blockedUserIds) {
+            blockedUserIds = Set(storedBlocked)
+        }
+
+
         if let storedTimestamp = defaults.object(forKey: StorageKey.lastUpdatedAt) as? Date {
             lastUpdatedAt = storedTimestamp
         }
@@ -409,6 +427,7 @@ final class AppState {
         defaults.set(savedSortOrder.rawValue, forKey: StorageKey.savedSortOrder)
         defaults.set(notificationsEnabled, forKey: StorageKey.notificationsEnabled)
         defaults.set(disabledCategoryValues, forKey: StorageKey.disabledSourceCategories)
+        defaults.set(Array(blockedUserIds), forKey: StorageKey.blockedUserIds)
         defaults.set(lastUpdatedAt, forKey: StorageKey.lastUpdatedAt)
         defaults.set(hasSeenIntro, forKey: StorageKey.hasSeenIntro)
         defaults.set(topStoryDismissedAt, forKey: StorageKey.topStoryDismissedAt)

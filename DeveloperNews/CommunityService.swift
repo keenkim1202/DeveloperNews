@@ -103,6 +103,39 @@ final class CommunityService {
         }
     }
 
+    func reportPost(_ post: CommunityPost, reporterId: String, reason: String) async {
+        let docId = "\(reporterId)_\(post.id)"
+        do {
+            try await db.collection("reports").document(docId).setData([
+                "postId": post.id,
+                "postTitle": post.title,
+                "authorId": post.authorId,
+                "reporterId": reporterId,
+                "reason": reason,
+                "createdAt": FieldValue.serverTimestamp(),
+            ])
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func hasReportedPost(_ postId: String, reporterId: String) async -> Bool {
+        let docId = "\(reporterId)_\(postId)"
+        do {
+            let snapshot = try await db.collection("reports").document(docId).getDocument()
+            return snapshot.exists
+        }
+        catch {
+            return false
+        }
+    }
+
+    func filteredPosts(excludingUserIds blockedIds: Set<String>) -> [CommunityPost] {
+        guard !blockedIds.isEmpty else { return posts }
+        return posts.filter { !blockedIds.contains($0.authorId) }
+    }
+
     func toggleLike(_ post: CommunityPost, userId: String) async {
         let ref = postsRef.document(post.id)
         let isLiked = post.likedBy.contains(userId)
