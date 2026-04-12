@@ -53,6 +53,9 @@ Carthage/Build/
 .DS_Store
 */.DS_Store
 
+# Firebase
+GoogleService-Info.plist
+
 # AI tooling
 .codex/
 .agents/
