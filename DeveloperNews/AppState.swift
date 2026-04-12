@@ -20,6 +20,7 @@ final class AppState {
         static let blockedUserIds = "blockedUserIds"
         static let readItemURLs = "readItemURLs"
         static let readPostIds = "readPostIds"
+        static let translationLanguage = "translationLanguage"
     }
 
     private static let topStoryDismissalWindow: TimeInterval = 24 * 60 * 60
@@ -290,6 +291,11 @@ final class AppState {
 
     private static let maxReadItems = 5000
 
+    func setTranslationLanguage(_ code: String?) {
+        translator.targetLanguageCode = code
+        persistState()
+    }
+
     func markURLAsRead(_ urlString: String) {
         readItemURLs.insert(HashUtil.shortHash(urlString))
         trimReadItems()
@@ -397,6 +403,38 @@ final class AppState {
         persistState()
     }
 
+    func processPendingSharedItems() {
+        let defaults = UserDefaults(suiteName: "group.keen-onit.DeveloperNews") ?? .standard
+        guard let pending = defaults.array(forKey: "pendingSharedItems") as? [[String: String]],
+              !pending.isEmpty
+        else { return }
+
+        for entry in pending {
+            guard let urlString = entry["url"], let url = URL(string: urlString) else { continue }
+            let title = entry["title"] ?? urlString
+            let description = entry["description"] ?? ""
+            let topicStrings = (entry["topics"] ?? "").split(separator: ",").map(String.init)
+            let topics = topicStrings.compactMap(Topic.init(rawValue:))
+
+            let item = ContentItem(
+                id: UUID(),
+                kind: .article,
+                title: title,
+                summary: description,
+                sourceName: String(localized: "save.sharedItem"),
+                sourceCategory: .article,
+                authorName: nil,
+                url: url,
+                publishedAt: .now,
+                topics: topics,
+                trendScore: 0
+            )
+            addSavedItem(item)
+        }
+
+        defaults.removeObject(forKey: "pendingSharedItems")
+    }
+
     func loadIfNeeded() async {
         guard !hasLoadedContent, !isLoading else {
             return
@@ -435,7 +473,7 @@ final class AppState {
     }
 
     private func loadPersistedState() {
-        let defaults = UserDefaults.standard
+        let defaults = UserDefaults(suiteName: "group.keen-onit.DeveloperNews") ?? .standard
 
         if let storedTopicValues = defaults.stringArray(forKey: StorageKey.selectedTopics) {
             selectedTopics = Set(storedTopicValues.compactMap(Topic.init(rawValue:)))
@@ -474,6 +512,9 @@ final class AppState {
             readPostIds = Set(storedReadPosts)
         }
 
+        if let storedLang = defaults.string(forKey: StorageKey.translationLanguage) {
+            translator.targetLanguageCode = storedLang
+        }
 
         if let storedTimestamp = defaults.object(forKey: StorageKey.lastUpdatedAt) as? Date {
             lastUpdatedAt = storedTimestamp
@@ -489,7 +530,7 @@ final class AppState {
     }
 
     private func persistState() {
-        let defaults = UserDefaults.standard
+        let defaults = UserDefaults(suiteName: "group.keen-onit.DeveloperNews") ?? .standard
         let topicValues = selectedTopics.map(\.rawValue).sorted()
         let disabledCategoryValues = disabledSourceCategories.map(\.rawValue).sorted()
         let records = savedItemSnapshots.values.map { item in
@@ -506,6 +547,7 @@ final class AppState {
         defaults.set(Array(blockedUserIds), forKey: StorageKey.blockedUserIds)
         defaults.set(Array(readItemURLs), forKey: StorageKey.readItemURLs)
         defaults.set(Array(readPostIds), forKey: StorageKey.readPostIds)
+        defaults.set(translator.targetLanguageCode, forKey: StorageKey.translationLanguage)
         defaults.set(lastUpdatedAt, forKey: StorageKey.lastUpdatedAt)
         defaults.set(hasSeenIntro, forKey: StorageKey.hasSeenIntro)
         defaults.set(topStoryDismissedAt, forKey: StorageKey.topStoryDismissedAt)

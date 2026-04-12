@@ -1,4 +1,5 @@
 import AuthenticationServices
+import CoreImage.CIFilterBuiltins
 import SwiftUI
 import Translation
 import WebKit
@@ -83,6 +84,7 @@ struct ContentView: View {
             guard newPhase == .active, appState.isOnboardingComplete else {
                 return
             }
+            appState.processPendingSharedItems()
             Task {
                 await appState.refreshIfStale(maxAge: Self.staleThreshold)
             }
@@ -103,6 +105,7 @@ struct ContentView: View {
                 appState.profileService.startListening(for: user)
             }
             appState.communityService.startListening()
+            appState.processPendingSharedItems()
         }
     }
 }
@@ -778,7 +781,7 @@ private struct HomeTopStoryCard: View {
             }
             .buttonStyle(.plain)
 
-            if translator.needsTranslation {
+            if translator.canTranslate {
                 Button {
                     if translator.isTranslated(item) {
                         showingTranslation.toggle()
@@ -938,7 +941,7 @@ private struct FeedItemRow: View {
                     .scrollClipDisabled()
                 }
 
-                if translator.needsTranslation {
+                if translator.canTranslate {
                     Button {
                         if translator.isTranslated(item) {
                             showingTranslation.toggle()
@@ -1217,6 +1220,23 @@ private func externalLinkLabel(for item: ContentItem) -> String? {
 
     return cleaned
 }
+
+private let translationLanguages: [(code: String, name: String)] = [
+    ("ko", "한국어"),
+    ("ja", "日本語"),
+    ("zh-Hans", "简体中文"),
+    ("zh-Hant", "繁體中文"),
+    ("es", "Español"),
+    ("fr", "Français"),
+    ("de", "Deutsch"),
+    ("pt-BR", "Português"),
+    ("ru", "Русский"),
+    ("ar", "العربية"),
+    ("hi", "हिन्दी"),
+    ("vi", "Tiếng Việt"),
+    ("th", "ไทย"),
+    ("id", "Bahasa Indonesia"),
+]
 
 private let appVersionString: String = {
     let info = Bundle.main.infoDictionary
@@ -2023,12 +2043,84 @@ private struct AddSavedItemView: View {
     }
 }
 
+private struct FeedbackView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    private static let instagramURLString = "https://www.instagram.com/developernews.zizic?igsh=dnRzMTBnNms0ZjRw&utm_source=qr"
+
+    private var instagramURL: URL {
+        URL(string: Self.instagramURLString)!
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    if let qr = QRCodeGenerator.generate(from: Self.instagramURLString) {
+                        Image(uiImage: qr)
+                            .interpolation(.none)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: 260)
+                            .padding(.top, 24)
+                    }
+
+                    Text(try! AttributedString(markdown: String(localized: "feedback.instagramMessage"), options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+                        .font(.body)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+
+                    Link(destination: instagramURL) {
+                        HStack {
+                            Image(systemName: "camera.circle.fill")
+                            Text("@developernews.zizic")
+                                .font(.body.weight(.semibold))
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(Color.accentColor)
+                        .foregroundStyle(.white)
+                        .clipShape(Capsule())
+                    }
+
+                    Spacer(minLength: 40)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 40)
+            }
+            .navigationTitle("Send feedback")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+enum QRCodeGenerator {
+    static func generate(from string: String) -> UIImage? {
+        let context = CIContext()
+        let filter = CIFilter(name: "CIQRCodeGenerator")
+        filter?.setValue(Data(string.utf8), forKey: "inputMessage")
+        filter?.setValue("H", forKey: "inputCorrectionLevel")
+
+        guard let output = filter?.outputImage else { return nil }
+        let scaled = output.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
+
+        guard let cgImage = context.createCGImage(scaled, from: scaled.extent) else { return nil }
+        return UIImage(cgImage: cgImage)
+    }
+}
+
 private struct SettingsView: View {
     let appState: AppState
 
     @State private var showSignIn = false
     @State private var showEditName = false
     @State private var showEmojiPicker = false
+    @State private var showFeedback = false
     @State private var editingName = ""
     @State private var editingEmoji = ""
 
@@ -2078,6 +2170,10 @@ private struct SettingsView: View {
                 }
             } message: {
                 Text("profile.editEmojiMessage")
+            }
+            .sheet(isPresented: $showFeedback) {
+                FeedbackView()
+                    .presentationDetents([.large])
             }
         }
     }
@@ -2167,6 +2263,18 @@ private struct SettingsView: View {
                         }
                     }
 
+                    Picker(selection: Binding(
+                        get: { appState.translator.targetLanguageCode ?? "" },
+                        set: { appState.setTranslationLanguage($0.isEmpty ? nil : $0) }
+                    )) {
+                        Text("settings.translationOff").tag("")
+                        ForEach(translationLanguages, id: \.code) { lang in
+                            Text(lang.name).tag(lang.code)
+                        }
+                    } label: {
+                        Label("settings.translation", systemImage: "translate")
+                    }
+
                     Button("Reset topic selection", role: .destructive) {
                         appState.resetTopics()
                     }
@@ -2207,7 +2315,9 @@ private struct SettingsView: View {
                         Label("Terms of use", systemImage: "doc.plaintext")
                     }
 
-                    Link(destination: AppContact.supportURL) {
+                    Button {
+                        showFeedback = true
+                    } label: {
                         Label("Send feedback", systemImage: "envelope")
                     }
 
@@ -2931,6 +3041,8 @@ private struct ArticleDetailView: View {
     @State private var pageTranslationTrigger = 0
     @State private var isTranslatingPage = false
     @State private var isPageTranslated = false
+    @State private var showEditNote = false
+    @State private var editingNote = ""
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -3008,7 +3120,19 @@ private struct ArticleDetailView: View {
                 .accessibilityLabel(appState.isSaved(item) ? "Remove from saved" : "Save story")
             }
 
-            if translator.needsTranslation {
+            if appState.isSaved(item) {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        editingNote = currentNote
+                        showEditNote = true
+                    } label: {
+                        Image(systemName: currentNote.isEmpty ? "note.text.badge.plus" : "note.text")
+                            .foregroundStyle(currentNote.isEmpty ? Color.primary : Color.accentColor)
+                    }
+                }
+            }
+
+            if translator.canTranslate {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         if isPageTranslated {
@@ -3053,6 +3177,51 @@ private struct ArticleDetailView: View {
         .onAppear {
             appState.markAsRead(item)
         }
+        .alert("saved.editNote", isPresented: $showEditNote) {
+            TextField("saved.notePlaceholder", text: $editingNote)
+                .onChange(of: editingNote) { _, new in
+                    if new.count > 500 { editingNote = String(new.prefix(500)) }
+                }
+            Button("Cancel", role: .cancel) {}
+            Button("Save") {
+                saveNote()
+            }
+            if !currentNote.isEmpty {
+                Button("saved.removeNote", role: .destructive) {
+                    editingNote = ""
+                    saveNote()
+                }
+            }
+        } message: {
+            Text("saved.editNoteMessage")
+        }
+    }
+
+    private var currentNote: String {
+        appState.savedItemSnapshots[item.url]?.summary ?? ""
+    }
+
+    private func saveNote() {
+        guard var saved = appState.savedItemSnapshots[item.url] else { return }
+        let trimmed = editingNote.trimmingCharacters(in: .whitespacesAndNewlines)
+        let updated = ContentItem(
+            id: saved.id,
+            kind: saved.kind,
+            title: saved.title,
+            summary: trimmed,
+            sourceName: saved.sourceName,
+            sourceCategory: saved.sourceCategory,
+            authorName: saved.authorName,
+            url: saved.url,
+            publishedAt: saved.publishedAt,
+            topics: saved.topics,
+            trendScore: saved.trendScore,
+            thumbnailURL: saved.thumbnailURL,
+            engagement: saved.engagement,
+            isUserCreated: saved.isUserCreated,
+            updatedAt: .now
+        )
+        appState.updateSavedItem(updated)
     }
 
     private func translateWebPage(using session: TranslationSession) async {

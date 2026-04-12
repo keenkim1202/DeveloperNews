@@ -6,16 +6,24 @@ final class ContentTranslator {
     private(set) var translatedTitles: [URL: String] = [:]
     private(set) var translatedSummaries: [URL: String] = [:]
 
-    var needsTranslation: Bool {
-        guard let langCode = Locale.current.language.languageCode?.identifier else { return false }
-        return langCode != "en"
+    var targetLanguageCode: String? {
+        didSet {
+            if targetLanguageCode != oldValue {
+                translatedTitles.removeAll()
+                translatedSummaries.removeAll()
+            }
+        }
+    }
+
+    var canTranslate: Bool {
+        targetLanguageCode != nil
     }
 
     func makeConfiguration() -> TranslationSession.Configuration? {
-        guard needsTranslation else { return nil }
+        guard let code = targetLanguageCode else { return nil }
         return .init(
             source: Locale.Language(identifier: "en"),
-            target: Locale.current.language
+            target: Locale.Language(identifier: code)
         )
     }
 
