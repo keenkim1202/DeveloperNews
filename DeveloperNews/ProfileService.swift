@@ -7,6 +7,8 @@ struct UserProfile: Codable {
     var displayName: String
     var email: String?
     var photoURL: String?
+    var profileEmoji: String?
+    var followedUserIds: Set<String>
     var createdAt: Date
     var updatedAt: Date
 }
@@ -28,6 +30,18 @@ final class ProfileService {
         return currentUser?.displayName ?? ""
     }
 
+    var profileEmoji: String? {
+        profile?.profileEmoji
+    }
+
+    var followedUserIds: Set<String> {
+        profile?.followedUserIds ?? []
+    }
+
+    func isFollowing(_ userId: String) -> Bool {
+        followedUserIds.contains(userId)
+    }
+
     func startListening(for user: FirebaseAuth.User) {
         stopListening()
         currentUser = user
@@ -38,11 +52,14 @@ final class ProfileService {
                 self?.profile = nil
                 return
             }
+            let followedArray = data["followedUserIds"] as? [String] ?? []
             self?.profile = UserProfile(
                 uid: user.uid,
                 displayName: data["displayName"] as? String ?? "",
                 email: data["email"] as? String,
                 photoURL: data["photoURL"] as? String,
+                profileEmoji: data["profileEmoji"] as? String,
+                followedUserIds: Set(followedArray),
                 createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
                 updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date()
             )
@@ -93,6 +110,67 @@ final class ProfileService {
         }
 
         isLoading = false
+    }
+
+    func updateProfileEmoji(_ emoji: String) async {
+        guard let uid = currentUser?.uid else { return }
+
+        do {
+            try await db.collection("users").document(uid).setData([
+                "profileEmoji": emoji,
+                "updatedAt": FieldValue.serverTimestamp(),
+            ], merge: true)
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func fetchFollowerCount(for userId: String) async -> Int {
+        do {
+            let snapshot = try await db.collection("users")
+                .whereField("followedUserIds", arrayContains: userId)
+                .getDocuments()
+            return snapshot.documents.count
+        }
+        catch {
+            return 0
+        }
+    }
+
+    func fetchFollowingCount(for userId: String) async -> Int {
+        do {
+            let snapshot = try await db.collection("users").document(userId).getDocument()
+            let data = snapshot.data() ?? [:]
+            let followedArray = data["followedUserIds"] as? [String] ?? []
+            return followedArray.count
+        }
+        catch {
+            return 0
+        }
+    }
+
+    func toggleFollow(_ targetUserId: String) async {
+        guard let uid = currentUser?.uid else { return }
+
+        let ref = db.collection("users").document(uid)
+        let isCurrentlyFollowing = followedUserIds.contains(targetUserId)
+
+        do {
+            if isCurrentlyFollowing {
+                try await ref.updateData([
+                    "followedUserIds": FieldValue.arrayRemove([targetUserId]),
+                ])
+            }
+            else {
+                try await ref.setData([
+                    "followedUserIds": FieldValue.arrayUnion([targetUserId]),
+                ], merge: true)
+            }
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     func deleteProfile() async {

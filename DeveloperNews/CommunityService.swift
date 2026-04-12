@@ -6,6 +6,7 @@ struct CommunityPost: Identifiable, Hashable {
     let id: String
     let authorId: String
     let authorName: String
+    let authorEmoji: String?
     let title: String
     let description: String
     let link: String?
@@ -71,12 +72,13 @@ final class CommunityService {
         listenerRegistration = nil
     }
 
-    func createPost(title: String, description: String, link: String?, topics: [Topic], author: FirebaseAuth.User, authorDisplayName: String) async {
+    func createPost(title: String, description: String, link: String?, topics: [Topic], author: FirebaseAuth.User, authorDisplayName: String, authorEmoji: String?) async {
         errorMessage = nil
 
         let data: [String: Any] = [
             "authorId": author.uid,
             "authorName": authorDisplayName,
+            "authorEmoji": authorEmoji ?? "",
             "title": title,
             "description": description,
             "link": link ?? "",
@@ -173,6 +175,7 @@ final class CommunityService {
             id: doc.documentID,
             authorId: authorId,
             authorName: data["authorName"] as? String ?? "",
+            authorEmoji: (data["authorEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 },
             title: title,
             description: data["description"] as? String ?? "",
             link: (data["link"] as? String).flatMap { $0.isEmpty ? nil : $0 },
