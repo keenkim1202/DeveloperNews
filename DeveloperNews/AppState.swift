@@ -322,7 +322,7 @@ final class AppState {
             persistState()
         }
         catch {
-            errorMessage = "Unable to load stories right now."
+            errorMessage = String(localized: "error.unableToLoad")
         }
 
         isLoading = false

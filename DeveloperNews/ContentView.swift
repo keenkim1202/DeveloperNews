@@ -298,7 +298,7 @@ private struct HomeTopicFocusBar: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 FocusChip(
-                    title: "All",
+                    title: "focus.all",
                     systemImage: "square.grid.2x2",
                     isSelected: appState.focusedTopic == nil
                 ) {
@@ -324,20 +324,24 @@ private struct HomeTopicFocusBar: View {
 }
 
 private struct FocusChip: View {
-    let title: String
+    let title: LocalizedStringResource
     let systemImage: String
     let isSelected: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(isSelected ? Color.accentColor.opacity(0.2) : Color(.secondarySystemBackground))
-                .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
-                .clipShape(Capsule())
+            Label {
+                Text(title)
+            } icon: {
+                Image(systemName: systemImage)
+            }
+            .font(.caption.weight(.semibold))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(isSelected ? Color.accentColor.opacity(0.2) : Color(.secondarySystemBackground))
+            .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+            .clipShape(Capsule())
         }
         .buttonStyle(.plain)
     }
@@ -378,6 +382,7 @@ private struct SavedView: View {
                 content
             }
             .navigationTitle("Saved")
+            .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search saved stories")
             .toolbar {
                 if !appState.savedItems.isEmpty {
@@ -475,7 +480,7 @@ private struct SavedTopicFilterBar: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 FocusChip(
-                    title: "All",
+                    title: "focus.all",
                     systemImage: "square.grid.2x2",
                     isSelected: selectedFilters.wrappedValue.isEmpty
                 ) {
@@ -550,7 +555,7 @@ private struct FeedSectionListView: View {
             }
 
             if !articleItems.isEmpty {
-                Section("Top Stories") {
+                Section {
                     ForEach(articleItems) { item in
                         FeedItemRow(appState: appState, item: item)
                     }
@@ -587,7 +592,7 @@ private struct FeedSectionListView: View {
             }
         }
         .listSectionSpacing(.compact)
-        .contentMargins(.top, 0, for: .scrollContent)
+        .contentMargins(.top, showsSummary ? 0 : 8, for: .scrollContent)
     }
 }
 
@@ -1001,7 +1006,11 @@ private struct SettingsView: View {
                             appState.toggleTopic(topic)
                         } label: {
                             HStack {
-                                Label(topic.title, systemImage: topic.symbolName)
+                                Label {
+                                    Text(topic.title)
+                                } icon: {
+                                    Image(systemName: topic.symbolName)
+                                }
                                 Spacer()
                                 if isSelected {
                                     Image(systemName: "checkmark.circle.fill")
@@ -1023,7 +1032,11 @@ private struct SettingsView: View {
                             get: { appState.isSourceCategoryEnabled(category) },
                             set: { appState.setSourceCategory(category, enabled: $0) }
                         )) {
-                            Label(category.title, systemImage: category.symbolName)
+                            Label {
+                                Text(category.title)
+                            } icon: {
+                                Image(systemName: category.symbolName)
+                            }
                         }
                     }
                 } header: {
@@ -1046,6 +1059,20 @@ private struct SettingsView: View {
                 }
 
                 Section {
+                    Button {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        HStack {
+                            Label("Language", systemImage: "globe")
+                            Spacer()
+                            Image(systemName: "arrow.up.forward.square")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
                     Button("Reset topic selection", role: .destructive) {
                         appState.resetTopics()
                     }
@@ -1082,6 +1109,7 @@ private struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
         }
 }
 
