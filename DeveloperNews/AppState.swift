@@ -79,6 +79,30 @@ final class AppState {
         !selectedTopics.isEmpty
     }
 
+    var followingItems: [ContentItem] {
+        guard !disabledSourceCategories.contains(.following) else { return [] }
+        let followedIds = profileService.followedUserIds
+        guard !followedIds.isEmpty else { return [] }
+
+        return communityService.posts
+            .filter { followedIds.contains($0.authorId) }
+            .map { post in
+                ContentItem(
+                    id: UUID(uuidString: post.id) ?? UUID(),
+                    kind: .article,
+                    title: post.title,
+                    summary: post.description,
+                    sourceName: post.authorName,
+                    sourceCategory: .following,
+                    authorName: post.authorName,
+                    url: URL(string: "devnews://community/\(post.id)")!,
+                    publishedAt: post.createdAt,
+                    topics: post.topics,
+                    trendScore: post.likeCount
+                )
+            }
+    }
+
     var personalizedItems: [ContentItem] {
         let enabledByCategory = allItems.filter { !disabledSourceCategories.contains($0.sourceCategory) }
         let activeTopics: Set<Topic>
@@ -99,9 +123,10 @@ final class AppState {
             }
         }
 
+        let combined = filteredItems + followingItems
         let savedSourceCounts = savedSourceNameCounts()
 
-        return filteredItems.sorted { lhs, rhs in
+        return combined.sorted { lhs, rhs in
             let leftScore = personalizedScore(for: lhs, savedSourceCounts: savedSourceCounts)
             let rightScore = personalizedScore(for: rhs, savedSourceCounts: savedSourceCounts)
             if leftScore == rightScore {

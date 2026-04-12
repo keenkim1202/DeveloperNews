@@ -3,6 +3,13 @@ import SwiftUI
 import Translation
 import WebKit
 
+extension Character {
+    var isEmoji: Bool {
+        guard let scalar = unicodeScalars.first else { return false }
+        return scalar.properties.isEmoji && (scalar.value > 0x238C || unicodeScalars.count > 1)
+    }
+}
+
 private struct LimitedTextField: View {
     var text: Binding<String>
     let limit: Int
@@ -840,6 +847,7 @@ private struct FeedItemRow: View {
 
     @State private var translationTrigger = 0
     @State private var showingTranslation = false
+    @State private var showAuthorProfile = false
 
     private var displayTitle: String {
         showingTranslation ? translator.title(for: item) : item.title
@@ -849,9 +857,21 @@ private struct FeedItemRow: View {
         showingTranslation ? translator.summary(for: item) : item.summary
     }
 
+    private var followingPost: CommunityPost? {
+        guard item.sourceCategory == .following,
+              let postId = item.url.pathComponents.last
+        else { return nil }
+        return appState.communityService.posts.first { $0.id == postId }
+    }
+
     var body: some View {
         NavigationLink {
-            if item.isUserCreated {
+            if item.sourceCategory == .following,
+               let postId = item.url.pathComponents.last,
+               let post = appState.communityService.posts.first(where: { $0.id == postId }) {
+                CommunityPostDetailView(appState: appState, post: post)
+            }
+            else if item.isUserCreated {
                 BookmarkDetailView(appState: appState, item: item)
             }
             else {
@@ -859,7 +879,9 @@ private struct FeedItemRow: View {
             }
         } label: {
             VStack(alignment: .leading, spacing: 8) {
-                FeedItemMetaView(item: item)
+                FeedItemMetaView(appState: appState, item: item, authorEmoji: followingPost?.authorEmoji) {
+                    showAuthorProfile = true
+                }
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .top, spacing: 10) {
@@ -933,6 +955,11 @@ private struct FeedItemRow: View {
                         await translator.translateSingle(item, using: session)
                         showingTranslation = true
                     }
+            }
+        }
+        .navigationDestination(isPresented: $showAuthorProfile) {
+            if let post = followingPost {
+                UserProfileView(appState: appState, authorId: post.authorId, authorName: post.authorName, authorEmoji: post.authorEmoji)
             }
         }
     }
@@ -1092,20 +1119,51 @@ private struct FeedItemThumbnailView: View {
 }
 
 private struct FeedItemMetaView: View {
+    let appState: AppState
     let item: ContentItem
+    var authorEmoji: String?
+    var onAuthorTap: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 6) {
-                Image(systemName: item.kind.symbolName)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                if item.sourceCategory != .following {
+                    Image(systemName: item.kind.symbolName)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
 
-                Text(item.sourceName)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+                if item.sourceCategory == .following, let onAuthorTap {
+                    Button {
+                        onAuthorTap()
+                    } label: {
+                        HStack(spacing: 4) {
+                            if let emoji = authorEmoji {
+                                Text(emoji)
+                                    .font(.caption)
+                            }
+                            else {
+                                Image(systemName: "questionmark.circle.dashed")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Text(item.sourceName)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.accentColor)
+                                .underline()
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+                else {
+                    Text(item.sourceName)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
 
                 Text("·")
                     .font(.caption)
@@ -1153,9 +1211,16 @@ private let appVersionString: String = {
 
 // MARK: - Community
 
+private struct AuthorInfo: Hashable {
+    let id: String
+    let name: String
+    let emoji: String?
+}
+
 private struct CommunityView: View {
     let appState: AppState
     @State private var showCreatePost = false
+    @State private var selectedAuthor: AuthorInfo?
 
     private var community: CommunityService { appState.communityService }
     private var currentUserId: String? { appState.authService.userId }
@@ -1209,11 +1274,16 @@ private struct CommunityView: View {
                     NavigationLink {
                         CommunityPostDetailView(appState: appState, post: post)
                     } label: {
-                        CommunityPostRow(appState: appState, post: post)
+                        CommunityPostRow(appState: appState, post: post) {
+                            selectedAuthor = AuthorInfo(id: post.authorId, name: post.authorName, emoji: post.authorEmoji)
+                        }
                     }
                 }
             }
             .listStyle(.plain)
+            .navigationDestination(item: $selectedAuthor) { author in
+                UserProfileView(appState: appState, authorId: author.id, authorName: author.name, authorEmoji: author.emoji)
+            }
             .refreshable {
                 community.startListening()
             }
@@ -1224,6 +1294,7 @@ private struct CommunityView: View {
 private struct CommunityPostRow: View {
     let appState: AppState
     let post: CommunityPost
+    var onAuthorTap: (() -> Void)?
 
     private var currentUserId: String? { appState.authService.userId }
     private var isLiked: Bool {
@@ -1231,11 +1302,41 @@ private struct CommunityPostRow: View {
         return post.likedBy.contains(uid)
     }
 
+    @ViewBuilder
+    private var authorIcon: some View {
+        if let emoji = post.authorEmoji {
+            Text(emoji)
+                .font(.caption)
+        }
+        else {
+            Image(systemName: "questionmark.circle.dashed")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Text(post.authorName)
-                    .font(.caption.weight(.semibold))
+                if let onAuthorTap {
+                    Button {
+                        onAuthorTap()
+                    } label: {
+                        HStack(spacing: 4) {
+                            authorIcon
+                            Text(post.authorName)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.accentColor)
+                                .underline()
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+                else {
+                    authorIcon
+                    Text(post.authorName)
+                        .font(.caption.weight(.semibold))
+                }
                 Text("·")
                     .foregroundStyle(.tertiary)
                 Text(relativeDateFormatter.localizedString(for: post.createdAt, relativeTo: .now))
@@ -1309,8 +1410,47 @@ private struct CommunityPostDetailView: View {
                     .font(.title2.bold())
 
                 HStack(spacing: 8) {
-                    Text(currentPost.authorName)
-                        .font(.caption.weight(.semibold))
+                    NavigationLink {
+                        UserProfileView(appState: appState, authorId: currentPost.authorId, authorName: currentPost.authorName, authorEmoji: currentPost.authorEmoji)
+                    } label: {
+                        HStack(spacing: 4) {
+                            if let emoji = currentPost.authorEmoji {
+                                Text(emoji)
+                            }
+                            Text(currentPost.authorName)
+                                .font(.caption.weight(.semibold))
+                                .underline()
+                        }
+                    }
+                    .buttonStyle(.plain)
+
+                    if !isAuthor, currentUserId != nil {
+                        Button {
+                            Task {
+                                await appState.profileService.toggleFollow(currentPost.authorId)
+                            }
+                        } label: {
+                            Text(appState.profileService.isFollowing(currentPost.authorId)
+                                 ? LocalizedStringResource("community.following")
+                                 : LocalizedStringResource("community.follow"))
+                                .font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 3)
+                                .background(
+                                    appState.profileService.isFollowing(currentPost.authorId)
+                                        ? Color.accentColor
+                                        : Color(.secondarySystemBackground)
+                                )
+                                .foregroundStyle(
+                                    appState.profileService.isFollowing(currentPost.authorId)
+                                        ? Color.white
+                                        : Color.primary
+                                )
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     Text("·")
                         .foregroundStyle(.tertiary)
                     Text(currentPost.createdAt, style: .date)
@@ -1428,6 +1568,7 @@ private struct CommunityPostDetailView: View {
             .padding(20)
         }
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         .confirmationDialog("community.deleteConfirm", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 Task {
@@ -1483,6 +1624,142 @@ private struct CommunityPostDetailView: View {
         Task {
             await community.reportPost(currentPost, reporterId: uid, reason: reason)
             alreadyReported = true
+        }
+    }
+}
+
+private struct UserProfileView: View {
+    let appState: AppState
+    let authorId: String
+    let authorName: String
+    let authorEmoji: String?
+
+    @State private var followerCount = 0
+    @State private var followingCount = 0
+
+    private var currentUserId: String? { appState.authService.userId }
+    private var isOwnProfile: Bool { currentUserId == authorId }
+
+    private var authorPosts: [CommunityPost] {
+        appState.communityService.posts.filter { $0.authorId == authorId }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                VStack(spacing: 8) {
+                    if let authorEmoji {
+                        Text(authorEmoji)
+                            .font(.system(size: 60))
+                    }
+                    else {
+                        Image(systemName: "questionmark.circle.dashed")
+                            .font(.system(size: 50))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Text(authorName)
+                        .font(.title3.bold())
+
+                    HStack(spacing: 20) {
+                        VStack {
+                            Text("\(authorPosts.count)")
+                                .font(.headline)
+                            Text("profile.posts")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        VStack {
+                            Text("\(followerCount)")
+                                .font(.headline)
+                            Text("profile.followers")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        VStack {
+                            Text("\(followingCount)")
+                                .font(.headline)
+                            Text("community.following")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        VStack {
+                            let totalLikes = authorPosts.reduce(0) { $0 + $1.likeCount }
+                            Text("\(totalLikes)")
+                                .font(.headline)
+                            Text("profile.likes")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if !isOwnProfile, currentUserId != nil {
+                        Button {
+                            Task {
+                                await appState.profileService.toggleFollow(authorId)
+                                followerCount = await appState.profileService.fetchFollowerCount(for: authorId)
+                            }
+                        } label: {
+                            Text(appState.profileService.isFollowing(authorId)
+                                 ? LocalizedStringResource("community.following")
+                                 : LocalizedStringResource("community.follow"))
+                                .font(.subheadline.weight(.semibold))
+                                .frame(width: 120, height: 34)
+                                .background(
+                                    appState.profileService.isFollowing(authorId)
+                                        ? Color.accentColor
+                                        : Color(.secondarySystemBackground)
+                                )
+                                .foregroundStyle(
+                                    appState.profileService.isFollowing(authorId)
+                                        ? Color.white
+                                        : Color.primary
+                                )
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.top, 20)
+
+                Divider()
+                    .padding(.horizontal, 20)
+
+                if authorPosts.isEmpty {
+                    Text("profile.noPosts")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 20)
+                }
+                else {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(authorPosts) { post in
+                            NavigationLink {
+                                CommunityPostDetailView(appState: appState, post: post)
+                            } label: {
+                                CommunityPostRow(appState: appState, post: post)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 10)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .buttonStyle(.plain)
+
+                            Divider()
+                                .padding(.horizontal, 20)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle(authorName)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
+        .task {
+            followerCount = await appState.profileService.fetchFollowerCount(for: authorId)
+            followingCount = await appState.profileService.fetchFollowingCount(for: authorId)
         }
     }
 }
@@ -1586,7 +1863,8 @@ private struct CreatePostView: View {
                 link: trimmedLink.isEmpty ? nil : trimmedLink,
                 topics: Topic.allCases.filter { selectedTopics.contains($0) },
                 author: user,
-                authorDisplayName: appState.profileService.displayName
+                authorDisplayName: appState.profileService.displayName,
+                authorEmoji: appState.profileService.profileEmoji
             )
         }
     }
@@ -1718,7 +1996,9 @@ private struct SettingsView: View {
 
     @State private var showSignIn = false
     @State private var showEditName = false
+    @State private var showEmojiPicker = false
     @State private var editingName = ""
+    @State private var editingEmoji = ""
 
     var body: some View {
         NavigationStack {
@@ -1745,6 +2025,27 @@ private struct SettingsView: View {
                 }
             } message: {
                 Text("profile.editNameMessage")
+            }
+            .alert("profile.editEmoji", isPresented: $showEmojiPicker) {
+                TextField("profile.emojiPlaceholder", text: $editingEmoji)
+                    .onChange(of: editingEmoji) { _, new in
+                        let emojis = new.filter(\.isEmoji)
+                        if let last = emojis.last {
+                            editingEmoji = String(last)
+                        }
+                        else {
+                            editingEmoji = ""
+                        }
+                    }
+                Button("Cancel", role: .cancel) {}
+                Button("Save") {
+                    guard !editingEmoji.isEmpty else { return }
+                    Task {
+                        await appState.profileService.updateProfileEmoji(editingEmoji)
+                    }
+                }
+            } message: {
+                Text("profile.editEmojiMessage")
             }
         }
     }
@@ -1838,13 +2139,13 @@ private struct SettingsView: View {
                         appState.resetTopics()
                     }
 
-                    if !appState.blockedUserIds.isEmpty {
-                        NavigationLink {
-                            BlockedUsersView(appState: appState)
-                        } label: {
-                            HStack {
-                                Label("settings.blockedUsers", systemImage: "person.slash")
-                                Spacer()
+                    NavigationLink {
+                        BlockedUsersView(appState: appState)
+                    } label: {
+                        HStack {
+                            Label("settings.blockedUsers", systemImage: "person.slash")
+                            Spacer()
+                            if !appState.blockedUserIds.isEmpty {
                                 Text("\(appState.blockedUserIds.count)")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
@@ -1893,14 +2194,24 @@ private struct SettingsView: View {
         let profile = appState.profileService
         if auth.isSignedIn {
             Section {
-                Button {
-                    editingName = profile.displayName
-                    showEditName = true
+                NavigationLink {
+                    UserProfileView(
+                        appState: appState,
+                        authorId: auth.userId ?? "",
+                        authorName: profile.displayName,
+                        authorEmoji: profile.profileEmoji
+                    )
                 } label: {
                     HStack(spacing: 12) {
-                        Image(systemName: "person.circle.fill")
-                            .font(.system(size: 40))
-                            .foregroundStyle(.secondary)
+                        if let emoji = profile.profileEmoji {
+                            Text(emoji)
+                                .font(.system(size: 36))
+                        }
+                        else {
+                            Image(systemName: "questionmark.circle.dashed")
+                                .font(.system(size: 30))
+                                .foregroundStyle(.secondary)
+                        }
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(profile.displayName.isEmpty ? String(localized: "auth.anonymousUser") : profile.displayName)
@@ -1912,16 +2223,23 @@ private struct SettingsView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-
-                        Spacer()
-
-                        Image(systemName: "pencil")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
                     }
                 }
-                .buttonStyle(.plain)
                 .padding(.vertical, 4)
+
+                Button {
+                    editingEmoji = ""
+                    showEmojiPicker = true
+                } label: {
+                    Label("profile.changeEmoji", systemImage: "face.smiling")
+                }
+
+                Button {
+                    editingName = profile.displayName
+                    showEditName = true
+                } label: {
+                    Label("profile.changeName", systemImage: "pencil")
+                }
 
                 Button("auth.signOut", role: .destructive) {
                     auth.signOut()
@@ -2119,22 +2437,30 @@ private struct BlockedUsersView: View {
     let appState: AppState
 
     var body: some View {
-        List {
-            ForEach(Array(appState.blockedUserIds), id: \.self) { userId in
-                HStack {
-                    Text(userId)
-                        .font(.footnote)
-                        .lineLimit(1)
-                    Spacer()
-                    Button("settings.unblock") {
-                        appState.unblockUser(userId)
+        Group {
+            if appState.blockedUserIds.isEmpty {
+                ContentUnavailableView("settings.noBlockedUsers", systemImage: "person.slash")
+            }
+            else {
+                List {
+                    ForEach(Array(appState.blockedUserIds), id: \.self) { userId in
+                        HStack {
+                            Text(userId)
+                                .font(.footnote)
+                                .lineLimit(1)
+                            Spacer()
+                            Button("settings.unblock", role: .destructive) {
+                                appState.unblockUser(userId)
+                            }
+                            .font(.footnote)
+                        }
                     }
-                    .font(.footnote)
                 }
             }
         }
         .navigationTitle("settings.blockedUsers")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
     }
 }
 
@@ -2191,6 +2517,7 @@ private struct SourcesAttributionView: View {
         }
         .navigationTitle("Content sources")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
     }
 
     @ViewBuilder
@@ -2243,6 +2570,7 @@ private struct PrivacyPolicyView: View {
         }
         .navigationTitle("Privacy policy")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
     }
 
     private func sectionHeader(_ text: String) -> some View {
@@ -2283,6 +2611,7 @@ private struct TermsOfUseView: View {
         }
         .navigationTitle("Terms of use")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
     }
 
     private func sectionHeader(_ text: String) -> some View {
@@ -2394,6 +2723,7 @@ private struct BookmarkDetailView: View {
         }
         .navigationTitle("bookmark.detail")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         .confirmationDialog("bookmark.deleteConfirm", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 appState.removeSavedItem(at: currentItem.url)
