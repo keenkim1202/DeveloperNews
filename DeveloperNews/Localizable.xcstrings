@@ -927,6 +927,27 @@
         }
       }
     },
+    "translation.showTranslated" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Translate" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "한국어로 보기" } }
+      }
+    },
+    "translation.showOriginal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Show original" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "원문 보기" } }
+      }
+    },
+    "Translate page" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Translate page" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "페이지 번역" } }
+      }
+    },
     "Reload article" : {
       "extractionState" : "manual",
       "localizations" : {

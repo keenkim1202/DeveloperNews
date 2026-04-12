@@ -1,4 +1,5 @@
 import SwiftUI
+import Translation
 import WebKit
 
 private let relativeDateFormatter: RelativeDateTimeFormatter = {
@@ -600,6 +601,15 @@ private struct HomeTopStoryCard: View {
     let appState: AppState
     let item: ContentItem
 
+    private var translator: ContentTranslator { appState.translator }
+
+    @State private var translationTrigger = 0
+    @State private var showingTranslation = false
+
+    private var displayTitle: String {
+        showingTranslation ? translator.title(for: item) : item.title
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -637,7 +647,7 @@ private struct HomeTopStoryCard: View {
                     HomeTopStoryThumbnail(url: item.thumbnailURL)
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(item.title)
+                        Text(displayTitle)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(2)
@@ -658,12 +668,41 @@ private struct HomeTopStoryCard: View {
                 }
             }
             .buttonStyle(.plain)
+
+            if translator.needsTranslation {
+                Button {
+                    if translator.isTranslated(item) {
+                        showingTranslation.toggle()
+                    }
+                    else {
+                        translationTrigger &+= 1
+                    }
+                } label: {
+                    HStack(spacing: 2) {
+                        Image(systemName: "translate")
+                        Text(showingTranslation ? "translation.showOriginal" : "translation.showTranslated")
+                    }
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(showingTranslation ? Color.accentColor : Color.primary)
+                }
+                .buttonStyle(.plain)
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.accentColor.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            if let config = translator.makeConfiguration(), translationTrigger > 0 {
+                Color.clear
+                    .id(translationTrigger)
+                    .translationTask(config) { session in
+                        await translator.translateSingle(item, using: session)
+                        showingTranslation = true
+                    }
+            }
+        }
     }
 }
 
@@ -710,6 +749,19 @@ private struct FeedItemRow: View {
     let appState: AppState
     let item: ContentItem
 
+    private var translator: ContentTranslator { appState.translator }
+
+    @State private var translationTrigger = 0
+    @State private var showingTranslation = false
+
+    private var displayTitle: String {
+        showingTranslation ? translator.title(for: item) : item.title
+    }
+
+    private var displaySummary: String {
+        showingTranslation ? translator.summary(for: item) : item.summary
+    }
+
     var body: some View {
         NavigationLink {
             ArticleDetailView(appState: appState, item: item)
@@ -719,7 +771,7 @@ private struct FeedItemRow: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .top, spacing: 10) {
-                        Text(item.title)
+                        Text(displayTitle)
                             .font(.headline)
                             .lineLimit(3)
                             .multilineTextAlignment(.leading)
@@ -731,7 +783,7 @@ private struct FeedItemRow: View {
                         }
                     }
 
-                    Text(item.summary)
+                    Text(displaySummary)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
@@ -756,11 +808,40 @@ private struct FeedItemRow: View {
                     .scrollClipDisabled()
                 }
 
+                if translator.needsTranslation {
+                    Button {
+                        if translator.isTranslated(item) {
+                            showingTranslation.toggle()
+                        }
+                        else {
+                            translationTrigger &+= 1
+                        }
+                    } label: {
+                        HStack(spacing: 2) {
+                            Image(systemName: "translate")
+                            Text(showingTranslation ? "translation.showOriginal" : "translation.showTranslated")
+                        }
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(showingTranslation ? Color.accentColor : Color.primary)
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 if let engagement = item.engagement {
                     EngagementSummaryView(engagement: engagement)
                 }
             }
             .padding(.vertical, 4)
+        }
+        .overlay {
+            if let config = translator.makeConfiguration(), translationTrigger > 0 {
+                Color.clear
+                    .id(translationTrigger)
+                    .translationTask(config) { session in
+                        await translator.translateSingle(item, using: session)
+                        showingTranslation = true
+                    }
+            }
         }
     }
 }
@@ -797,6 +878,7 @@ private struct ArticleWebView: UIViewRepresentable {
     let isLoading: Binding<Bool>
     let loadError: Binding<String?>
     let progress: Binding<Double>
+    let webViewRef: Binding<WKWebView?>
     let reloadTrigger: Int
 
     func makeCoordinator() -> Coordinator {
@@ -809,6 +891,9 @@ private struct ArticleWebView: UIViewRepresentable {
         webView.allowsBackForwardNavigationGestures = true
         webView.addObserver(context.coordinator, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
         context.coordinator.observedWebView = webView
+        DispatchQueue.main.async {
+            self.webViewRef.wrappedValue = webView
+        }
         return webView
     }
 
@@ -1273,10 +1358,16 @@ private struct ArticleDetailView: View {
     let appState: AppState
     let item: ContentItem
 
+    private var translator: ContentTranslator { appState.translator }
+
     @State private var isLoading = true
     @State private var loadError: String?
     @State private var loadProgress: Double = 0
     @State private var reloadTrigger = 0
+    @State private var webViewRef: WKWebView?
+    @State private var pageTranslationTrigger = 0
+    @State private var isTranslatingPage = false
+    @State private var isPageTranslated = false
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -1285,6 +1376,7 @@ private struct ArticleDetailView: View {
                 isLoading: $isLoading,
                 loadError: $loadError,
                 progress: $loadProgress,
+                webViewRef: $webViewRef,
                 reloadTrigger: reloadTrigger
             )
             .opacity(loadError == nil ? 1 : 0)
@@ -1321,10 +1413,19 @@ private struct ArticleDetailView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: isLoading)
+        .overlay {
+            if let config = translator.makeConfiguration(), pageTranslationTrigger > 0 {
+                Color.clear
+                    .id(pageTranslationTrigger)
+                    .translationTask(config) { session in
+                        await translateWebPage(using: session)
+                    }
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .principal) {
                 VStack(spacing: 0) {
-                    Text(item.title)
+                    Text(translator.title(for: item))
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -1342,6 +1443,30 @@ private struct ArticleDetailView: View {
                     Image(systemName: appState.isSaved(item) ? "bookmark.fill" : "bookmark")
                 }
                 .accessibilityLabel(appState.isSaved(item) ? "Remove from saved" : "Save story")
+            }
+
+            if translator.needsTranslation {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        if isPageTranslated {
+                            restoreOriginalPage()
+                        }
+                        else {
+                            pageTranslationTrigger &+= 1
+                        }
+                    } label: {
+                        if isTranslatingPage {
+                            ProgressView()
+                                .controlSize(.small)
+                        }
+                        else {
+                            Image(systemName: "translate")
+                                .foregroundStyle(isPageTranslated ? Color.accentColor : Color.primary)
+                        }
+                    }
+                    .disabled(isLoading || isTranslatingPage)
+                    .accessibilityLabel("Translate page")
+                }
             }
 
             ToolbarItem(placement: .topBarTrailing) {
@@ -1363,4 +1488,90 @@ private struct ArticleDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
     }
+
+    private func translateWebPage(using session: TranslationSession) async {
+        guard let webView = webViewRef else { return }
+        isTranslatingPage = true
+
+        let extractJS = """
+        var els=document.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li,td,th,blockquote,figcaption,dt,dd');
+        var r=[];
+        for(var i=0;i<els.length;i++){
+            var t=els[i].innerText.trim();
+            if(t.length>0&&t.length<5000){
+                els[i].setAttribute('data-tr-id',String(i));
+                els[i].setAttribute('data-tr-orig',els[i].innerText);
+                r.push({id:i,text:t});
+            }
+        }
+        return JSON.stringify(r);
+        """
+
+        guard let jsonString = try? await webView.callAsyncJavaScript(
+            extractJS, contentWorld: .page
+        ) as? String,
+              let data = jsonString.data(using: .utf8),
+              let entries = try? JSONDecoder().decode([PageTextEntry].self, from: data),
+              !entries.isEmpty
+        else {
+            isTranslatingPage = false
+            return
+        }
+
+        let chunkSize = 15
+        for chunkStart in stride(from: 0, to: entries.count, by: chunkSize) {
+            let chunkEnd = min(chunkStart + chunkSize, entries.count)
+            let chunk = Array(entries[chunkStart..<chunkEnd])
+            let requests = chunk.map {
+                TranslationSession.Request(sourceText: $0.text, clientIdentifier: String($0.id))
+            }
+
+            var translations: [String: String] = [:]
+            do {
+                for try await response in session.translate(batch: requests) {
+                    if let id = response.clientIdentifier {
+                        translations[id] = response.targetText
+                    }
+                }
+            }
+            catch {
+                continue
+            }
+
+            guard !translations.isEmpty else { continue }
+
+            let injectJS = """
+            for(var id in translations){
+                var el=document.querySelector('[data-tr-id="'+id+'"]');
+                if(el) el.innerText=translations[id];
+            }
+            """
+            _ = try? await webView.callAsyncJavaScript(
+                injectJS,
+                arguments: ["translations": translations],
+                contentWorld: .page
+            )
+        }
+
+        isTranslatingPage = false
+        isPageTranslated = true
+    }
+
+    private func restoreOriginalPage() {
+        guard let webView = webViewRef else { return }
+
+        let restoreJS = """
+        var els=document.querySelectorAll('[data-tr-orig]');
+        for(var i=0;i<els.length;i++){
+            els[i].innerText=els[i].getAttribute('data-tr-orig');
+        }
+        """
+        webView.evaluateJavaScript(restoreJS)
+        isPageTranslated = false
+    }
+}
+
+private struct PageTextEntry: Decodable {
+    let id: Int
+    let text: String
 }
