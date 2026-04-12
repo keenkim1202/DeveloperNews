@@ -19,6 +19,8 @@ Set these environment variables before using `beta` or `release`:
 export APP_STORE_CONNECT_ISSUER_ID="YOUR_ISSUER_ID"
 export APP_STORE_CONNECT_KEY_ID="YOUR_KEY_ID"
 export APP_STORE_CONNECT_KEY_FILE="$HOME/.appstoreconnect/private_keys/AuthKey_XXXXXXXXXX.p8"
+export APP_STORE_PROFILE_NAME="DeveloperNews AppStore"
+export SHARE_EXTENSION_PROFILE_NAME="DeveloperNews ShareExtension AppStore"
 ```
 
 You can also fill in `.env` locally:
@@ -32,6 +34,13 @@ For GitHub Actions, add these repository secrets:
 - `APP_STORE_CONNECT_ISSUER_ID`
 - `APP_STORE_CONNECT_KEY_ID`
 - `APP_STORE_CONNECT_KEY_CONTENT`
+- `APP_STORE_PROFILE_NAME`
+- `SHARE_EXTENSION_PROFILE_NAME`
+- `BUILD_CERTIFICATE_BASE64`
+- `P12_PASSWORD`
+- `KEYCHAIN_PASSWORD`
+- `APP_STORE_PROFILE_BASE64`
+- `SHARE_EXTENSION_PROFILE_BASE64`
 
 ### Lanes
 
@@ -50,5 +59,6 @@ bundle exec fastlane ios bump_build
 - `beta` uploads the archived build to TestFlight.
 - `release` uploads the archived build to App Store Connect without auto-submitting for review.
 - `beta` and `release` require the App Store Connect API Key environment variables above.
+- local and CI uploads also need the App Store provisioning profile names for the app and share extension
 - pushes to the `release` branch run `.github/workflows/release-beta.yml`, which executes `bundle exec fastlane ios beta`
 - Override the export method with `FL_EXPORT_METHOD` when needed.

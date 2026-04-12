@@ -25,6 +25,17 @@ private_lane :xcode_auth_args do
   ].join(" ")
 end
 
+private_lane :export_options_config do
+  {
+    method: ENV.fetch("FL_EXPORT_METHOD", "app-store"),
+    signingStyle: "manual",
+    provisioningProfiles: {
+      "keen-onit.DeveloperNews" => ENV.fetch("APP_STORE_PROFILE_NAME"),
+      "keen-onit.DeveloperNews.ShareExtension" => ENV.fetch("SHARE_EXTENSION_PROFILE_NAME")
+    }
+  }
+end
+
 platform :ios do
   desc "Build the app for iOS Simulator"
   lane :simulator_build do
@@ -50,7 +61,8 @@ platform :ios do
       export_method: ENV.fetch("FL_EXPORT_METHOD", "app-store"),
       derived_data_path: "fastlane/DerivedData",
       xcargs: xcode_auth_args,
-      export_xcargs: xcode_auth_args
+      export_xcargs: xcode_auth_args,
+      export_options: export_options_config
     )
   end
 
