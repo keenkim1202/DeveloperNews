@@ -460,7 +460,7 @@ final class AppState {
         errorMessage = nil
 
         do {
-            allItems = try await contentSourceClient.fetchItems()
+            allItems = try await contentSourceClient.fetchItems(selectedTopics: selectedTopics)
             lastUpdatedAt = .now
             resetPagination()
             persistState()

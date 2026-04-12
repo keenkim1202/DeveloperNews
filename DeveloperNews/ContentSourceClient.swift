@@ -9,11 +9,11 @@ enum AppContact {
 }
 
 protocol ContentSourceClient {
-    func fetchItems() async throws -> [ContentItem]
+    func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem]
 }
 
 struct MockContentSourceClient: ContentSourceClient {
-    func fetchItems() async throws -> [ContentItem] {
+    func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem] {
         try await Task.sleep(for: .milliseconds(150))
         return SampleData.items
     }
@@ -32,11 +32,11 @@ struct CompositeContentSourceClient: ContentSourceClient {
     let clients: [any ContentSourceClient]
     let fallbackClient: any ContentSourceClient
 
-    func fetchItems() async throws -> [ContentItem] {
+    func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem] {
         let collectedItems = await withTaskGroup(of: [ContentItem].self) { group in
             for client in clients {
                 group.addTask {
-                    (try? await client.fetchItems()) ?? []
+                    (try? await client.fetchItems(selectedTopics: selectedTopics)) ?? []
                 }
             }
 
@@ -48,7 +48,7 @@ struct CompositeContentSourceClient: ContentSourceClient {
         }
 
         if collectedItems.isEmpty {
-            return try await fallbackClient.fetchItems()
+            return try await fallbackClient.fetchItems(selectedTopics: selectedTopics)
         }
 
         let weighted = collectedItems.map(applyingSourceTrust)

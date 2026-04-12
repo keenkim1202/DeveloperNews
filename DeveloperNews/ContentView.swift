@@ -47,6 +47,215 @@ private struct LimitedTextEditor: View {
     }
 }
 
+private struct DraftEditorScreen: View {
+    let navigationTitle: LocalizedStringResource
+    let saveTitle: LocalizedStringResource
+    let titleLimit: Int
+    let descriptionLimit: Int
+    let onSave: (String, String, String, Set<Topic>) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @Binding var title: String
+    @Binding var description: String
+    @Binding var link: String
+    @Binding var selectedTopics: Set<Topic>
+
+    init(
+        navigationTitle: LocalizedStringResource,
+        saveTitle: LocalizedStringResource,
+        title: Binding<String>,
+        description: Binding<String>,
+        link: Binding<String>,
+        selectedTopics: Binding<Set<Topic>>,
+        titleLimit: Int = 100,
+        descriptionLimit: Int = 1000,
+        onSave: @escaping (String, String, String, Set<Topic>) -> Void
+    ) {
+        self.navigationTitle = navigationTitle
+        self.saveTitle = saveTitle
+        self.titleLimit = titleLimit
+        self.descriptionLimit = descriptionLimit
+        self.onSave = onSave
+        _title = title
+        _description = description
+        _link = link
+        _selectedTopics = selectedTopics
+    }
+
+    private var isValid: Bool {
+        let hasTitle = !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasLink = !link.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasDescription = !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return hasTitle && !selectedTopics.isEmpty && (hasLink || hasDescription)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    LimitedTextField(text: $title, limit: titleLimit, prompt: "save.titlePlaceholder")
+
+                    TextField("save.linkPlaceholder", text: $link)
+                        .textContentType(.URL)
+                        .keyboardType(.URL)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                } header: {
+                    Text("save.details")
+                }
+
+                Section {
+                    LimitedTextEditor(text: $description, limit: descriptionLimit)
+                } header: {
+                    Text("save.description")
+                }
+
+                Section {
+                    ForEach(Topic.allCases) { topic in
+                        Button {
+                            if selectedTopics.contains(topic) {
+                                selectedTopics.remove(topic)
+                            }
+                            else {
+                                selectedTopics.insert(topic)
+                            }
+                        } label: {
+                            HStack {
+                                Label {
+                                    Text(topic.title)
+                                } icon: {
+                                    Image(systemName: topic.symbolName)
+                                }
+                                Spacer()
+                                if selectedTopics.contains(topic) {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Text("save.topic")
+                }
+            }
+            .navigationTitle(navigationTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(saveTitle) {
+                        onSave(title, description, link, selectedTopics)
+                        dismiss()
+                    }
+                    .disabled(!isValid)
+                }
+            }
+            .scrollDismissesKeyboard(.interactively)
+        }
+    }
+}
+
+private struct SavedItemNoteComposerView: View {
+    let appState: AppState
+    let item: ContentItem
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var description: String
+
+    init(appState: AppState, item: ContentItem) {
+        self.appState = appState
+        self.item = item
+        _description = State(initialValue: item.summary)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(item.title)
+                            .font(.headline)
+                        Text(item.sourceName)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Link")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        Text(item.url.absoluteString)
+                            .font(.footnote.monospaced())
+                            .textSelection(.enabled)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                        Button {
+                            UIPasteboard.general.string = item.url.absoluteString
+                        } label: {
+                            Label("Copy link", systemImage: "doc.on.doc")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .buttonStyle(.bordered)
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("save.description")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        LimitedTextEditor(text: $description, limit: 2000)
+                    }
+                }
+                .padding(20)
+            }
+            .navigationTitle("saved.editNote")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        saveChanges()
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func saveChanges() {
+        guard let saved = appState.savedItemSnapshots[item.url] else { return }
+        let trimmed = description.trimmingCharacters(in: .whitespacesAndNewlines)
+        let updated = ContentItem(
+            id: saved.id,
+            kind: saved.kind,
+            title: saved.title,
+            summary: trimmed,
+            sourceName: saved.sourceName,
+            sourceCategory: saved.sourceCategory,
+            authorName: saved.authorName,
+            url: saved.url,
+            publishedAt: saved.publishedAt,
+            topics: saved.topics,
+            trendScore: saved.trendScore,
+            thumbnailURL: saved.thumbnailURL,
+            engagement: saved.engagement,
+            isUserCreated: saved.isUserCreated,
+            updatedAt: .now
+        )
+        appState.updateSavedItem(updated)
+    }
+}
+
 private let relativeDateFormatter: RelativeDateTimeFormatter = {
     let formatter = RelativeDateTimeFormatter()
     formatter.unitsStyle = .short
@@ -238,7 +447,7 @@ private struct MainTabView: View {
 
             SavedView(appState: appState)
                 .tabItem {
-                    Label("Saved", systemImage: "bookmark")
+                    Label("Bookmarks", systemImage: "bookmark")
                 }
                 .tag(AppTab.saved)
 
@@ -469,7 +678,7 @@ private struct SavedView: View {
 
                 content
             }
-            .navigationTitle("Saved")
+            .navigationTitle("Bookmarks")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search saved stories")
             .toolbar {
@@ -1434,6 +1643,7 @@ private struct CommunityPostRow: View {
 private struct CommunityPostDetailView: View {
     let appState: AppState
     let post: CommunityPost
+    @State private var showEditPost = false
     @State private var showDeleteConfirm = false
     @State private var showReportConfirm = false
     @State private var showBlockConfirm = false
@@ -1568,6 +1778,23 @@ private struct CommunityPostDetailView: View {
 
                 Divider()
 
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 4) {
+                        Text("community.createdAt")
+                        Text(currentPost.createdAt, style: .date)
+                        Text(currentPost.createdAt, style: .time)
+                    }
+                    if let updatedAt = currentPost.updatedAt {
+                        HStack(spacing: 4) {
+                            Text("community.updatedAt")
+                            Text(updatedAt, style: .date)
+                            Text(updatedAt, style: .time)
+                        }
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+
                 HStack {
                     Button {
                         guard let uid = currentUserId else { return }
@@ -1620,6 +1847,21 @@ private struct CommunityPostDetailView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .toolbar {
+            if isAuthor {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showEditPost = true
+                    } label: {
+                        Image(systemName: "pencil")
+                    }
+                    .accessibilityLabel("community.editPost")
+                }
+            }
+        }
+        .sheet(isPresented: $showEditPost) {
+            EditCommunityPostView(appState: appState, post: currentPost)
+        }
         .confirmationDialog("community.deleteConfirm", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 Task {
@@ -1677,6 +1919,76 @@ private struct CommunityPostDetailView: View {
         Task {
             await community.reportPost(currentPost, reporterId: uid, reason: reason)
             alreadyReported = true
+        }
+    }
+}
+
+private struct CommunityPostEditorView: View {
+    let appState: AppState
+    let existingPost: CommunityPost?
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var title: String
+    @State private var description: String
+    @State private var link: String
+    @State private var selectedTopics: Set<Topic>
+
+    init(appState: AppState, existingPost: CommunityPost? = nil) {
+        self.appState = appState
+        self.existingPost = existingPost
+        _title = State(initialValue: existingPost?.title ?? "")
+        _description = State(initialValue: existingPost?.description ?? "")
+        _link = State(initialValue: existingPost?.link ?? "")
+        _selectedTopics = State(initialValue: Set(existingPost?.topics ?? []))
+    }
+
+    private var isEditing: Bool { existingPost != nil }
+
+    var body: some View {
+        DraftEditorScreen(
+            navigationTitle: isEditing ? "community.editPost" : "community.newPost",
+            saveTitle: isEditing ? "community.savePost" : "community.post",
+            title: $title,
+            description: $description,
+            link: $link,
+            selectedTopics: $selectedTopics
+        ) { _, _, _, _ in
+            savePost()
+        }
+    }
+
+    private func savePost() {
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedLink = link.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
+        let topics = Topic.allCases.filter { selectedTopics.contains($0) }
+
+        if let existingPost {
+            guard let userId = appState.authService.userId else { return }
+            Task {
+                await appState.communityService.updatePost(
+                    existingPost,
+                    title: trimmedTitle,
+                    description: trimmedDescription,
+                    link: trimmedLink.isEmpty ? nil : trimmedLink,
+                    topics: topics,
+                    editorId: userId
+                )
+            }
+        }
+        else {
+            guard let user = appState.authService.user else { return }
+            Task {
+                await appState.communityService.createPost(
+                    title: trimmedTitle,
+                    description: trimmedDescription,
+                    link: trimmedLink.isEmpty ? nil : trimmedLink,
+                    topics: topics,
+                    author: user,
+                    authorDisplayName: appState.profileService.displayName
+                )
+            }
         }
     }
 }
@@ -1794,11 +2106,13 @@ private struct UserProfileView: View {
                                 CommunityPostDetailView(appState: appState, post: post)
                             } label: {
                                 CommunityPostRow(appState: appState, post: post)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, 20)
                                     .padding(.vertical, 10)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
                             Divider()
                                 .padding(.horizontal, 20)
@@ -1819,106 +2133,17 @@ private struct UserProfileView: View {
 
 private struct CreatePostView: View {
     let appState: AppState
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var title = ""
-    @State private var description = ""
-    @State private var link = ""
-    @State private var selectedTopics: Set<Topic> = []
-
-    private var isValid: Bool {
-        let hasTitle = !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasLink = !link.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasDescription = !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        return hasTitle && !selectedTopics.isEmpty && (hasLink || hasDescription)
+    var body: some View {
+        CommunityPostEditorView(appState: appState)
     }
+}
+
+private struct EditCommunityPostView: View {
+    let appState: AppState
+    let post: CommunityPost
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    LimitedTextField(text: $title, limit: 100, prompt: "save.titlePlaceholder")
-
-                    TextField("save.linkPlaceholder", text: $link)
-                        .textContentType(.URL)
-                        .keyboardType(.URL)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                } header: {
-                    Text("save.details")
-                }
-
-                Section {
-                    LimitedTextEditor(text: $description, limit: 1000)
-                } header: {
-                    Text("save.description")
-                }
-
-                Section {
-                    ForEach(Topic.allCases) { topic in
-                        Button {
-                            if selectedTopics.contains(topic) {
-                                selectedTopics.remove(topic)
-                            }
-                            else {
-                                selectedTopics.insert(topic)
-                            }
-                        } label: {
-                            HStack {
-                                Label {
-                                    Text(topic.title)
-                                } icon: {
-                                    Image(systemName: topic.symbolName)
-                                }
-                                Spacer()
-                                if selectedTopics.contains(topic) {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.tint)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                } header: {
-                    Text("save.topic")
-                }
-            }
-            .navigationTitle("community.newPost")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("community.post") {
-                        createPost()
-                        dismiss()
-                    }
-                    .disabled(!isValid)
-                }
-            }
-            .scrollDismissesKeyboard(.interactively)
-        }
-    }
-
-    private func createPost() {
-        guard let user = appState.authService.user else { return }
-
-        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedLink = link.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        Task {
-            await appState.communityService.createPost(
-                title: trimmedTitle,
-                description: trimmedDescription,
-                link: trimmedLink.isEmpty ? nil : trimmedLink,
-                topics: Topic.allCases.filter { selectedTopics.contains($0) },
-                author: user,
-                authorDisplayName: appState.profileService.displayName
-            )
-        }
+        CommunityPostEditorView(appState: appState, existingPost: post)
     }
 }
 
@@ -1926,86 +2151,22 @@ private struct CreatePostView: View {
 
 private struct AddSavedItemView: View {
     let appState: AppState
-    @Environment(\.dismiss) private var dismiss
 
     @State private var title = ""
     @State private var description = ""
     @State private var link = ""
     @State private var selectedTopics: Set<Topic> = []
 
-    private var isValid: Bool {
-        let hasTitle = !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasLink = !link.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasDescription = !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        return hasTitle && !selectedTopics.isEmpty && (hasLink || hasDescription)
-    }
-
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    LimitedTextField(text: $title, limit: 100, prompt: "save.titlePlaceholder")
-
-                    TextField("save.linkPlaceholder", text: $link)
-                        .textContentType(.URL)
-                        .keyboardType(.URL)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                } header: {
-                    Text("save.details")
-                }
-
-                Section {
-                    LimitedTextEditor(text: $description, limit: 1000)
-                } header: {
-                    Text("save.description")
-                }
-
-                Section {
-                    ForEach(Topic.allCases) { topic in
-                        Button {
-                            if selectedTopics.contains(topic) {
-                                selectedTopics.remove(topic)
-                            }
-                            else {
-                                selectedTopics.insert(topic)
-                            }
-                        } label: {
-                            HStack {
-                                Label {
-                                    Text(topic.title)
-                                } icon: {
-                                    Image(systemName: topic.symbolName)
-                                }
-                                Spacer()
-                                if selectedTopics.contains(topic) {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.tint)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                } header: {
-                    Text("save.topic")
-                }
-            }
-            .navigationTitle("save.addItem")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        saveItem()
-                        dismiss()
-                    }
-                    .disabled(!isValid)
-                }
-            }
-            .scrollDismissesKeyboard(.interactively)
+        DraftEditorScreen(
+            navigationTitle: "save.addItem",
+            saveTitle: "Save",
+            title: $title,
+            description: $description,
+            link: $link,
+            selectedTopics: $selectedTopics
+        ) { _, _, _, _ in
+            saveItem()
         }
     }
 
@@ -2615,7 +2776,7 @@ private struct SourcesAttributionView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section("Articles") {
+            Section("Blogs & Articles") {
                 Text("Curated RSS feeds from independent and company engineering blogs.")
                     .font(.footnote)
                 attributionRow("Swift with Majid", url: "https://swiftwithmajid.com")
@@ -2863,7 +3024,6 @@ private struct BookmarkDetailView: View {
             }
             .padding(20)
         }
-        .navigationTitle("bookmark.detail")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .onAppear {
@@ -2893,7 +3053,6 @@ private struct BookmarkDetailView: View {
 private struct EditBookmarkView: View {
     let appState: AppState
     let item: ContentItem
-    @Environment(\.dismiss) private var dismiss
 
     @State private var title: String
     @State private var description: String
@@ -2909,79 +3068,16 @@ private struct EditBookmarkView: View {
         _selectedTopics = State(initialValue: Set(item.topics))
     }
 
-    private var isValid: Bool {
-        let hasTitle = !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasLink = !link.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let hasDescription = !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        return hasTitle && !selectedTopics.isEmpty && (hasLink || hasDescription)
-    }
-
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    LimitedTextField(text: $title, limit: 100, prompt: "save.titlePlaceholder")
-
-                    TextField("save.linkPlaceholder", text: $link)
-                        .textContentType(.URL)
-                        .keyboardType(.URL)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                } header: {
-                    Text("save.details")
-                }
-
-                Section {
-                    LimitedTextEditor(text: $description, limit: 1000)
-                } header: {
-                    Text("save.description")
-                }
-
-                Section {
-                    ForEach(Topic.allCases) { topic in
-                        Button {
-                            if selectedTopics.contains(topic) {
-                                selectedTopics.remove(topic)
-                            }
-                            else {
-                                selectedTopics.insert(topic)
-                            }
-                        } label: {
-                            HStack {
-                                Label {
-                                    Text(topic.title)
-                                } icon: {
-                                    Image(systemName: topic.symbolName)
-                                }
-                                Spacer()
-                                if selectedTopics.contains(topic) {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.tint)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                } header: {
-                    Text("save.topic")
-                }
-            }
-            .navigationTitle("bookmark.edit")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        saveChanges()
-                        dismiss()
-                    }
-                    .disabled(!isValid)
-                }
-            }
-            .scrollDismissesKeyboard(.interactively)
+        DraftEditorScreen(
+            navigationTitle: "bookmark.edit",
+            saveTitle: "Save",
+            title: $title,
+            description: $description,
+            link: $link,
+            selectedTopics: $selectedTopics
+        ) { _, _, _, _ in
+            saveChanges()
         }
     }
 
@@ -3001,7 +3097,7 @@ private struct EditBookmarkView: View {
             newURL = item.url
         }
 
-        var updated = ContentItem(
+        let updated = ContentItem(
             id: item.id,
             kind: item.kind,
             title: trimmedTitle,
@@ -3042,7 +3138,6 @@ private struct ArticleDetailView: View {
     @State private var isTranslatingPage = false
     @State private var isPageTranslated = false
     @State private var showEditNote = false
-    @State private var editingNote = ""
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -3123,7 +3218,6 @@ private struct ArticleDetailView: View {
             if appState.isSaved(item) {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        editingNote = currentNote
                         showEditNote = true
                     } label: {
                         Image(systemName: currentNote.isEmpty ? "note.text.badge.plus" : "note.text")
@@ -3177,51 +3271,16 @@ private struct ArticleDetailView: View {
         .onAppear {
             appState.markAsRead(item)
         }
-        .alert("saved.editNote", isPresented: $showEditNote) {
-            TextField("saved.notePlaceholder", text: $editingNote)
-                .onChange(of: editingNote) { _, new in
-                    if new.count > 500 { editingNote = String(new.prefix(500)) }
-                }
-            Button("Cancel", role: .cancel) {}
-            Button("Save") {
-                saveNote()
-            }
-            if !currentNote.isEmpty {
-                Button("saved.removeNote", role: .destructive) {
-                    editingNote = ""
-                    saveNote()
-                }
-            }
-        } message: {
-            Text("saved.editNoteMessage")
-        }
+        .sheet(isPresented: $showEditNote) { noteEditorSheet }
     }
 
     private var currentNote: String {
         appState.savedItemSnapshots[item.url]?.summary ?? ""
     }
 
-    private func saveNote() {
-        guard var saved = appState.savedItemSnapshots[item.url] else { return }
-        let trimmed = editingNote.trimmingCharacters(in: .whitespacesAndNewlines)
-        let updated = ContentItem(
-            id: saved.id,
-            kind: saved.kind,
-            title: saved.title,
-            summary: trimmed,
-            sourceName: saved.sourceName,
-            sourceCategory: saved.sourceCategory,
-            authorName: saved.authorName,
-            url: saved.url,
-            publishedAt: saved.publishedAt,
-            topics: saved.topics,
-            trendScore: saved.trendScore,
-            thumbnailURL: saved.thumbnailURL,
-            engagement: saved.engagement,
-            isUserCreated: saved.isUserCreated,
-            updatedAt: .now
-        )
-        appState.updateSavedItem(updated)
+    @ViewBuilder
+    private var noteEditorSheet: some View {
+        SavedItemNoteComposerView(appState: appState, item: appState.savedItemSnapshots[item.url] ?? item)
     }
 
     private func translateWebPage(using session: TranslationSession) async {

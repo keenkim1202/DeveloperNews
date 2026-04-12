@@ -18,8 +18,8 @@ struct RSSSourceClient: ContentSourceClient {
         self.session = session
     }
 
-    func fetchItems() async throws -> [ContentItem] {
-        await withTaskGroup(of: [ContentItem].self) { group in
+    func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem] {
+        let combined = await withTaskGroup(of: [ContentItem].self) { group in
             for feed in feeds {
                 group.addTask {
                     (try? await fetchItems(for: feed)) ?? []
@@ -32,6 +32,15 @@ struct RSSSourceClient: ContentSourceClient {
             }
             return combined
         }
+
+        if selectedTopics.count == 1 {
+            return combined
+                .sorted { $0.publishedAt > $1.publishedAt }
+                .prefix(30)
+                .map { $0 }
+        }
+
+        return combined
     }
 
     private func fetchItems(for feed: RSSFeedDefinition) async throws -> [ContentItem] {
