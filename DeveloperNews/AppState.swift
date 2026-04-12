@@ -24,6 +24,8 @@ final class AppState {
     private let contentSourceClient: any ContentSourceClient
 
     let translator = ContentTranslator()
+    let authService = AuthService()
+    let profileService = ProfileService()
 
     var selectedTopics: Set<Topic> = []
     var focusedTopic: Topic?

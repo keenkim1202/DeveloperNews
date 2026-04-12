@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 import Translation
 import WebKit
@@ -41,6 +42,22 @@ struct ContentView: View {
             }
             Task {
                 await appState.refreshIfStale(maxAge: Self.staleThreshold)
+            }
+        }
+        .onChange(of: appState.authService.isSignedIn) { _, signedIn in
+            if signedIn, let user = appState.authService.user {
+                appState.profileService.startListening(for: user)
+                Task {
+                    await appState.profileService.createProfileIfNeeded(for: user)
+                }
+            }
+            else {
+                appState.profileService.stopListening()
+            }
+        }
+        .onAppear {
+            if let user = appState.authService.user {
+                appState.profileService.startListening(for: user)
             }
         }
     }
@@ -1062,6 +1079,10 @@ private let appVersionString: String = {
 private struct SettingsView: View {
     let appState: AppState
 
+    @State private var showSignIn = false
+    @State private var showEditName = false
+    @State private var editingName = ""
+
     var body: some View {
         NavigationStack {
             ScrollViewReader { proxy in
@@ -1072,16 +1093,34 @@ private struct SettingsView: View {
                         }
                     }
             }
+            .sheet(isPresented: $showSignIn) {
+                SignInView(authService: appState.authService)
+            }
+            .alert("profile.editName", isPresented: $showEditName) {
+                TextField("profile.namePlaceholder", text: $editingName)
+                Button("Cancel", role: .cancel) {}
+                Button("Save") {
+                    let trimmed = editingName.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
+                    Task {
+                        await appState.profileService.updateDisplayName(trimmed)
+                    }
+                }
+            } message: {
+                Text("profile.editNameMessage")
+            }
         }
     }
 
     private var settingsList: some View {
         List {
+            accountSection
+                .id("__settings_top__")
+
             Section("Your topics") {
                 Text("\(appState.selectedTopics.count) of \(AppState.maxSelectedTopics) selected")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                    .id("__settings_top__")
 
                     ForEach(Topic.allCases) { topic in
                         let isSelected = appState.selectedTopics.contains(topic)
@@ -1196,6 +1235,231 @@ private struct SettingsView: View {
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
         }
+
+    @ViewBuilder
+    private var accountSection: some View {
+        let auth = appState.authService
+        let profile = appState.profileService
+        if auth.isSignedIn {
+            Section {
+                Button {
+                    editingName = profile.displayName
+                    showEditName = true
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "person.circle.fill")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.secondary)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(profile.displayName.isEmpty ? String(localized: "auth.anonymousUser") : profile.displayName)
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                            if let email = auth.email {
+                                Text(email)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "pencil")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, 4)
+
+                Button("auth.signOut", role: .destructive) {
+                    auth.signOut()
+                }
+
+                Button("auth.deleteAccount", role: .destructive) {
+                    Task {
+                        await profile.deleteProfile()
+                        await auth.deleteAccount()
+                    }
+                }
+            } header: {
+                Text("auth.account")
+            }
+        }
+        else {
+            Section {
+                Button {
+                    showSignIn = true
+                } label: {
+                    HStack {
+                        Label("auth.signIn", systemImage: "person.crop.circle")
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("auth.account")
+            } footer: {
+                Text("auth.signInFooter")
+            }
+        }
+    }
+}
+
+private struct SignInView: View {
+    let authService: AuthService
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var email = ""
+    @State private var password = ""
+    @State private var isSignUp = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                VStack(spacing: 12) {
+                    Button {
+                        Task {
+                            await authService.signInWithApple()
+                            if authService.isSignedIn { dismiss() }
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image("apple_logo")
+                                .resizable()
+                                .frame(width: 20, height: 20)
+                            Text("auth.signInWithApple")
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(.black)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.white)
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        Task {
+                            await authService.signInWithGoogle()
+                            if authService.isSignedIn { dismiss() }
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image("google_logo")
+                                .resizable()
+                                .frame(width: 20, height: 20)
+                            Text("auth.signInWithGoogle")
+                                .font(.body.weight(.medium))
+                                .foregroundStyle(.black)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.white)
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                dividerWithText("auth.or")
+
+                VStack(spacing: 12) {
+                    TextField("auth.email", text: $email)
+                        .textContentType(.emailAddress)
+                        .keyboardType(.emailAddress)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .padding(12)
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                    SecureField("auth.password", text: $password)
+                        .textContentType(isSignUp ? .newPassword : .password)
+                        .padding(12)
+                        .background(Color(.secondarySystemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                    Button {
+                        Task {
+                            if isSignUp {
+                                await authService.signUpWithEmail(email, password: password)
+                            }
+                            else {
+                                await authService.signInWithEmail(email, password: password)
+                            }
+                            if authService.isSignedIn { dismiss() }
+                        }
+                    } label: {
+                        Text(isSignUp ? LocalizedStringResource("auth.createAccount") : LocalizedStringResource("auth.signInWithEmail"))
+                            .font(.body.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .foregroundStyle(.white)
+                            .background(Color.accentColor)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    .disabled(email.isEmpty || password.isEmpty)
+
+                    Button {
+                        isSignUp.toggle()
+                    } label: {
+                        Text(isSignUp ? LocalizedStringResource("auth.alreadyHaveAccount") : LocalizedStringResource("auth.noAccount"))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                if let error = authService.errorMessage {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                }
+
+                Spacer()
+            }
+            .padding(20)
+            .navigationTitle("auth.signIn")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
+            .overlay {
+                if authService.isLoading {
+                    Color.black.opacity(0.2)
+                        .ignoresSafeArea()
+                    ProgressView()
+                }
+            }
+        }
+    }
+
+    private func dividerWithText(_ text: LocalizedStringResource) -> some View {
+        HStack {
+            Rectangle()
+                .fill(Color.secondary.opacity(0.3))
+                .frame(height: 1)
+            Text(text)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Rectangle()
+                .fill(Color.secondary.opacity(0.3))
+                .frame(height: 1)
+        }
+    }
 }
 
 private struct SourcesAttributionView: View {
@@ -1277,7 +1541,10 @@ private struct PrivacyPolicyView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Group {
                     sectionHeader("What we collect")
-                    sectionBody("DeveloperNews collects no personal information. We do not run analytics, telemetry, or any third party tracking SDK that identifies you.")
+                    sectionBody("DeveloperNews does not run analytics or third-party tracking SDKs. However, if you sign in with Apple, Google, or email, we collect your email address and display name through Firebase Authentication to manage your account.")
+
+                    sectionHeader("Authentication")
+                    sectionBody("Sign-in is powered by Firebase Authentication, a service provided by Google. When you sign in, Firebase stores your email, display name, and account creation date. You can delete your account at any time from Settings, which removes your authentication data from Firebase.")
 
                     sectionHeader("On-device storage")
                     sectionBody("Your selected topics, saved stories, and preferences are stored only on your device using the system defaults database. They never leave the device unless iCloud sync is enabled by you in iOS settings.")

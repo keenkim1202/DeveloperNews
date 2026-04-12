@@ -1,0 +1,110 @@
+import FirebaseAuth
+import FirebaseFirestore
+import Foundation
+
+struct UserProfile: Codable {
+    let uid: String
+    var displayName: String
+    var email: String?
+    var photoURL: String?
+    var createdAt: Date
+    var updatedAt: Date
+}
+
+@Observable
+final class ProfileService {
+    private(set) var profile: UserProfile?
+    private(set) var isLoading = false
+    private(set) var errorMessage: String?
+
+    private let db = Firestore.firestore()
+    private var listenerRegistration: ListenerRegistration?
+    private var currentUser: FirebaseAuth.User?
+
+    var displayName: String {
+        if let name = profile?.displayName, !name.isEmpty {
+            return name
+        }
+        return currentUser?.displayName ?? ""
+    }
+
+    func startListening(for user: FirebaseAuth.User) {
+        stopListening()
+        currentUser = user
+
+        let ref = db.collection("users").document(user.uid)
+        listenerRegistration = ref.addSnapshotListener { [weak self] snapshot, _ in
+            guard let data = snapshot?.data(), snapshot?.exists == true else {
+                self?.profile = nil
+                return
+            }
+            self?.profile = UserProfile(
+                uid: user.uid,
+                displayName: data["displayName"] as? String ?? "",
+                email: data["email"] as? String,
+                photoURL: data["photoURL"] as? String,
+                createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
+                updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date()
+            )
+        }
+    }
+
+    func stopListening() {
+        listenerRegistration?.remove()
+        listenerRegistration = nil
+        profile = nil
+        currentUser = nil
+    }
+
+    func createProfileIfNeeded(for user: FirebaseAuth.User) async {
+        let ref = db.collection("users").document(user.uid)
+
+        do {
+            let snapshot = try await ref.getDocument()
+            if snapshot.exists { return }
+
+            let now = FieldValue.serverTimestamp()
+            try await ref.setData([
+                "displayName": user.displayName ?? "",
+                "email": user.email ?? "",
+                "photoURL": user.photoURL?.absoluteString ?? "",
+                "createdAt": now,
+                "updatedAt": now,
+            ])
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func updateDisplayName(_ name: String) async {
+        guard let uid = currentUser?.uid else { return }
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            try await db.collection("users").document(uid).setData([
+                "displayName": name,
+                "updatedAt": FieldValue.serverTimestamp(),
+            ], merge: true)
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    func deleteProfile() async {
+        guard let uid = currentUser?.uid else { return }
+
+        do {
+            try await db.collection("users").document(uid).delete()
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+
+        stopListening()
+    }
+}

@@ -168,6 +168,329 @@
         }
       }
     },
+    "auth.account" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Account"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계정"
+          }
+        }
+      }
+    },
+    "auth.alreadyHaveAccount" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already have an account? Sign in"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이미 계정이 있으신가요? 로그인"
+          }
+        }
+      }
+    },
+    "auth.anonymousUser" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "User"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사용자"
+          }
+        }
+      }
+    },
+    "auth.createAccount" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create account"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계정 만들기"
+          }
+        }
+      }
+    },
+    "auth.deleteAccount" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete account"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계정 삭제"
+          }
+        }
+      }
+    },
+    "auth.email" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Email"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이메일"
+          }
+        }
+      }
+    },
+    "auth.error.invalidCredential" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid sign-in credentials. Please try again."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인 정보가 올바르지 않습니다. 다시 시도해 주세요."
+          }
+        }
+      }
+    },
+    "auth.error.missingClientID" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google Sign-In is not configured. Please check Firebase settings."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google 로그인이 설정되지 않았습니다. Firebase 설정을 확인해 주세요."
+          }
+        }
+      }
+    },
+    "auth.error.missingRootViewController" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to present sign-in screen."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인 화면을 표시할 수 없습니다."
+          }
+        }
+      }
+    },
+    "auth.noAccount" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't have an account? Sign up"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계정이 없으신가요? 회원가입"
+          }
+        }
+      }
+    },
+    "auth.or" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "or"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "또는"
+          }
+        }
+      }
+    },
+    "auth.password" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "비밀번호"
+          }
+        }
+      }
+    },
+    "auth.signIn" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인"
+          }
+        }
+      }
+    },
+    "auth.signInFooter" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in to share posts and access community features."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인하여 글을 공유하고 커뮤니티 기능을 이용하세요."
+          }
+        }
+      }
+    },
+    "auth.signInWithApple" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in with Apple"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple로 로그인"
+          }
+        }
+      }
+    },
+    "auth.signInWithEmail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in with email"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이메일로 로그인"
+          }
+        }
+      }
+    },
+    "auth.signInWithGoogle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign in with Google"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google로 로그인"
+          }
+        }
+      }
+    },
+    "auth.signOut" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그아웃"
+          }
+        }
+      }
+    },
+    "Authentication" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Authentication"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "인증"
+          }
+        }
+      }
+    },
     "Browse trending" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -184,6 +507,10 @@
           }
         }
       }
+    },
+    "Cancel" : {
+      "comment" : "The text for a button that dismisses the current view.",
+      "isCommentAutoGenerated" : true
     },
     "Changes" : {
       "extractionState" : "manual",
@@ -325,19 +652,19 @@
         }
       }
     },
-    "DeveloperNews collects no personal information. We do not run analytics, telemetry, or any third party tracking SDK that identifies you." : {
+    "DeveloperNews does not run analytics or third-party tracking SDKs. However, if you sign in with Apple, Google, or email, we collect your email address and display name through Firebase Authentication to manage your account." : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DeveloperNews collects no personal information. We do not run analytics, telemetry, or any third party tracking SDK that identifies you."
+            "value" : "DeveloperNews does not run analytics or third-party tracking SDKs. However, if you sign in with Apple, Google, or email, we collect your email address and display name through Firebase Authentication to manage your account."
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DeveloperNews는 개인 정보를 수집하지 않습니다. 분석, 텔레메트리 또는 사용자를 식별하는 서드파티 추적 SDK를 사용하지 않습니다."
+            "value" : "DeveloperNews는 분석이나 서드파티 추적 SDK를 사용하지 않습니다. 단, Apple, Google 또는 이메일로 로그인하는 경우 계정 관리를 위해 Firebase Authentication을 통해 이메일 주소와 표시 이름을 수집합니다."
           }
         }
       }
@@ -617,8 +944,18 @@
     "Language" : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Language" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "언어" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "언어"
+          }
+        }
       }
     },
     "Limitation of liability" : {
@@ -876,6 +1213,57 @@
         }
       }
     },
+    "profile.editName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit nickname"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "닉네임 변경"
+          }
+        }
+      }
+    },
+    "profile.editNameMessage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a new nickname for your profile."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "프로필에 사용할 새 닉네임을 입력하세요."
+          }
+        }
+      }
+    },
+    "profile.namePlaceholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nickname"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "닉네임"
+          }
+        }
+      }
+    },
     "Push delivery is coming soon. Your choice is saved on this device for now." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -925,27 +1313,6 @@
             "value" : "Reddit"
           }
         }
-      }
-    },
-    "translation.showTranslated" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Translate" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "한국어로 보기" } }
-      }
-    },
-    "translation.showOriginal" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Show original" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "원문 보기" } }
-      }
-    },
-    "Translate page" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Translate page" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "페이지 번역" } }
       }
     },
     "Reload article" : {
@@ -1131,6 +1498,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "설정"
+          }
+        }
+      }
+    },
+    "Sign-in is powered by Firebase Authentication, a service provided by Google. When you sign in, Firebase stores your email, display name, and account creation date. You can delete your account at any time from Settings, which removes your authentication data from Firebase." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign-in is powered by Firebase Authentication, a service provided by Google. When you sign in, Firebase stores your email, display name, and account creation date. You can delete your account at any time from Settings, which removes your authentication data from Firebase."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "로그인은 Google에서 제공하는 Firebase Authentication을 통해 처리됩니다. 로그인 시 Firebase에 이메일, 표시 이름, 계정 생성일이 저장됩니다. 설정에서 언제든지 계정을 삭제할 수 있으며, 삭제 시 Firebase의 인증 데이터가 제거됩니다."
           }
         }
       }
@@ -1342,8 +1726,18 @@
     "Top story" : {
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Top story" } },
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "추천 스토리" } }
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top story"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "추천 스토리"
+          }
+        }
       }
     },
     "topic.ai" : {
@@ -1461,6 +1855,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "웹"
+          }
+        }
+      }
+    },
+    "Translate page" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translate page"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "페이지 번역"
+          }
+        }
+      }
+    },
+    "translation.showOriginal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show original"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "원문 보기"
+          }
+        }
+      }
+    },
+    "translation.showTranslated" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Translate"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "한국어로 보기"
           }
         }
       }

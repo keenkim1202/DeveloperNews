@@ -1,10 +1,12 @@
 import CoreText
+import FirebaseCore
 import Foundation
 import SwiftUI
 
 @main
 struct DeveloperNewsApp: App {
     init() {
+        FirebaseApp.configure()
         configureSharedImageCache()
         registerCustomFonts()
     }
