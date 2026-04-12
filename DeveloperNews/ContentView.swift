@@ -253,13 +253,7 @@ private struct HomeView: View {
                     HomeTopicFocusBar(appState: appState)
                 }
 
-                if let topItem {
-                    HomeTopStoryCard(appState: appState, item: topItem)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                }
-
-                feedContent(excluding: topItem)
+                feedContent(topItem: topItem)
             }
             .navigationTitle("Trending")
             .navigationBarTitleDisplayMode(.inline)
@@ -276,7 +270,7 @@ private struct HomeView: View {
     }
 
     @ViewBuilder
-    private func feedContent(excluding topItem: ContentItem?) -> some View {
+    private func feedContent(topItem: ContentItem?) -> some View {
         Group {
             if appState.isLoading && !appState.hasLoadedContent {
                     VStack(spacing: 16) {
@@ -335,7 +329,14 @@ private struct HomeView: View {
                         discussionItems: discussionItems,
                         hasMore: appState.hasMorePages,
                         onLoadMore: { appState.loadMore() },
-                        scrollToTopTrigger: appState.homeScrollToTopTrigger
+                        scrollToTopTrigger: appState.homeScrollToTopTrigger,
+                        topContent: topItem.map { item in
+                            AnyView(
+                                HomeTopStoryCard(appState: appState, item: item)
+                                    .padding(.horizontal, 2)
+                                    .padding(.vertical, 4)
+                            )
+                        }
                     )
                     .overlay {
                         if appState.isLoading {
@@ -591,6 +592,7 @@ private struct FeedSectionListView: View {
     var hasMore: Bool = false
     var onLoadMore: (() -> Void)? = nil
     var scrollToTopTrigger: Int = 0
+    var topContent: AnyView? = nil
 
     private var firstAnchorID: ContentItem.ID? {
         articleItems.first?.id ?? discussionItems.first?.id
@@ -610,6 +612,14 @@ private struct FeedSectionListView: View {
 
     private var list: some View {
         List {
+            if let topContent {
+                Section {
+                    topContent
+                }
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                .listRowBackground(Color.clear)
+            }
+
             if showsSummary {
                 Section {
                     VStack(alignment: .leading, spacing: 2) {
@@ -1195,7 +1205,7 @@ private struct CommunityView: View {
         }
         else {
             List {
-                ForEach(community.posts) { post in
+                ForEach(community.filteredPosts(excludingUserIds: appState.blockedUserIds)) { post in
                     NavigationLink {
                         CommunityPostDetailView(appState: appState, post: post)
                     } label: {
@@ -1273,6 +1283,11 @@ private struct CommunityPostDetailView: View {
     let appState: AppState
     let post: CommunityPost
     @State private var showDeleteConfirm = false
+    @State private var showReportConfirm = false
+    @State private var showBlockConfirm = false
+    @State private var showOtherReasonInput = false
+    @State private var otherReasonText = ""
+    @State private var alreadyReported = false
     @Environment(\.dismiss) private var dismiss
 
     private var community: CommunityService { appState.communityService }
@@ -1388,6 +1403,27 @@ private struct CommunityPostDetailView: View {
                     }
                     .font(.footnote)
                 }
+                else if currentUserId != nil {
+                    HStack(spacing: 16) {
+                        Button("community.report") {
+                            showReportConfirm = true
+                        }
+                        .disabled(alreadyReported)
+                        .foregroundStyle(alreadyReported ? Color.secondary : Color.red)
+
+                        Button("community.blockUser") {
+                            showBlockConfirm = true
+                        }
+                        .foregroundStyle(.red)
+                    }
+                    .font(.footnote)
+
+                    if alreadyReported {
+                        Text("community.alreadyReported")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
             .padding(20)
         }
@@ -1399,6 +1435,54 @@ private struct CommunityPostDetailView: View {
                     dismiss()
                 }
             }
+        }
+        .confirmationDialog("community.reportConfirmTitle", isPresented: $showReportConfirm, titleVisibility: .visible) {
+            Button("community.reportReasonSpam") {
+                submitReport("spam")
+            }
+            Button("community.reportReasonInappropriate") {
+                submitReport("inappropriate")
+            }
+            Button("community.reportReasonOther") {
+                otherReasonText = ""
+                showOtherReasonInput = true
+            }
+        }
+        .alert("community.reportReasonOtherTitle", isPresented: $showOtherReasonInput) {
+            TextField("community.reportReasonOtherPlaceholder", text: $otherReasonText)
+                .onChange(of: otherReasonText) { _, new in
+                    if new.count > 200 { otherReasonText = String(new.prefix(200)) }
+                }
+            Button("Cancel", role: .cancel) {}
+            Button("community.report") {
+                let trimmed = otherReasonText.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { return }
+                submitReport("other: \(trimmed)")
+            }
+        } message: {
+            Text("community.reportReasonOtherMessage")
+        }
+        .confirmationDialog("community.blockConfirmTitle", isPresented: $showBlockConfirm, titleVisibility: .visible) {
+            Button("community.blockConfirmAction", role: .destructive) {
+                appState.blockUser(currentPost.authorId)
+                dismiss()
+            }
+        } message: {
+            Text("community.blockConfirmMessage")
+        }
+        .onAppear {
+            Task {
+                guard let uid = currentUserId else { return }
+                alreadyReported = await community.hasReportedPost(post.id, reporterId: uid)
+            }
+        }
+    }
+
+    private func submitReport(_ reason: String) {
+        guard let uid = currentUserId else { return }
+        Task {
+            await community.reportPost(currentPost, reporterId: uid, reason: reason)
+            alreadyReported = true
         }
     }
 }
@@ -1753,6 +1837,20 @@ private struct SettingsView: View {
                     Button("Reset topic selection", role: .destructive) {
                         appState.resetTopics()
                     }
+
+                    if !appState.blockedUserIds.isEmpty {
+                        NavigationLink {
+                            BlockedUsersView(appState: appState)
+                        } label: {
+                            HStack {
+                                Label("settings.blockedUsers", systemImage: "person.slash")
+                                Spacer()
+                                Text("\(appState.blockedUserIds.count)")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
                 } header: {
                     Text("App")
                 }
@@ -1892,6 +1990,7 @@ private struct SignInView: View {
                         .background {
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.white)
+                                .stroke(Color.accentColor, lineWidth: 1)
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
@@ -1916,6 +2015,7 @@ private struct SignInView: View {
                         .background {
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color.white)
+                                .stroke(Color.accentColor, lineWidth: 1)
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
@@ -2012,6 +2112,29 @@ private struct SignInView: View {
                 .fill(Color.secondary.opacity(0.3))
                 .frame(height: 1)
         }
+    }
+}
+
+private struct BlockedUsersView: View {
+    let appState: AppState
+
+    var body: some View {
+        List {
+            ForEach(Array(appState.blockedUserIds), id: \.self) { userId in
+                HStack {
+                    Text(userId)
+                        .font(.footnote)
+                        .lineLimit(1)
+                    Spacer()
+                    Button("settings.unblock") {
+                        appState.unblockUser(userId)
+                    }
+                    .font(.footnote)
+                }
+            }
+        }
+        .navigationTitle("settings.blockedUsers")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
