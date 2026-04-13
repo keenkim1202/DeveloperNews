@@ -447,6 +447,23 @@
         }
       }
     },
+    "auth.termsAgreement" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I have read and agree to the [Terms of Use](devnews://terms) and [Privacy Policy](devnews://privacy)."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "[이용약관](devnews://terms) 및 [개인정보 처리방침](devnews://privacy)을 읽고 동의합니다."
+          }
+        }
+      }
+    },
     "auth.signOut" : {
       "extractionState" : "manual",
       "localizations" : {
