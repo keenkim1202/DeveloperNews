@@ -2326,6 +2326,7 @@ private struct SettingsView: View {
     @State private var showEditName = false
     @State private var showEmojiPicker = false
     @State private var showFeedback = false
+    @State private var showDeleteAccountConfirm = false
     @State private var editingName = ""
     @State private var editingEmoji = ""
 
@@ -2379,6 +2380,20 @@ private struct SettingsView: View {
             .sheet(isPresented: $showFeedback) {
                 FeedbackView()
                     .presentationDetents([.large])
+            }
+            .confirmationDialog(
+                "auth.deleteAccount.confirmTitle",
+                isPresented: $showDeleteAccountConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("auth.deleteAccount.confirmAction", role: .destructive) {
+                    Task {
+                        await appState.deleteCurrentAccount()
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("auth.deleteAccount.confirmMessage")
             }
         }
     }
@@ -2593,9 +2608,7 @@ private struct SettingsView: View {
                 }
 
                 Button("auth.deleteAccount", role: .destructive) {
-                    Task {
-                        await appState.deleteCurrentAccount()
-                    }
+                    showDeleteAccountConfirm = true
                 }
             } header: {
                 Text("auth.account")

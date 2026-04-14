@@ -38,7 +38,11 @@ final class AuthService {
     func signInWithApple() async -> Bool {
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
+        defer {
+            isLoading = false
+            currentNonce = nil
+            appleSignInDelegate = nil
+        }
 
         let nonce = randomNonceString()
         currentNonce = nonce
@@ -224,7 +228,7 @@ final class AuthService {
         guard errorCode == errSecSuccess else {
             fatalError("Unable to generate nonce: \(errorCode)")
         }
-        let charset: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
+        let charset: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._")
         return String(randomBytes.map { charset[Int($0) % charset.count] })
     }
 

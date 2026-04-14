@@ -21,6 +21,7 @@ final class ProfileService {
     private let db = Firestore.firestore()
     private var listenerRegistration: ListenerRegistration?
     private var currentUser: FirebaseAuth.User?
+    private var profileCreationInFlight = false
 
     var displayName: String {
         if let name = profile?.displayName, !name.isEmpty {
@@ -72,6 +73,10 @@ final class ProfileService {
     }
 
     func createProfileIfNeeded(for user: FirebaseAuth.User) async {
+        guard !profileCreationInFlight else { return }
+        profileCreationInFlight = true
+        defer { profileCreationInFlight = false }
+
         let ref = db.collection("users").document(user.uid)
 
         do {
