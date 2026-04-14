@@ -267,6 +267,7 @@ struct ContentView: View {
     @State private var appState = AppState()
     @State private var showSplash = true
     @State private var isToastVisible = false
+    @State private var toastDismissTask: Task<Void, Never>?
     @Environment(\.scenePhase) private var scenePhase
 
     private static let staleThreshold: TimeInterval = 15 * 60
@@ -300,11 +301,13 @@ struct ContentView: View {
         }
         .onChange(of: appState.toastTrigger) { _, _ in
             guard appState.toastMessage != nil else { return }
+            toastDismissTask?.cancel()
             withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                 isToastVisible = true
             }
-            Task {
+            toastDismissTask = Task {
                 try? await Task.sleep(for: .seconds(3.5))
+                guard !Task.isCancelled else { return }
                 withAnimation(.easeInOut(duration: 0.3)) {
                     isToastVisible = false
                 }

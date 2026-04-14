@@ -50,6 +50,9 @@ final class AppState {
     var toastMessage: String?
     var toastTrigger: Int = 0
     var lastUpdatedAt: Date?
+
+    @ObservationIgnored
+    private var reloadGeneration: Int = 0
     var hasSeenIntro = false
     var topStoryDismissedAt: Date?
     var visibleItemLimit: Int = pageSize
@@ -475,10 +478,17 @@ final class AppState {
     }
 
     func reload(notifyOnFailure: Bool = true) async {
+        reloadGeneration += 1
+        let generation = reloadGeneration
         isLoading = true
         errorMessage = nil
 
         let result = await contentSourceClient.fetchItemsWithStatus(selectedTopics: selectedTopics)
+
+        guard generation == reloadGeneration else {
+            return
+        }
+
         allItems = result.items
         failedSourceNames = result.failedSourceNames
         lastUpdatedAt = .now
@@ -593,8 +603,7 @@ final class AppState {
                 .init(name: "GitHub Trending", client: GitHubTrendingSourceClient()),
                 .init(name: "Hacker News", client: HackerNewsSourceClient()),
                 .init(name: "Reddit", client: RedditSourceClient())
-            ],
-            fallbackClient: MockContentSourceClient()
+            ]
         )
     }
 }
