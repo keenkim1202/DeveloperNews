@@ -2587,26 +2587,16 @@ private struct SignInView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var isSignUp = false
-    @State private var hasAgreedToTerms = false
-    @State private var showPrivacyPolicy = false
-    @State private var showTermsOfUse = false
-
-    private var canSignUp: Bool { hasAgreedToTerms }
-    private var canSubmitEmail: Bool {
-        guard !email.isEmpty, !password.isEmpty else { return false }
-        return isSignUp ? hasAgreedToTerms : true
-    }
+    @State private var showConsentSheet = false
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
-                termsAgreementSection
-
                 VStack(spacing: 12) {
                     Button {
                         Task {
-                            await authService.signInWithApple()
-                            if authService.isSignedIn { dismiss() }
+                            let isNewUser = await authService.signInWithApple()
+                            handleSignInResult(isNewUser: isNewUser)
                         }
                     } label: {
                         HStack(spacing: 8) {
@@ -2625,15 +2615,13 @@ private struct SignInView: View {
                                 .stroke(Color.accentColor, lineWidth: 1)
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .opacity(canSignUp ? 1 : 0.5)
                     }
                     .buttonStyle(.plain)
-                    .disabled(!canSignUp)
 
                     Button {
                         Task {
-                            await authService.signInWithGoogle()
-                            if authService.isSignedIn { dismiss() }
+                            let isNewUser = await authService.signInWithGoogle()
+                            handleSignInResult(isNewUser: isNewUser)
                         }
                     } label: {
                         HStack(spacing: 8) {
@@ -2652,10 +2640,8 @@ private struct SignInView: View {
                                 .stroke(Color.accentColor, lineWidth: 1)
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .opacity(canSignUp ? 1 : 0.5)
                     }
                     .buttonStyle(.plain)
-                    .disabled(!canSignUp)
                 }
 
                 dividerWithText("auth.or")
@@ -2678,13 +2664,14 @@ private struct SignInView: View {
 
                     Button {
                         Task {
+                            let isNewUser: Bool
                             if isSignUp {
-                                await authService.signUpWithEmail(email, password: password)
+                                isNewUser = await authService.signUpWithEmail(email, password: password)
                             }
                             else {
-                                await authService.signInWithEmail(email, password: password)
+                                isNewUser = await authService.signInWithEmail(email, password: password)
                             }
-                            if authService.isSignedIn { dismiss() }
+                            handleSignInResult(isNewUser: isNewUser)
                         }
                     } label: {
                         Text(isSignUp ? LocalizedStringResource("auth.createAccount") : LocalizedStringResource("auth.signInWithEmail"))
@@ -2695,7 +2682,7 @@ private struct SignInView: View {
                             .background(Color.accentColor)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
-                    .disabled(!canSubmitEmail)
+                    .disabled(email.isEmpty || password.isEmpty)
 
                     Button {
                         isSignUp.toggle()
@@ -2733,47 +2720,32 @@ private struct SignInView: View {
                     ProgressView()
                 }
             }
-            .sheet(isPresented: $showPrivacyPolicy) {
-                NavigationStack { PrivacyPolicyView() }
-            }
-            .sheet(isPresented: $showTermsOfUse) {
-                NavigationStack { TermsOfUseView() }
+            .sheet(isPresented: $showConsentSheet) {
+                TermsConsentSheet(
+                    onAccept: {
+                        showConsentSheet = false
+                        dismiss()
+                    },
+                    onDecline: {
+                        Task {
+                            await authService.deleteAccount()
+                            authService.signOut()
+                            showConsentSheet = false
+                        }
+                    }
+                )
+                .interactiveDismissDisabled()
             }
         }
     }
 
-    private var termsAgreementSection: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Button {
-                hasAgreedToTerms.toggle()
-            } label: {
-                Image(systemName: hasAgreedToTerms ? "checkmark.square.fill" : "square")
-                    .font(.title3)
-                    .foregroundStyle(hasAgreedToTerms ? Color.accentColor : .secondary)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("auth.termsAgreement")
-            .accessibilityAddTraits(hasAgreedToTerms ? [.isSelected] : [])
-
-            Text(try! AttributedString(markdown: String(localized: "auth.termsAgreement"), options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .tint(Color.accentColor)
-                .environment(\.openURL, OpenURLAction { url in
-                    if url.scheme == "devnews" {
-                        if url.host == "terms" {
-                            showTermsOfUse = true
-                            return .handled
-                        }
-                        if url.host == "privacy" {
-                            showPrivacyPolicy = true
-                            return .handled
-                        }
-                    }
-                    return .systemAction
-                })
-
-            Spacer(minLength: 0)
+    private func handleSignInResult(isNewUser: Bool) {
+        guard authService.isSignedIn else { return }
+        if isNewUser {
+            showConsentSheet = true
+        }
+        else {
+            dismiss()
         }
     }
 
@@ -2788,6 +2760,70 @@ private struct SignInView: View {
             Rectangle()
                 .fill(Color.secondary.opacity(0.3))
                 .frame(height: 1)
+        }
+    }
+}
+
+private struct TermsConsentSheet: View {
+    let onAccept: () -> Void
+    let onDecline: () -> Void
+
+    @State private var showPrivacyPolicy = false
+    @State private var showTermsOfUse = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("auth.consent.title")
+                    .font(.title2.bold())
+
+                Text(try! AttributedString(markdown: String(localized: "auth.consent.body"), options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .tint(Color.accentColor)
+                    .environment(\.openURL, OpenURLAction { url in
+                        if url.scheme == "devnews" {
+                            if url.host == "terms" {
+                                showTermsOfUse = true
+                                return .handled
+                            }
+                            if url.host == "privacy" {
+                                showPrivacyPolicy = true
+                                return .handled
+                            }
+                        }
+                        return .systemAction
+                    })
+
+                Spacer()
+
+                VStack(spacing: 12) {
+                    Button(action: onAccept) {
+                        Text("auth.consent.accept")
+                            .font(.body.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .foregroundStyle(.white)
+                            .background(Color.accentColor)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button(action: onDecline) {
+                        Text("auth.consent.decline")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .padding(20)
+            .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showPrivacyPolicy) {
+                NavigationStack { PrivacyPolicyView() }
+            }
+            .sheet(isPresented: $showTermsOfUse) {
+                NavigationStack { TermsOfUseView() }
+            }
         }
     }
 }

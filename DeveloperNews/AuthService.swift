@@ -34,9 +34,11 @@ final class AuthService {
 
     // MARK: - Apple Sign In
 
-    func signInWithApple() async {
+    @discardableResult
+    func signInWithApple() async -> Bool {
         isLoading = true
         errorMessage = nil
+        defer { isLoading = false }
 
         let nonce = randomNonceString()
         currentNonce = nonce
@@ -61,7 +63,8 @@ final class AuthService {
                 fullName: appleIDCredential.fullName
             )
 
-            try await Auth.auth().signIn(with: credential)
+            let authResult = try await Auth.auth().signIn(with: credential)
+            return authResult.additionalUserInfo?.isNewUser ?? false
         }
         catch {
             let nsError = error as NSError
@@ -72,9 +75,8 @@ final class AuthService {
             else {
                 errorMessage = error.localizedDescription
             }
+            return false
         }
-
-        isLoading = false
     }
 
     private func performAppleSignIn(request: ASAuthorizationAppleIDRequest) async throws -> ASAuthorization {
@@ -91,9 +93,11 @@ final class AuthService {
 
     // MARK: - Google Sign In
 
-    func signInWithGoogle() async {
+    @discardableResult
+    func signInWithGoogle() async -> Bool {
         isLoading = true
         errorMessage = nil
+        defer { isLoading = false }
 
         do {
             guard let clientID = FirebaseApp.app()?.options.clientID else {
@@ -118,7 +122,8 @@ final class AuthService {
                 accessToken: result.user.accessToken.tokenString
             )
 
-            try await Auth.auth().signIn(with: credential)
+            let authResult = try await Auth.auth().signIn(with: credential)
+            return authResult.additionalUserInfo?.isNewUser ?? false
         }
         catch {
             if (error as NSError).code == GIDSignInError.canceled.rawValue {
@@ -127,39 +132,42 @@ final class AuthService {
             else {
                 errorMessage = error.localizedDescription
             }
+            return false
         }
-
-        isLoading = false
     }
 
     // MARK: - Email / Password
 
-    func signInWithEmail(_ email: String, password: String) async {
+    @discardableResult
+    func signInWithEmail(_ email: String, password: String) async -> Bool {
         isLoading = true
         errorMessage = nil
+        defer { isLoading = false }
 
         do {
             try await Auth.auth().signIn(withEmail: email, password: password)
+            return false
         }
         catch {
             errorMessage = error.localizedDescription
+            return false
         }
-
-        isLoading = false
     }
 
-    func signUpWithEmail(_ email: String, password: String) async {
+    @discardableResult
+    func signUpWithEmail(_ email: String, password: String) async -> Bool {
         isLoading = true
         errorMessage = nil
+        defer { isLoading = false }
 
         do {
             try await Auth.auth().createUser(withEmail: email, password: password)
+            return true
         }
         catch {
             errorMessage = error.localizedDescription
+            return false
         }
-
-        isLoading = false
     }
 
     // MARK: - Sign Out
