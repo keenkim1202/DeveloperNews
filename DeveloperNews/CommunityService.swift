@@ -64,7 +64,9 @@ final class CommunityService {
                 self.posts = documents.compactMap { doc in
                     Self.parsePost(doc)
                 }
-                Task { await self.fetchAuthorEmojis() }
+                Task { [weak self] in
+                    await self?.fetchAuthorEmojis()
+                }
             }
     }
 

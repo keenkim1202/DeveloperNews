@@ -38,7 +38,11 @@ final class AuthService {
     func signInWithApple() async -> Bool {
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
+        defer {
+            isLoading = false
+            currentNonce = nil
+            appleSignInDelegate = nil
+        }
 
         let nonce = randomNonceString()
         currentNonce = nonce

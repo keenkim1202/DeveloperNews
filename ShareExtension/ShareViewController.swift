@@ -141,22 +141,40 @@ class ShareViewController: UIViewController {
                 if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
                     group.enter()
                     provider.loadItem(forTypeIdentifier: UTType.url.identifier) { [weak self] data, _ in
+                        let resolved: String?
                         if let url = data as? URL {
-                            self?.sharedURL = url.absoluteString
+                            resolved = url.absoluteString
                         }
                         else if let urlData = data as? Data, let url = URL(dataRepresentation: urlData, relativeTo: nil) {
-                            self?.sharedURL = url.absoluteString
+                            resolved = url.absoluteString
                         }
-                        group.leave()
+                        else {
+                            resolved = nil
+                        }
+                        DispatchQueue.main.async {
+                            if let resolved {
+                                self?.sharedURL = resolved
+                            }
+                            group.leave()
+                        }
                     }
                 }
                 else if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
                     group.enter()
                     provider.loadItem(forTypeIdentifier: UTType.plainText.identifier) { [weak self] data, _ in
+                        let resolved: String?
                         if let text = data as? String, URL(string: text) != nil, text.hasPrefix("http") {
-                            self?.sharedURL = text
+                            resolved = text
                         }
-                        group.leave()
+                        else {
+                            resolved = nil
+                        }
+                        DispatchQueue.main.async {
+                            if let resolved {
+                                self?.sharedURL = resolved
+                            }
+                            group.leave()
+                        }
                     }
                 }
             }
