@@ -205,11 +205,6 @@ extension RSSSourceClient {
             defaultTopics: [.backend, .ai]
         ),
         RSSFeedDefinition(
-            sourceName: "Meta Engineering",
-            feedURL: URL(string: "https://engineering.fb.com/feed/")!,
-            defaultTopics: [.backend, .ai]
-        ),
-        RSSFeedDefinition(
             sourceName: "Vercel",
             feedURL: URL(string: "https://vercel.com/atom")!,
             defaultTopics: [.web, .product]
