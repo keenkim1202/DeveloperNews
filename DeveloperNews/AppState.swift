@@ -349,7 +349,7 @@ final class AppState {
 
         do {
             try await communityService.deleteUserContent(uid: uid)
-            try await profileService.deleteProfileAndRelations(uid: uid)
+            try await profileService.deleteOwnProfile(uid: uid)
         }
         catch {
             authService.setErrorMessage(error.localizedDescription)
