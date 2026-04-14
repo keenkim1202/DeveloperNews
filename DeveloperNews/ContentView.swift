@@ -2587,6 +2587,7 @@ private struct SignInView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var isSignUp = false
+    @State private var showConsentSheet = false
 
     var body: some View {
         NavigationStack {
@@ -2594,8 +2595,8 @@ private struct SignInView: View {
                 VStack(spacing: 12) {
                     Button {
                         Task {
-                            await authService.signInWithApple()
-                            if authService.isSignedIn { dismiss() }
+                            let isNewUser = await authService.signInWithApple()
+                            handleSignInResult(isNewUser: isNewUser)
                         }
                     } label: {
                         HStack(spacing: 8) {
@@ -2619,8 +2620,8 @@ private struct SignInView: View {
 
                     Button {
                         Task {
-                            await authService.signInWithGoogle()
-                            if authService.isSignedIn { dismiss() }
+                            let isNewUser = await authService.signInWithGoogle()
+                            handleSignInResult(isNewUser: isNewUser)
                         }
                     } label: {
                         HStack(spacing: 8) {
@@ -2663,13 +2664,14 @@ private struct SignInView: View {
 
                     Button {
                         Task {
+                            let isNewUser: Bool
                             if isSignUp {
-                                await authService.signUpWithEmail(email, password: password)
+                                isNewUser = await authService.signUpWithEmail(email, password: password)
                             }
                             else {
-                                await authService.signInWithEmail(email, password: password)
+                                isNewUser = await authService.signInWithEmail(email, password: password)
                             }
-                            if authService.isSignedIn { dismiss() }
+                            handleSignInResult(isNewUser: isNewUser)
                         }
                     } label: {
                         Text(isSignUp ? LocalizedStringResource("auth.createAccount") : LocalizedStringResource("auth.signInWithEmail"))
@@ -2718,6 +2720,32 @@ private struct SignInView: View {
                     ProgressView()
                 }
             }
+            .sheet(isPresented: $showConsentSheet) {
+                TermsConsentSheet(
+                    onAccept: {
+                        showConsentSheet = false
+                        dismiss()
+                    },
+                    onDecline: {
+                        Task {
+                            await authService.deleteAccount()
+                            authService.signOut()
+                            showConsentSheet = false
+                        }
+                    }
+                )
+                .interactiveDismissDisabled()
+            }
+        }
+    }
+
+    private func handleSignInResult(isNewUser: Bool) {
+        guard authService.isSignedIn else { return }
+        if isNewUser {
+            showConsentSheet = true
+        }
+        else {
+            dismiss()
         }
     }
 
@@ -2732,6 +2760,70 @@ private struct SignInView: View {
             Rectangle()
                 .fill(Color.secondary.opacity(0.3))
                 .frame(height: 1)
+        }
+    }
+}
+
+private struct TermsConsentSheet: View {
+    let onAccept: () -> Void
+    let onDecline: () -> Void
+
+    @State private var showPrivacyPolicy = false
+    @State private var showTermsOfUse = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("auth.consent.title")
+                    .font(.title2.bold())
+
+                Text(try! AttributedString(markdown: String(localized: "auth.consent.body"), options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .tint(Color.accentColor)
+                    .environment(\.openURL, OpenURLAction { url in
+                        if url.scheme == "devnews" {
+                            if url.host == "terms" {
+                                showTermsOfUse = true
+                                return .handled
+                            }
+                            if url.host == "privacy" {
+                                showPrivacyPolicy = true
+                                return .handled
+                            }
+                        }
+                        return .systemAction
+                    })
+
+                Spacer()
+
+                VStack(spacing: 12) {
+                    Button(action: onAccept) {
+                        Text("auth.consent.accept")
+                            .font(.body.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .foregroundStyle(.white)
+                            .background(Color.accentColor)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
+
+                    Button(action: onDecline) {
+                        Text("auth.consent.decline")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .padding(20)
+            .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showPrivacyPolicy) {
+                NavigationStack { PrivacyPolicyView() }
+            }
+            .sheet(isPresented: $showTermsOfUse) {
+                NavigationStack { TermsOfUseView() }
+            }
         }
     }
 }
@@ -2842,50 +2934,28 @@ private struct SourcesAttributionView: View {
 }
 
 private struct PrivacyPolicyView: View {
+    private static let notionURL = URL(string: "https://profuse-scaffold-962.notion.site/PrivacyInfo-34138d63664180fc9fb0d2604090aad5")!
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Group {
-                    sectionHeader("What we collect")
-                    sectionBody("DeveloperNews does not run analytics or third-party tracking SDKs. However, if you sign in with Apple, Google, or email, we collect your email address and display name through Firebase Authentication to manage your account.")
+        SimpleWebView(url: Self.notionURL)
+            .ignoresSafeArea(edges: .bottom)
+            .navigationTitle("Privacy policy")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .tabBar)
+    }
+}
 
-                    sectionHeader("Authentication")
-                    sectionBody("Sign-in is powered by Firebase Authentication, a service provided by Google. When you sign in, Firebase stores your email, display name, and account creation date. You can delete your account at any time from Settings, which removes your authentication data from Firebase.")
+private struct SimpleWebView: UIViewRepresentable {
+    let url: URL
 
-                    sectionHeader("On-device storage")
-                    sectionBody("Your selected topics, saved stories, and preferences are stored only on your device using the system defaults database. They never leave the device unless iCloud sync is enabled by you in iOS settings.")
-
-                    sectionHeader("Network requests")
-                    sectionBody("To populate the feed the app requests publicly available content from RSS feeds, the Hacker News API, and the GitHub API. These services may log your IP address and User-Agent like any other web request.")
-
-                    sectionHeader("Article web view")
-                    sectionBody("When you open a story the original publisher's web page loads inside an in-app browser. The publisher's own cookies, scripts, and trackers run as if you visited the page in Safari.")
-
-                    sectionHeader("Advertising")
-                    sectionBody("If a future version of the app includes advertising, an additional consent screen will be shown before any advertising SDK collects identifiers, in line with Apple's App Tracking Transparency policy.")
-
-                    sectionHeader("Contact")
-                    sectionBody("Questions about this policy can be sent through the feedback link in Settings.")
-                }
-            }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .navigationTitle("Privacy policy")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .tabBar)
+    func makeUIView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        webView.allowsBackForwardNavigationGestures = true
+        webView.load(URLRequest(url: url))
+        return webView
     }
 
-    private func sectionHeader(_ text: String) -> some View {
-        Text(text)
-            .font(.headline)
-    }
-
-    private func sectionBody(_ text: String) -> some View {
-        Text(text)
-            .font(.body)
-            .foregroundStyle(.secondary)
-    }
+    func updateUIView(_ webView: WKWebView, context: Context) {}
 }
 
 private struct TermsOfUseView: View {

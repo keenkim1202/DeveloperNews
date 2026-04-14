@@ -447,6 +447,74 @@
         }
       }
     },
+    "auth.consent.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Before you continue"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "시작하기 전에"
+          }
+        }
+      }
+    },
+    "auth.consent.body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To create your account, please review and agree to our [Terms of Use](devnews://terms) and [Privacy Policy](devnews://privacy). You can revisit them anytime from Settings."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계정을 만들기 위해 [이용약관](devnews://terms)과 [개인정보 처리방침](devnews://privacy)을 확인하고 동의해 주세요. 설정에서 언제든 다시 확인할 수 있습니다."
+          }
+        }
+      }
+    },
+    "auth.consent.accept" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I agree and continue"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "동의하고 계속하기"
+          }
+        }
+      }
+    },
+    "auth.consent.decline" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decline and cancel sign-up"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "거부하고 가입 취소"
+          }
+        }
+      }
+    },
     "auth.signOut" : {
       "extractionState" : "manual",
       "localizations" : {

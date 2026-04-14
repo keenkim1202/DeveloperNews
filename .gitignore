@@ -52,6 +52,8 @@ Carthage/Build/
 # Misc
 .DS_Store
 */.DS_Store
+.env
+build/
 
 # Firebase
 GoogleService-Info.plist
@@ -68,6 +70,9 @@ GoogleService-Info.plist
 # https://docs.fastlane.tools/best-practices/source-control/#source-control
 
 fastlane/report.xml
+fastlane/README.md
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+fastlane/DerivedData
+*.mobileprovision
