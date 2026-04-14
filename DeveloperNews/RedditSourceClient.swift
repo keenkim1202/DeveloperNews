@@ -150,7 +150,7 @@ extension RedditSourceClient {
         RedditFeedDefinition(subreddit: "android", defaultTopics: [.android]),
         RedditFeedDefinition(subreddit: "Kotlin", defaultTopics: [.android]),
         RedditFeedDefinition(subreddit: "jetpackcompose", defaultTopics: [.android]),
-        RedditFeedDefinition(subreddit: "Flutter", defaultTopics: [.android, .ios]),
+        RedditFeedDefinition(subreddit: "FlutterDev", defaultTopics: [.android, .ios]),
         RedditFeedDefinition(subreddit: "AndroidStudio", defaultTopics: [.android]),
         RedditFeedDefinition(subreddit: "Kotlin_Multiplatform", defaultTopics: [.android, .ios]),
         RedditFeedDefinition(subreddit: "javascript", defaultTopics: [.web]),

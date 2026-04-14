@@ -11,10 +11,14 @@ struct DevToSourceClient: ContentSourceClient {
 
     func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem] {
         var components = URLComponents(string: "https://dev.to/api/articles")!
-        components.queryItems = [
+        var queryItems: [URLQueryItem] = [
             URLQueryItem(name: "top", value: "7"),
             URLQueryItem(name: "per_page", value: "\(fetchLimit(for: selectedTopics))")
         ]
+        if selectedTopics.count == 1, let topic = selectedTopics.first, let tag = Self.devToTag(for: topic) {
+            queryItems.append(URLQueryItem(name: "tag", value: tag))
+        }
+        components.queryItems = queryItems
         guard let url = components.url else { return [] }
 
         var request = URLRequest(url: url)
@@ -48,6 +52,18 @@ struct DevToSourceClient: ContentSourceClient {
 
     private func fetchLimit(for selectedTopics: Set<Topic>) -> Int {
         selectedTopics.count == 1 ? max(30, maxItems) : maxItems
+    }
+
+    private static func devToTag(for topic: Topic) -> String? {
+        switch topic {
+        case .ios: "swift"
+        case .android: "android"
+        case .web: "webdev"
+        case .backend: "backend"
+        case .ai: "ai"
+        case .security: "security"
+        case .product: "productivity"
+        }
     }
 
     private func trendScore(reactions: Int, comments: Int) -> Int {
