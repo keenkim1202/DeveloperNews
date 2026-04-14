@@ -266,6 +266,7 @@ private let relativeDateFormatter: RelativeDateTimeFormatter = {
 struct ContentView: View {
     @State private var appState = AppState()
     @State private var showSplash = true
+    @State private var isToastVisible = false
     @Environment(\.scenePhase) private var scenePhase
 
     private static let staleThreshold: TimeInterval = 15 * 60
@@ -287,6 +288,26 @@ struct ContentView: View {
             }
             else {
                 TopicSelectionView(appState: appState)
+            }
+        }
+        .overlay(alignment: .top) {
+            if isToastVisible, let message = appState.toastMessage {
+                ToastView(message: message)
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .allowsHitTesting(false)
+            }
+        }
+        .onChange(of: appState.toastTrigger) { _, _ in
+            guard appState.toastMessage != nil else { return }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                isToastVisible = true
+            }
+            Task {
+                try? await Task.sleep(for: .seconds(3.5))
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isToastVisible = false
+                }
             }
         }
         .onChange(of: scenePhase) { _, newPhase in
@@ -316,6 +337,26 @@ struct ContentView: View {
             appState.communityService.startListening()
             appState.processPendingSharedItems()
         }
+    }
+}
+
+private struct ToastView: View {
+    let message: String
+
+    var body: some View {
+        Text(message)
+            .font(.footnote.weight(.medium))
+            .foregroundStyle(.white)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background {
+                Capsule()
+                    .fill(Color.black.opacity(0.85))
+            }
+            .shadow(color: Color.black.opacity(0.25), radius: 8, y: 3)
+            .padding(.horizontal, 24)
+            .frame(maxWidth: .infinity)
     }
 }
 

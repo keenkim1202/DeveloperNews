@@ -8,8 +8,26 @@ enum AppContact {
     static let termsOfUseURL = URL(string: "https://github.com/keenkim1202/DeveloperNews#terms")!
 }
 
+struct SourceFetchResult {
+    let items: [ContentItem]
+    let failedSourceNames: [String]
+    let totalSourceCount: Int
+}
+
 protocol ContentSourceClient {
     func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem]
+}
+
+extension ContentSourceClient {
+    func fetchItemsWithStatus(selectedTopics: Set<Topic>) async -> SourceFetchResult {
+        do {
+            let items = try await fetchItems(selectedTopics: selectedTopics)
+            return SourceFetchResult(items: items, failedSourceNames: [], totalSourceCount: 1)
+        }
+        catch {
+            return SourceFetchResult(items: [], failedSourceNames: [], totalSourceCount: 1)
+        }
+    }
 }
 
 struct MockContentSourceClient: ContentSourceClient {
@@ -20,6 +38,11 @@ struct MockContentSourceClient: ContentSourceClient {
 }
 
 struct CompositeContentSourceClient: ContentSourceClient {
+    struct NamedClient {
+        let name: String
+        let client: any ContentSourceClient
+    }
+
     private static let sourceTrustBonus: [String: Int] = [
         "GitHub Blog": 5,
         "Swift with Majid": 4,
@@ -29,31 +52,62 @@ struct CompositeContentSourceClient: ContentSourceClient {
         "Hacker News": 2
     ]
 
-    let clients: [any ContentSourceClient]
+    let namedClients: [NamedClient]
     let fallbackClient: any ContentSourceClient
 
     func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem] {
-        let collectedItems = await withTaskGroup(of: [ContentItem].self) { group in
-            for client in clients {
+        await fetchItemsWithStatus(selectedTopics: selectedTopics).items
+    }
+
+    func fetchItemsWithStatus(selectedTopics: Set<Topic>) async -> SourceFetchResult {
+        let outcomes = await withTaskGroup(of: (String, [ContentItem]?).self) { group in
+            for named in namedClients {
                 group.addTask {
-                    (try? await client.fetchItems(selectedTopics: selectedTopics)) ?? []
+                    do {
+                        let items = try await named.client.fetchItems(selectedTopics: selectedTopics)
+                        return (named.name, items)
+                    }
+                    catch {
+                        return (named.name, nil)
+                    }
                 }
             }
 
-            var combined: [ContentItem] = []
-            for await items in group {
-                combined.append(contentsOf: items)
+            var results: [(String, [ContentItem]?)] = []
+            for await result in group {
+                results.append(result)
             }
-            return combined
+            return results
+        }
+
+        var collectedItems: [ContentItem] = []
+        var failedSourceNames: [String] = []
+        for (name, maybeItems) in outcomes {
+            if let items = maybeItems {
+                collectedItems.append(contentsOf: items)
+            }
+            else {
+                failedSourceNames.append(name)
+            }
         }
 
         if collectedItems.isEmpty {
-            return try await fallbackClient.fetchItems(selectedTopics: selectedTopics)
+            let fallbackItems = (try? await fallbackClient.fetchItems(selectedTopics: selectedTopics)) ?? []
+            return SourceFetchResult(
+                items: fallbackItems,
+                failedSourceNames: failedSourceNames,
+                totalSourceCount: namedClients.count
+            )
         }
 
         let weighted = collectedItems.map(applyingSourceTrust)
         let normalized = normalizingScoresPerSource(weighted)
-        return deduplicatedItems(from: normalized)
+        let dedup = deduplicatedItems(from: normalized)
+        return SourceFetchResult(
+            items: dedup,
+            failedSourceNames: failedSourceNames,
+            totalSourceCount: namedClients.count
+        )
     }
 
     private func normalizingScoresPerSource(_ items: [ContentItem]) -> [ContentItem] {

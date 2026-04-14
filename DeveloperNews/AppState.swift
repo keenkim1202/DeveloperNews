@@ -46,6 +46,9 @@ final class AppState {
     var allItems: [ContentItem] = []
     var isLoading = false
     var errorMessage: String?
+    var failedSourceNames: [String] = []
+    var toastMessage: String?
+    var toastTrigger: Int = 0
     var lastUpdatedAt: Date?
     var hasSeenIntro = false
     var topStoryDismissedAt: Date?
@@ -468,21 +471,29 @@ final class AppState {
             return
         }
 
-        await reload()
+        await reload(notifyOnFailure: false)
     }
 
-    func reload() async {
+    func reload(notifyOnFailure: Bool = true) async {
         isLoading = true
         errorMessage = nil
 
-        do {
-            allItems = try await contentSourceClient.fetchItems(selectedTopics: selectedTopics)
-            lastUpdatedAt = .now
-            resetPagination()
-            persistState()
-        }
-        catch {
+        let result = await contentSourceClient.fetchItemsWithStatus(selectedTopics: selectedTopics)
+        allItems = result.items
+        failedSourceNames = result.failedSourceNames
+        lastUpdatedAt = .now
+        resetPagination()
+        persistState()
+
+        if result.totalSourceCount > 0,
+           result.failedSourceNames.count == result.totalSourceCount,
+           result.items.isEmpty {
             errorMessage = String(localized: "error.unableToLoad")
+        }
+
+        if notifyOnFailure, !result.failedSourceNames.isEmpty {
+            toastMessage = String(localized: "toast.sourcesUnavailable")
+            toastTrigger += 1
         }
 
         isLoading = false
@@ -576,12 +587,12 @@ final class AppState {
 
     private static func defaultContentSourceClient() -> any ContentSourceClient {
         CompositeContentSourceClient(
-            clients: [
-                RSSSourceClient(),
-                DevToSourceClient(),
-                GitHubTrendingSourceClient(),
-                HackerNewsSourceClient(),
-                RedditSourceClient()
+            namedClients: [
+                .init(name: "Blogs & articles", client: RSSSourceClient()),
+                .init(name: "DEV.to", client: DevToSourceClient()),
+                .init(name: "GitHub Trending", client: GitHubTrendingSourceClient()),
+                .init(name: "Hacker News", client: HackerNewsSourceClient()),
+                .init(name: "Reddit", client: RedditSourceClient())
             ],
             fallbackClient: MockContentSourceClient()
         )
