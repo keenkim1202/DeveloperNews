@@ -5,7 +5,6 @@ import Foundation
 struct UserProfile: Codable {
     let uid: String
     var displayName: String
-    var email: String?
     var photoURL: String?
     var profileEmoji: String?
     var followedUserIds: Set<String>
@@ -56,7 +55,6 @@ final class ProfileService {
             self?.profile = UserProfile(
                 uid: user.uid,
                 displayName: data["displayName"] as? String ?? "",
-                email: data["email"] as? String,
                 photoURL: data["photoURL"] as? String,
                 profileEmoji: data["profileEmoji"] as? String,
                 followedUserIds: Set(followedArray),
@@ -83,8 +81,8 @@ final class ProfileService {
             let now = FieldValue.serverTimestamp()
             try await ref.setData([
                 "displayName": user.displayName ?? "",
-                "email": user.email ?? "",
                 "photoURL": user.photoURL?.absoluteString ?? "",
+                "followedUserIds": [String](),
                 "createdAt": now,
                 "updatedAt": now,
             ])
@@ -189,18 +187,8 @@ final class ProfileService {
         }
     }
 
-    func deleteProfileAndRelations(uid: String) async throws {
-        let followers = try await db.collection("users")
-            .whereField("followedUserIds", arrayContains: uid)
-            .getDocuments()
-        for doc in followers.documents {
-            try await doc.reference.updateData([
-                "followedUserIds": FieldValue.arrayRemove([uid]),
-            ])
-        }
-
+    func deleteOwnProfile(uid: String) async throws {
         try await db.collection("users").document(uid).delete()
-
         stopListening()
     }
 }
