@@ -179,15 +179,30 @@ final class CommunityService {
         let idsToFetch = authorIds.filter { authorEmojiCache[$0] == nil }
         guard !idsToFetch.isEmpty else { return }
 
-        for uid in idsToFetch {
-            do {
-                let snapshot = try await db.collection("users").document(uid).getDocument()
-                let emoji = (snapshot.data()?["profileEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 }
-                authorEmojiCache[uid] = emoji
+        let db = self.db
+        let fetched = await withTaskGroup(of: (String, String?).self) { group in
+            for uid in idsToFetch {
+                group.addTask {
+                    do {
+                        let snapshot = try await db.collection("users").document(uid).getDocument()
+                        let emoji = (snapshot.data()?["profileEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+                        return (uid, emoji)
+                    }
+                    catch {
+                        return (uid, nil)
+                    }
+                }
             }
-            catch {
-                // skip
+
+            var results: [(String, String?)] = []
+            for await result in group {
+                results.append(result)
             }
+            return results
+        }
+
+        for (uid, emoji) in fetched {
+            authorEmojiCache[uid] = emoji
         }
     }
 
