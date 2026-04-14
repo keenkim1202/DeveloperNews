@@ -184,18 +184,35 @@ final class AuthService {
 
     // MARK: - Delete Account
 
-    func deleteAccount() async {
+    func setErrorMessage(_ message: String?) {
+        errorMessage = message
+    }
+
+    @discardableResult
+    func deleteAccount() async -> DeleteAccountResult {
         isLoading = true
         errorMessage = nil
+        defer { isLoading = false }
+
+        guard let user else {
+            return .failed
+        }
 
         do {
-            try await user?.delete()
+            try await user.delete()
+            return .success
         }
         catch {
+            let nsError = error as NSError
+            if nsError.domain == AuthErrorDomain,
+               nsError.code == AuthErrorCode.requiresRecentLogin.rawValue {
+                signOut()
+                errorMessage = String(localized: "auth.error.requiresRecentLogin")
+                return .requiresRecentLogin
+            }
             errorMessage = error.localizedDescription
+            return .failed
         }
-
-        isLoading = false
     }
 
     // MARK: - Helpers
@@ -244,4 +261,10 @@ enum AuthError: LocalizedError {
         case .missingRootViewController: String(localized: "auth.error.missingRootViewController")
         }
     }
+}
+
+enum DeleteAccountResult {
+    case success
+    case requiresRecentLogin
+    case failed
 }

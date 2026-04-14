@@ -196,6 +196,32 @@ final class CommunityService {
         return posts.filter { !blockedIds.contains($0.authorId) }
     }
 
+    func deleteUserContent(uid: String) async throws {
+        let ownPosts = try await postsRef
+            .whereField("authorId", isEqualTo: uid)
+            .getDocuments()
+        for doc in ownPosts.documents {
+            try await doc.reference.delete()
+        }
+
+        let likedPosts = try await postsRef
+            .whereField("likedBy", arrayContains: uid)
+            .getDocuments()
+        for doc in likedPosts.documents {
+            try await doc.reference.updateData([
+                "likedBy": FieldValue.arrayRemove([uid]),
+                "likeCount": FieldValue.increment(Int64(-1)),
+            ])
+        }
+
+        let submittedReports = try await db.collection("reports")
+            .whereField("reporterId", isEqualTo: uid)
+            .getDocuments()
+        for doc in submittedReports.documents {
+            try await doc.reference.delete()
+        }
+    }
+
     func toggleLike(_ post: CommunityPost, userId: String) async {
         let ref = postsRef.document(post.id)
         let isLiked = post.likedBy.contains(userId)
