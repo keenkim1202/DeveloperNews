@@ -294,6 +294,40 @@
         }
       }
     },
+    "auth.error.requiresRecentLogin" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For your security, please sign in again and delete your account right after."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보안을 위해 다시 로그인한 다음 바로 계정 삭제를 진행해 주세요."
+          }
+        }
+      }
+    },
+    "auth.error.deleteFailed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not delete your account. Please check your connection and try again."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계정을 삭제하지 못했습니다. 연결 상태를 확인한 뒤 다시 시도해 주세요."
+          }
+        }
+      }
+    },
     "auth.error.missingRootViewController" : {
       "extractionState" : "manual",
       "localizations" : {

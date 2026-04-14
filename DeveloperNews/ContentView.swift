@@ -2296,7 +2296,7 @@ private struct SettingsView: View {
                     }
             }
             .sheet(isPresented: $showSignIn) {
-                SignInView(authService: appState.authService)
+                SignInView(appState: appState)
             }
             .alert("profile.editName", isPresented: $showEditName) {
                 TextField("profile.namePlaceholder", text: $editingName)
@@ -2550,8 +2550,7 @@ private struct SettingsView: View {
 
                 Button("auth.deleteAccount", role: .destructive) {
                     Task {
-                        await profile.deleteProfile()
-                        await auth.deleteAccount()
+                        await appState.deleteCurrentAccount()
                     }
                 }
             } header: {
@@ -2581,13 +2580,15 @@ private struct SettingsView: View {
 }
 
 private struct SignInView: View {
-    let authService: AuthService
+    let appState: AppState
     @Environment(\.dismiss) private var dismiss
 
     @State private var email = ""
     @State private var password = ""
     @State private var isSignUp = false
     @State private var showConsentSheet = false
+
+    private var authService: AuthService { appState.authService }
 
     var body: some View {
         NavigationStack {
@@ -2728,7 +2729,10 @@ private struct SignInView: View {
                     },
                     onDecline: {
                         Task {
-                            await authService.deleteAccount()
+                            let result = await appState.deleteCurrentAccount()
+                            if result == .failed {
+                                authService.setErrorMessage(String(localized: "auth.error.deleteFailed"))
+                            }
                             authService.signOut()
                             showConsentSheet = false
                         }

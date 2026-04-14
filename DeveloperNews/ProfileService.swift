@@ -189,15 +189,17 @@ final class ProfileService {
         }
     }
 
-    func deleteProfile() async {
-        guard let uid = currentUser?.uid else { return }
+    func deleteProfileAndRelations(uid: String) async throws {
+        let followers = try await db.collection("users")
+            .whereField("followedUserIds", arrayContains: uid)
+            .getDocuments()
+        for doc in followers.documents {
+            try await doc.reference.updateData([
+                "followedUserIds": FieldValue.arrayRemove([uid]),
+            ])
+        }
 
-        do {
-            try await db.collection("users").document(uid).delete()
-        }
-        catch {
-            errorMessage = error.localizedDescription
-        }
+        try await db.collection("users").document(uid).delete()
 
         stopListening()
     }

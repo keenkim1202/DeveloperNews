@@ -343,6 +343,22 @@ final class AppState {
         persistState()
     }
 
+    @discardableResult
+    func deleteCurrentAccount() async -> DeleteAccountResult {
+        guard let uid = authService.userId else { return .failed }
+
+        do {
+            try await communityService.deleteUserContent(uid: uid)
+            try await profileService.deleteProfileAndRelations(uid: uid)
+        }
+        catch {
+            authService.setErrorMessage(error.localizedDescription)
+            return .failed
+        }
+
+        return await authService.deleteAccount()
+    }
+
     func toggleSaved(_ item: ContentItem) {
         if savedItemSnapshots[item.url] != nil {
             savedItemSnapshots[item.url] = nil
