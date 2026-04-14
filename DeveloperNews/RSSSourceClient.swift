@@ -182,6 +182,76 @@ extension RSSSourceClient {
             sourceName: "Apple Developer News",
             feedURL: URL(string: "https://developer.apple.com/news/rss/news.rss")!,
             defaultTopics: [.ios]
+        ),
+        RSSFeedDefinition(
+            sourceName: "NSHipster",
+            feedURL: URL(string: "https://nshipster.com/feed.xml")!,
+            defaultTopics: [.ios]
+        ),
+        RSSFeedDefinition(
+            sourceName: "SwiftLee",
+            feedURL: URL(string: "https://www.avanderlee.com/feed/")!,
+            defaultTopics: [.ios]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Hugging Face",
+            feedURL: URL(string: "https://huggingface.co/blog/feed.xml")!,
+            defaultTopics: [.ai]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Simon Willison",
+            feedURL: URL(string: "https://simonwillison.net/atom/everything/")!,
+            defaultTopics: [.ai, .backend]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Dropbox Tech",
+            feedURL: URL(string: "https://dropbox.tech/feed")!,
+            defaultTopics: [.backend]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Spotify Engineering",
+            feedURL: URL(string: "https://engineering.atspotify.com/feed")!,
+            defaultTopics: [.backend, .ai]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Meta Engineering",
+            feedURL: URL(string: "https://engineering.fb.com/feed/")!,
+            defaultTopics: [.backend, .ai]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Vercel",
+            feedURL: URL(string: "https://vercel.com/atom")!,
+            defaultTopics: [.web, .product]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Julia Evans",
+            feedURL: URL(string: "https://jvns.ca/atom.xml")!,
+            defaultTopics: [.backend, .security]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Martin Fowler",
+            feedURL: URL(string: "https://martinfowler.com/feed.atom")!,
+            defaultTopics: [.backend, .product]
+        ),
+        RSSFeedDefinition(
+            sourceName: "web.dev",
+            feedURL: URL(string: "https://web.dev/feed.xml")!,
+            defaultTopics: [.web]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Smashing Magazine",
+            feedURL: URL(string: "https://www.smashingmagazine.com/feed/")!,
+            defaultTopics: [.web, .product]
+        ),
+        RSSFeedDefinition(
+            sourceName: "Krebs on Security",
+            feedURL: URL(string: "https://krebsonsecurity.com/feed/")!,
+            defaultTopics: [.security]
+        ),
+        RSSFeedDefinition(
+            sourceName: "The Pragmatic Engineer",
+            feedURL: URL(string: "https://newsletter.pragmaticengineer.com/feed")!,
+            defaultTopics: [.backend, .product]
         )
     ]
 }
