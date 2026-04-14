@@ -872,6 +872,8 @@ private struct FeedSectionListView: View {
     var scrollToTopTrigger: Int = 0
     var topContent: AnyView? = nil
 
+    @State private var selectedAuthor: AuthorInfo?
+
     private var firstAnchorID: ContentItem.ID? {
         articleItems.first?.id ?? discussionItems.first?.id
     }
@@ -885,6 +887,14 @@ private struct FeedSectionListView: View {
                         proxy.scrollTo(anchor, anchor: .top)
                     }
                 }
+        }
+        .navigationDestination(item: $selectedAuthor) { author in
+            UserProfileView(
+                appState: appState,
+                authorId: author.id,
+                authorName: author.name,
+                authorEmoji: author.emoji
+            )
         }
     }
 
@@ -918,7 +928,7 @@ private struct FeedSectionListView: View {
             if !articleItems.isEmpty {
                 Section {
                     ForEach(articleItems) { item in
-                        FeedItemRow(appState: appState, item: item)
+                        FeedItemRow(appState: appState, item: item, selectedAuthor: $selectedAuthor)
                     }
                 }
             }
@@ -926,7 +936,7 @@ private struct FeedSectionListView: View {
             if !discussionItems.isEmpty {
                 Section("Discussions") {
                     ForEach(discussionItems) { item in
-                        FeedItemRow(appState: appState, item: item)
+                        FeedItemRow(appState: appState, item: item, selectedAuthor: $selectedAuthor)
                     }
                 }
             }
@@ -1113,12 +1123,12 @@ private struct HomeTopStoryThumbnail: View {
 private struct FeedItemRow: View {
     let appState: AppState
     let item: ContentItem
+    var selectedAuthor: Binding<AuthorInfo?>
 
     private var translator: ContentTranslator { appState.translator }
 
     @State private var translationTrigger = 0
     @State private var showingTranslation = false
-    @State private var showAuthorProfile = false
 
     private var displayTitle: String {
         showingTranslation ? translator.title(for: item) : item.title
@@ -1151,7 +1161,12 @@ private struct FeedItemRow: View {
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 FeedItemMetaView(appState: appState, item: item, authorEmoji: followingPost.flatMap { appState.communityService.authorEmoji(for: $0.authorId) }) {
-                    showAuthorProfile = true
+                    guard let post = followingPost else { return }
+                    selectedAuthor.wrappedValue = AuthorInfo(
+                        id: post.authorId,
+                        name: post.authorName,
+                        emoji: appState.communityService.authorEmoji(for: post.authorId)
+                    )
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -1227,11 +1242,6 @@ private struct FeedItemRow: View {
                         await translator.translateSingle(item, using: session)
                         showingTranslation = true
                     }
-            }
-        }
-        .navigationDestination(isPresented: $showAuthorProfile) {
-            if let post = followingPost {
-                UserProfileView(appState: appState, authorId: post.authorId, authorName: post.authorName, authorEmoji: appState.communityService.authorEmoji(for: post.authorId))
             }
         }
     }
