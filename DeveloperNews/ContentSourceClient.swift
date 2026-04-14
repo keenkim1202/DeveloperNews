@@ -54,7 +54,6 @@ struct CompositeContentSourceClient: ContentSourceClient {
     ]
 
     let namedClients: [NamedClient]
-    let fallbackClient: any ContentSourceClient
 
     func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem] {
         await fetchItemsWithStatus(selectedTopics: selectedTopics).items
@@ -93,9 +92,8 @@ struct CompositeContentSourceClient: ContentSourceClient {
         }
 
         if collectedItems.isEmpty {
-            let fallbackItems = (try? await fallbackClient.fetchItems(selectedTopics: selectedTopics)) ?? []
             return SourceFetchResult(
-                items: fallbackItems,
+                items: [],
                 failedSourceNames: failedSourceNames,
                 totalSourceCount: namedClients.count
             )
