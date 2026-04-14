@@ -18,17 +18,27 @@ struct RSSSourceClient: ContentSourceClient {
         self.session = session
     }
 
+    private static let maxConcurrentFetches = 6
+
     func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem] {
         await withTaskGroup(of: [ContentItem].self) { group in
-            for feed in feeds {
+            var iterator = feeds.makeIterator()
+
+            for _ in 0..<Self.maxConcurrentFetches {
+                guard let feed = iterator.next() else { break }
                 group.addTask {
                     (try? await fetchItems(for: feed)) ?? []
                 }
             }
 
             var combined: [ContentItem] = []
-            for await items in group {
+            while let items = await group.next() {
                 combined.append(contentsOf: items)
+                if let nextFeed = iterator.next() {
+                    group.addTask {
+                        (try? await fetchItems(for: nextFeed)) ?? []
+                    }
+                }
             }
             return combined
         }
@@ -202,11 +212,6 @@ extension RSSSourceClient {
         RSSFeedDefinition(
             sourceName: "Spotify Engineering",
             feedURL: URL(string: "https://engineering.atspotify.com/feed")!,
-            defaultTopics: [.backend, .ai]
-        ),
-        RSSFeedDefinition(
-            sourceName: "Meta Engineering",
-            feedURL: URL(string: "https://engineering.fb.com/feed/")!,
             defaultTopics: [.backend, .ai]
         ),
         RSSFeedDefinition(
