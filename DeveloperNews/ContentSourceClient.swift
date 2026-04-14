@@ -16,6 +16,7 @@ struct SourceFetchResult {
 
 protocol ContentSourceClient {
     func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem]
+    func fetchItemsWithStatus(selectedTopics: Set<Topic>) async -> SourceFetchResult
 }
 
 extension ContentSourceClient {
