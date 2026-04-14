@@ -9,21 +9,32 @@ struct HackerNewsSourceClient: ContentSourceClient {
         self.maxStories = maxStories
     }
 
+    private static let maxConcurrentFetches = 6
+
     func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem] {
         let topStoryIDs = try await fetchTopStoryIDs()
         let fetchCount = storyLimit(for: selectedTopics)
+        let targetIDs = Array(topStoryIDs.prefix(fetchCount))
 
         return await withTaskGroup(of: ContentItem?.self) { group in
-            for id in topStoryIDs.prefix(fetchCount) {
+            var iterator = targetIDs.makeIterator()
+
+            for _ in 0..<Self.maxConcurrentFetches {
+                guard let id = iterator.next() else { break }
                 group.addTask {
                     try? await fetchStory(id: id)
                 }
             }
 
             var combined: [ContentItem] = []
-            for await item in group {
+            while let item = await group.next() {
                 if let item {
                     combined.append(item)
+                }
+                if let nextID = iterator.next() {
+                    group.addTask {
+                        try? await fetchStory(id: nextID)
+                    }
                 }
             }
             return combined
