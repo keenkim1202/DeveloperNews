@@ -2872,6 +2872,23 @@
         }
       }
     },
+    "community.error.notAuthor" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only the author can edit this post."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "작성자만 이 글을 수정할 수 있습니다."
+          }
+        }
+      }
+    },
     "toast.sourcesUnavailable" : {
       "extractionState" : "manual",
       "localizations" : {

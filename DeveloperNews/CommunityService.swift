@@ -115,7 +115,7 @@ final class CommunityService {
         errorMessage = nil
 
         guard post.authorId == editorId else {
-            errorMessage = "Only the author can edit this post."
+            errorMessage = String(localized: "community.error.notAuthor")
             return
         }
 
