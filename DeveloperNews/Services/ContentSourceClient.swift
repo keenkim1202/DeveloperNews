@@ -1,11 +1,7 @@
 import Foundation
 
-enum AppContact {
+enum AppIdentity {
     static let userAgent = "DeveloperNews/1.0 (https://github.com/keenkim1202/DeveloperNews)"
-    static let supportEmail = "keenkim1202@gmail.com"
-    static let supportURL = URL(string: "https://github.com/keenkim1202/DeveloperNews/issues")!
-    static let privacyPolicyURL = URL(string: "https://github.com/keenkim1202/DeveloperNews#privacy")!
-    static let termsOfUseURL = URL(string: "https://github.com/keenkim1202/DeveloperNews#terms")!
 }
 
 struct SourceFetchResult {
@@ -95,8 +91,7 @@ struct CompositeContentSourceClient: ContentSourceClient {
             return SourceFetchResult(
                 items: [],
                 failedSourceNames: failedSourceNames,
-                totalSourceCount: namedClients.count
-            )
+                totalSourceCount: namedClients.count)
         }
 
         let weighted = collectedItems.map(applyingSourceTrust)
@@ -105,8 +100,7 @@ struct CompositeContentSourceClient: ContentSourceClient {
         return SourceFetchResult(
             items: dedup,
             failedSourceNames: failedSourceNames,
-            totalSourceCount: namedClients.count
-        )
+            totalSourceCount: namedClients.count)
     }
 
     private func normalizingScoresPerSource(_ items: [ContentItem]) -> [ContentItem] {
@@ -139,9 +133,7 @@ struct CompositeContentSourceClient: ContentSourceClient {
                         topics: item.topics,
                         trendScore: score,
                         thumbnailURL: item.thumbnailURL,
-                        engagement: item.engagement
-                    )
-                )
+                        engagement: item.engagement))
             }
         }
 
@@ -167,8 +159,7 @@ struct CompositeContentSourceClient: ContentSourceClient {
             topics: item.topics,
             trendScore: min(100, item.trendScore + bonus),
             thumbnailURL: item.thumbnailURL,
-            engagement: item.engagement
-        )
+            engagement: item.engagement)
     }
 
     private func deduplicatedItems(from items: [ContentItem]) -> [ContentItem] {
@@ -219,8 +210,7 @@ struct CompositeContentSourceClient: ContentSourceClient {
             topics: unionedTopics,
             trendScore: min(100, primary.trendScore + mentionBoost),
             thumbnailURL: thumbnail,
-            engagement: engagement
-        )
+            engagement: engagement)
     }
 
     private func titleKey(for title: String) -> String {

@@ -23,8 +23,7 @@ final class ContentTranslator {
         guard let code = targetLanguageCode else { return nil }
         return .init(
             source: Locale.Language(identifier: "en"),
-            target: Locale.Language(identifier: code)
-        )
+            target: Locale.Language(identifier: code))
     }
 
     func isTranslated(_ item: ContentItem) -> Bool {

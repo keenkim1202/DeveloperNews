@@ -48,7 +48,7 @@ struct HackerNewsSourceClient: ContentSourceClient {
     private func fetchTopStoryIDs() async throws -> [Int] {
         let url = URL(string: "https://hacker-news.firebaseio.com/v0/topstories.json")!
         var request = URLRequest(url: url)
-        request.setValue(AppContact.userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue(AppIdentity.userAgent, forHTTPHeaderField: "User-Agent")
         let (data, _) = try await session.data(for: request)
         return try JSONDecoder().decode([Int].self, from: data)
     }
@@ -56,7 +56,7 @@ struct HackerNewsSourceClient: ContentSourceClient {
     private func fetchStory(id: Int) async throws -> ContentItem? {
         let url = URL(string: "https://hacker-news.firebaseio.com/v0/item/\(id).json")!
         var request = URLRequest(url: url)
-        request.setValue(AppContact.userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue(AppIdentity.userAgent, forHTTPHeaderField: "User-Agent")
         let (data, _) = try await session.data(for: request)
         let story = try JSONDecoder().decode(HNStory.self, from: data)
 
@@ -85,8 +85,7 @@ struct HackerNewsSourceClient: ContentSourceClient {
             publishedAt: publishedAt,
             topics: topics,
             trendScore: score,
-            engagement: EngagementMetrics(reactionCount: story.score, commentCount: story.descendants ?? 0)
-        )
+            engagement: EngagementMetrics(reactionCount: story.score, commentCount: story.descendants ?? 0))
     }
 
     private func inferredTopics(for text: String) -> [Topic] {

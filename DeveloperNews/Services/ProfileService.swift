@@ -60,8 +60,7 @@ final class ProfileService {
                 profileEmoji: data["profileEmoji"] as? String,
                 followedUserIds: Set(followedArray),
                 createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
-                updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date()
-            )
+                updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date())
         }
     }
 

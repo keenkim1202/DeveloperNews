@@ -46,7 +46,7 @@ struct RSSSourceClient: ContentSourceClient {
 
     private func fetchItems(for feed: RSSFeedDefinition) async throws -> [ContentItem] {
         var request = URLRequest(url: feed.feedURL)
-        request.setValue(AppContact.userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue(AppIdentity.userAgent, forHTTPHeaderField: "User-Agent")
         let (data, _) = try await session.data(for: request)
         let parsedItems = try RSSFeedParser().parse(data: data)
 
@@ -63,8 +63,7 @@ struct RSSSourceClient: ContentSourceClient {
                 publishedAt: item.publishedAt,
                 topics: inferredTopics(for: item.title + " " + item.summary, fallback: feed.defaultTopics),
                 trendScore: trendScore(for: item.publishedAt),
-                thumbnailURL: item.imageURL
-            )
+                thumbnailURL: item.imageURL)
         }
     }
 
@@ -247,8 +246,7 @@ extension RSSSourceClient {
         RSSFeedDefinition(
             sourceName: "The Pragmatic Engineer",
             feedURL: URL(string: "https://newsletter.pragmaticengineer.com/feed")!,
-            defaultTopics: [.backend, .product]
-        )
+            defaultTopics: [.backend, .product])
     ]
 }
 
@@ -398,9 +396,7 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
                         link: link,
                         author: item.author.isEmpty ? nil : item.author,
                         publishedAt: publishedAt,
-                        imageURL: imageURL
-                    )
-                )
+                        imageURL: imageURL))
             }
 
             currentItem = nil
@@ -566,14 +562,12 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
         let withoutTags = rawHTML.replacingOccurrences(
             of: "<[^>]+>",
             with: " ",
-            options: .regularExpression
-        )
+            options: .regularExpression)
 
         let collapsedWhitespace = withoutTags.replacingOccurrences(
             of: "\\s+",
             with: " ",
-            options: .regularExpression
-        )
+            options: .regularExpression)
 
         return decodingHTMLEntities(collapsedWhitespace)
             .trimmingCharacters(in: .whitespacesAndNewlines)

@@ -52,7 +52,6 @@ enum SampleData {
             url: URL(string: "https://www.infoq.com")!,
             publishedAt: .now.addingTimeInterval(-60 * 240),
             topics: [.ai, .backend, .product],
-            trendScore: 95
-        )
+            trendScore: 95)
     ]
 }

@@ -109,8 +109,7 @@ final class AppState {
                     url: URL(string: "devnews://community/\(post.id)")!,
                     publishedAt: post.createdAt,
                     topics: post.topics,
-                    trendScore: post.likeCount
-                )
+                    trendScore: post.likeCount)
             }
     }
 
@@ -367,6 +366,14 @@ final class AppState {
         return await authService.deleteAccount()
     }
 
+    func updateDisplayName(_ name: String) async {
+        await profileService.updateDisplayName(name)
+    }
+
+    func updateProfileEmoji(_ emoji: String) async {
+        await profileService.updateProfileEmoji(emoji)
+    }
+
     func signOut() {
         profileService.stopListening()
         authService.signOut()
@@ -456,8 +463,7 @@ final class AppState {
                 url: url,
                 publishedAt: .now,
                 topics: topics,
-                trendScore: 0
-            )
+                trendScore: 0)
             addSavedItem(item)
         }
 
@@ -610,7 +616,6 @@ final class AppState {
                 .init(name: "GitHub Trending", client: GitHubTrendingSourceClient()),
                 .init(name: "Hacker News", client: HackerNewsSourceClient()),
                 .init(name: "Reddit", client: RedditSourceClient())
-            ]
-        )
+            ])
     }
 }

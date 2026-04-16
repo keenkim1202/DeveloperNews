@@ -283,7 +283,6 @@ final class CommunityService {
             likeCount: data["likeCount"] as? Int ?? 0,
             likedBy: Set(likedByArray),
             createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
-            updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue()
-        )
+            updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue())
     }
 }
