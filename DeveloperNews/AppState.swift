@@ -353,6 +353,8 @@ final class AppState {
     func deleteCurrentAccount() async -> DeleteAccountResult {
         guard let uid = authService.userId else { return .failed }
 
+        profileService.stopListening()
+
         do {
             try await communityService.deleteUserContent(uid: uid)
             try await profileService.deleteOwnProfile(uid: uid)
@@ -363,6 +365,11 @@ final class AppState {
         }
 
         return await authService.deleteAccount()
+    }
+
+    func signOut() {
+        profileService.stopListening()
+        authService.signOut()
     }
 
     func toggleSaved(_ item: ContentItem) {

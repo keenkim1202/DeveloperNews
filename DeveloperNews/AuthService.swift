@@ -77,7 +77,7 @@ final class AuthService {
                 // User canceled
             }
             else {
-                errorMessage = error.localizedDescription
+                errorMessage = await localizedAuthError(from: error, attemptedEmail: nil)
             }
             return false
         }
@@ -134,7 +134,7 @@ final class AuthService {
                 // User canceled — not an error
             }
             else {
-                errorMessage = error.localizedDescription
+                errorMessage = await localizedAuthError(from: error, attemptedEmail: nil)
             }
             return false
         }
@@ -153,7 +153,7 @@ final class AuthService {
             return false
         }
         catch {
-            errorMessage = error.localizedDescription
+            errorMessage = await localizedAuthError(from: error, attemptedEmail: email)
             return false
         }
     }
@@ -169,8 +169,27 @@ final class AuthService {
             return true
         }
         catch {
-            errorMessage = error.localizedDescription
+            errorMessage = await localizedAuthError(from: error, attemptedEmail: email)
             return false
+        }
+    }
+
+    // MARK: - Password Reset
+
+    @discardableResult
+    func sendPasswordReset(email: String) async -> PasswordResetResult {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            try await Auth.auth().sendPasswordReset(withEmail: email)
+            return .success
+        }
+        catch {
+            let message = await localizedAuthError(from: error, attemptedEmail: email)
+            errorMessage = message
+            return .failed(message)
         }
     }
 
@@ -235,6 +254,93 @@ final class AuthService {
     private func sha256(_ input: String) -> String {
         HashUtil.sha256(input)
     }
+
+    /// Maps a Firebase Auth or system NSError into a localized, user-facing message.
+    /// When the error suggests the email is registered with another provider, this looks up
+    /// the linked sign-in methods via `fetchSignInMethods(forEmail:)` to surface a specific
+    /// "use Google/Apple to sign in" message. Requires Firebase email enumeration protection
+    /// to be disabled in the console; otherwise the helper falls back to the generic message.
+    private func localizedAuthError(from error: Error, attemptedEmail: String?) async -> String {
+        let nsError = error as NSError
+
+        if let authError = error as? AuthError {
+            return authError.errorDescription ?? String(localized: "auth.error.unknown")
+        }
+
+        guard nsError.domain == AuthErrorDomain else {
+            if nsError.domain == NSURLErrorDomain {
+                return String(localized: "auth.error.networkError")
+            }
+            return String(localized: "auth.error.unknown")
+        }
+
+        guard let code = AuthErrorCode(rawValue: nsError.code) else {
+            return String(localized: "auth.error.unknown")
+        }
+
+        switch code {
+        case .invalidEmail:
+            return String(localized: "auth.error.invalidEmail")
+        case .userNotFound:
+            if let providerMessage = await providerSpecificMessage(for: attemptedEmail) {
+                return providerMessage
+            }
+            return String(localized: "auth.error.userNotFound")
+        case .wrongPassword:
+            if let providerMessage = await providerSpecificMessage(for: attemptedEmail) {
+                return providerMessage
+            }
+            return String(localized: "auth.error.wrongPassword")
+        case .invalidCredential:
+            if let providerMessage = await providerSpecificMessage(for: attemptedEmail) {
+                return providerMessage
+            }
+            return String(localized: "auth.error.invalidCredentials")
+        case .emailAlreadyInUse:
+            if let providerMessage = await providerSpecificMessage(for: attemptedEmail) {
+                return providerMessage
+            }
+            return String(localized: "auth.error.emailAlreadyInUse")
+        case .accountExistsWithDifferentCredential:
+            if let providerMessage = await providerSpecificMessage(for: attemptedEmail) {
+                return providerMessage
+            }
+            return String(localized: "auth.error.invalidCredentials")
+        case .weakPassword:
+            return String(localized: "auth.error.weakPassword")
+        case .networkError:
+            return String(localized: "auth.error.networkError")
+        case .tooManyRequests:
+            return String(localized: "auth.error.tooManyRequests")
+        case .userDisabled:
+            return String(localized: "auth.error.unknown")
+        default:
+            return String(localized: "auth.error.unknown")
+        }
+    }
+
+    /// Looks up which provider an email address is linked to. Returns a localized message
+    /// when the email is associated with Google or Apple (so the user knows which method
+    /// to use), or `nil` when the lookup is inconclusive.
+    private func providerSpecificMessage(for email: String?) async -> String? {
+        guard let email, !email.isEmpty else { return nil }
+
+        do {
+            let methods = try await Auth.auth().fetchSignInMethods(forEmail: email)
+            guard !methods.isEmpty else { return nil }
+
+            if methods.contains("google.com") {
+                return String(localized: "auth.error.providerGoogle")
+            }
+            if methods.contains("apple.com") {
+                return String(localized: "auth.error.providerApple")
+            }
+            return nil
+        }
+        catch {
+            return nil
+        }
+    }
 }
 
 private final class AppleSignInDelegate: NSObject, ASAuthorizationControllerDelegate, Sendable {
@@ -271,4 +377,9 @@ enum DeleteAccountResult {
     case success
     case requiresRecentLogin
     case failed
+}
+
+enum PasswordResetResult {
+    case success
+    case failed(String)
 }

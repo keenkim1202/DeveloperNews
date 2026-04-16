@@ -2614,7 +2614,7 @@ private struct SettingsView: View {
                 }
 
                 Button("auth.signOut", role: .destructive) {
-                    auth.signOut()
+                    appState.signOut()
                 }
 
                 Button("auth.deleteAccount", role: .destructive) {
@@ -2653,124 +2653,166 @@ private struct SignInView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var isSignUp = false
-    @State private var showConsentSheet = false
+    @State private var hasAgreedToTerms = false
+    @State private var showPasswordReset = false
+    @State private var showPrivacyPolicy = false
+    @State private var showTermsOfUse = false
 
     private var authService: AuthService { appState.authService }
 
+    private var isEmailFormatValid: Bool {
+        let pattern = #"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
+        return email.range(of: pattern, options: .regularExpression) != nil
+    }
+
+    private var showEmailFormatError: Bool {
+        !email.isEmpty && !isEmailFormatValid
+    }
+
+    private var canSubmitEmailForm: Bool {
+        guard !email.isEmpty, !password.isEmpty, isEmailFormatValid else { return false }
+        if isSignUp { return hasAgreedToTerms }
+        return true
+    }
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                VStack(spacing: 12) {
-                    Button {
-                        Task {
-                            let isNewUser = await authService.signInWithApple()
-                            handleSignInResult(isNewUser: isNewUser)
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image("apple_logo")
-                                .resizable()
-                                .frame(width: 20, height: 20)
-                            Text("auth.signInWithApple")
-                                .font(.body.weight(.medium))
-                                .foregroundStyle(.black)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.white)
-                                .stroke(Color.accentColor, lineWidth: 1)
-                        }
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                    .buttonStyle(.plain)
+            ScrollView {
+                VStack(spacing: 24) {
+                    termsCheckbox
 
-                    Button {
-                        Task {
-                            let isNewUser = await authService.signInWithGoogle()
-                            handleSignInResult(isNewUser: isNewUser)
-                        }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image("google_logo")
-                                .resizable()
-                                .frame(width: 20, height: 20)
-                            Text("auth.signInWithGoogle")
-                                .font(.body.weight(.medium))
-                                .foregroundStyle(.black)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.white)
-                                .stroke(Color.accentColor, lineWidth: 1)
-                        }
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                dividerWithText("auth.or")
-
-                VStack(spacing: 12) {
-                    TextField("auth.email", text: $email)
-                        .textContentType(.emailAddress)
-                        .keyboardType(.emailAddress)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                        .padding(12)
-                        .background(Color(.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                    SecureField("auth.password", text: $password)
-                        .textContentType(isSignUp ? .newPassword : .password)
-                        .padding(12)
-                        .background(Color(.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                    Button {
-                        Task {
-                            let isNewUser: Bool
-                            if isSignUp {
-                                isNewUser = await authService.signUpWithEmail(email, password: password)
+                    VStack(spacing: 12) {
+                        Button {
+                            Task {
+                                _ = await authService.signInWithApple()
+                                if authService.isSignedIn { dismiss() }
                             }
-                            else {
-                                isNewUser = await authService.signInWithEmail(email, password: password)
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image("apple_logo")
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                Text("auth.signInWithApple")
+                                    .font(.body.weight(.medium))
+                                    .foregroundStyle(.black)
                             }
-                            handleSignInResult(isNewUser: isNewUser)
-                        }
-                    } label: {
-                        Text(isSignUp ? LocalizedStringResource("auth.createAccount") : LocalizedStringResource("auth.signInWithEmail"))
-                            .font(.body.weight(.medium))
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)
-                            .foregroundStyle(.white)
-                            .background(Color.accentColor)
+                            .background {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.white)
+                                    .stroke(Color.accentColor, lineWidth: 1)
+                            }
                             .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                    .disabled(email.isEmpty || password.isEmpty)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!hasAgreedToTerms)
+                        .opacity(hasAgreedToTerms ? 1 : 0.5)
 
-                    Button {
-                        isSignUp.toggle()
-                    } label: {
-                        Text(isSignUp ? LocalizedStringResource("auth.alreadyHaveAccount") : LocalizedStringResource("auth.noAccount"))
+                        Button {
+                            Task {
+                                _ = await authService.signInWithGoogle()
+                                if authService.isSignedIn { dismiss() }
+                            }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image("google_logo")
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                Text("auth.signInWithGoogle")
+                                    .font(.body.weight(.medium))
+                                    .foregroundStyle(.black)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.white)
+                                    .stroke(Color.accentColor, lineWidth: 1)
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!hasAgreedToTerms)
+                        .opacity(hasAgreedToTerms ? 1 : 0.5)
+                    }
+
+                    dividerWithText("auth.or")
+
+                    VStack(spacing: 12) {
+                        TextField("auth.email", text: $email)
+                            .textContentType(.emailAddress)
+                            .keyboardType(.emailAddress)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .padding(12)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                        if showEmailFormatError {
+                            Text("auth.error.invalidEmail")
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                        SecureField("auth.password", text: $password)
+                            .textContentType(isSignUp ? .newPassword : .password)
+                            .padding(12)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                        Button {
+                            Task {
+                                if isSignUp {
+                                    _ = await authService.signUpWithEmail(email, password: password)
+                                }
+                                else {
+                                    _ = await authService.signInWithEmail(email, password: password)
+                                }
+                                if authService.isSignedIn { dismiss() }
+                            }
+                        } label: {
+                            Text(isSignUp ? LocalizedStringResource("auth.createAccount") : LocalizedStringResource("auth.signInWithEmail"))
+                                .font(.body.weight(.medium))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .foregroundStyle(.white)
+                                .background(Color.accentColor)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .disabled(!canSubmitEmailForm)
+
+                        if !isSignUp {
+                            Button {
+                                authService.setErrorMessage(nil)
+                                showPasswordReset = true
+                            } label: {
+                                Text("auth.forgotPassword")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        Button {
+                            authService.setErrorMessage(nil)
+                            isSignUp.toggle()
+                        } label: {
+                            Text(isSignUp ? LocalizedStringResource("auth.alreadyHaveAccount") : LocalizedStringResource("auth.noAccount"))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if let error = authService.errorMessage {
+                        Text(error)
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.red)
+                            .multilineTextAlignment(.center)
                     }
                 }
-
-                if let error = authService.errorMessage {
-                    Text(error)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
-                }
-
-                Spacer()
+                .padding(20)
             }
-            .padding(20)
             .navigationTitle("auth.signIn")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -2788,36 +2830,54 @@ private struct SignInView: View {
                     ProgressView()
                 }
             }
-            .sheet(isPresented: $showConsentSheet) {
-                TermsConsentSheet(
-                    onAccept: {
-                        showConsentSheet = false
-                        dismiss()
-                    },
-                    onDecline: {
-                        Task {
-                            let result = await appState.deleteCurrentAccount()
-                            if result == .failed {
-                                authService.setErrorMessage(String(localized: "auth.error.deleteFailed"))
-                            }
-                            authService.signOut()
-                            showConsentSheet = false
-                        }
-                    }
-                )
-                .interactiveDismissDisabled()
+            .sheet(isPresented: $showPasswordReset) {
+                PasswordResetView(authService: authService)
+            }
+            .sheet(isPresented: $showPrivacyPolicy) {
+                NavigationStack { PrivacyPolicyView() }
+            }
+            .sheet(isPresented: $showTermsOfUse) {
+                NavigationStack { TermsOfUseView() }
             }
         }
     }
 
-    private func handleSignInResult(isNewUser: Bool) {
-        guard authService.isSignedIn else { return }
-        if isNewUser {
-            showConsentSheet = true
+    private var termsCheckbox: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Button {
+                hasAgreedToTerms.toggle()
+            } label: {
+                Image(systemName: hasAgreedToTerms ? "checkmark.square.fill" : "square")
+                    .font(.title3)
+                    .foregroundStyle(hasAgreedToTerms ? Color.accentColor : .secondary)
+            }
+            .buttonStyle(.plain)
+
+            Text(termsAgreementAttributed)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .tint(Color.accentColor)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .environment(\.openURL, OpenURLAction { url in
+                    if url.scheme == "devnews" {
+                        if url.host == "terms" {
+                            showTermsOfUse = true
+                            return .handled
+                        }
+                        if url.host == "privacy" {
+                            showPrivacyPolicy = true
+                            return .handled
+                        }
+                    }
+                    return .systemAction
+                })
         }
-        else {
-            dismiss()
-        }
+    }
+
+    private var termsAgreementAttributed: AttributedString {
+        let raw = String(localized: "auth.termsAgreement")
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        return (try? AttributedString(markdown: raw, options: options)) ?? AttributedString(raw)
     }
 
     private func dividerWithText(_ text: LocalizedStringResource) -> some View {
@@ -2835,65 +2895,89 @@ private struct SignInView: View {
     }
 }
 
-private struct TermsConsentSheet: View {
-    let onAccept: () -> Void
-    let onDecline: () -> Void
+private struct PasswordResetView: View {
+    let authService: AuthService
+    @Environment(\.dismiss) private var dismiss
 
-    @State private var showPrivacyPolicy = false
-    @State private var showTermsOfUse = false
+    @State private var email = ""
+    @State private var successMessage: String?
+
+    private var isEmailFormatValid: Bool {
+        let pattern = #"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
+        return email.range(of: pattern, options: .regularExpression) != nil
+    }
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 20) {
-                Text("auth.consent.title")
-                    .font(.title2.bold())
+                Text("auth.passwordReset.description")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
 
-                Text(try! AttributedString(markdown: String(localized: "auth.consent.body"), options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
-                    .font(.body)
-                    .foregroundStyle(.primary)
-                    .tint(Color.accentColor)
-                    .environment(\.openURL, OpenURLAction { url in
-                        if url.scheme == "devnews" {
-                            if url.host == "terms" {
-                                showTermsOfUse = true
-                                return .handled
-                            }
-                            if url.host == "privacy" {
-                                showPrivacyPolicy = true
-                                return .handled
-                            }
+                TextField("auth.email", text: $email)
+                    .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .padding(12)
+                    .background(Color(.secondarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                Button {
+                    Task {
+                        successMessage = nil
+                        let result = await authService.sendPasswordReset(email: email)
+                        if case .success = result {
+                            successMessage = String(localized: "auth.passwordReset.success")
                         }
-                        return .systemAction
-                    })
+                    }
+                } label: {
+                    Text("auth.passwordReset.send")
+                        .font(.body.weight(.medium))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .foregroundStyle(.white)
+                        .background(Color.accentColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .disabled(!isEmailFormatValid)
+
+                if let successMessage {
+                    Text(successMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.green)
+                        .multilineTextAlignment(.leading)
+                }
+
+                if let error = authService.errorMessage {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.leading)
+                }
 
                 Spacer()
-
-                VStack(spacing: 12) {
-                    Button(action: onAccept) {
-                        Text("auth.consent.accept")
-                            .font(.body.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .foregroundStyle(.white)
-                            .background(Color.accentColor)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                    .buttonStyle(.plain)
-
-                    Button(action: onDecline) {
-                        Text("auth.consent.decline")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
+            }
+            .padding(20)
+            .navigationTitle("auth.passwordReset.title")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        authService.setErrorMessage(nil)
+                        dismiss()
                     }
                 }
             }
-            .padding(20)
-            .navigationBarTitleDisplayMode(.inline)
-            .sheet(isPresented: $showPrivacyPolicy) {
-                NavigationStack { PrivacyPolicyView() }
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
             }
-            .sheet(isPresented: $showTermsOfUse) {
-                NavigationStack { TermsOfUseView() }
+            .overlay {
+                if authService.isLoading {
+                    Color.black.opacity(0.2)
+                        .ignoresSafeArea()
+                    ProgressView()
+                }
             }
         }
     }
