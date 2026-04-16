@@ -2614,7 +2614,7 @@ private struct SettingsView: View {
                 }
 
                 Button("auth.signOut", role: .destructive) {
-                    auth.signOut()
+                    appState.signOut()
                 }
 
                 Button("auth.deleteAccount", role: .destructive) {
