@@ -19,7 +19,7 @@ struct FeedSectionListView: View {
     var body: some View {
         ScrollViewReader { proxy in
             list
-                .onChange(of: scrollToTopTrigger) { _, _ in
+                .keenOnChange(of: scrollToTopTrigger) {
                     guard let anchor = firstAnchorID else { return }
                     withAnimation {
                         proxy.scrollTo(anchor, anchor: .top)

@@ -97,9 +97,7 @@ struct BookmarkDetailView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
-        .onAppear {
-            appState.markAsRead(currentItem)
-        }
+        .onAppear(perform: onAppear)
         .confirmationDialog("bookmark.deleteConfirm", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 appState.removeSavedItem(at: currentItem.url)
@@ -118,6 +116,10 @@ struct BookmarkDetailView: View {
         .sheet(isPresented: $showEdit) {
             EditBookmarkView(appState: appState, item: currentItem)
         }
+    }
+
+    private func onAppear() {
+        appState.markAsRead(currentItem)
     }
 }
 

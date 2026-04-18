@@ -37,46 +37,54 @@ struct ContentView: View {
                     .allowsHitTesting(false)
             }
         }
-        .onChange(of: appState.toastTrigger) { _, _ in
-            guard appState.toastMessage != nil else { return }
-            toastDismissTask?.cancel()
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                isToastVisible = true
-            }
-            toastDismissTask = Task {
-                try? await Task.sleep(for: .seconds(3.5))
-                guard !Task.isCancelled else { return }
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    isToastVisible = false
-                }
+        .keenOnChange(of: appState.toastTrigger, perform: onToastTriggerChange)
+        .keenOnChange(of: scenePhase, perform: onScenePhaseChange)
+        .keenOnChange(of: appState.authService.isSignedIn, perform: onIsSignedInChange)
+        .onAppear(perform: onAppear)
+    }
+
+    private func onAppear() {
+        if let user = appState.authService.user {
+            appState.profileService.startListening(for: user)
+        }
+        appState.communityService.startListening()
+        appState.processPendingSharedItems()
+    }
+
+    private func onToastTriggerChange() {
+        guard appState.toastMessage != nil else { return }
+        toastDismissTask?.cancel()
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            isToastVisible = true
+        }
+        toastDismissTask = Task {
+            try? await Task.sleep(for: .seconds(3.5))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isToastVisible = false
             }
         }
-        .onChange(of: scenePhase) { _, newPhase in
-            guard newPhase == .active, appState.isOnboardingComplete else {
-                return
-            }
-            appState.processPendingSharedItems()
+    }
+
+    private func onScenePhaseChange(_ newPhase: ScenePhase) {
+        guard newPhase == .active, appState.isOnboardingComplete else {
+            return
+        }
+        appState.processPendingSharedItems()
+        Task {
+            await appState.refreshIfStale(maxAge: Self.staleThreshold)
+        }
+    }
+
+    private func onIsSignedInChange(_ signedIn: Bool) {
+        if signedIn, let user = appState.authService.user {
+            appState.profileService.startListening(for: user)
             Task {
-                await appState.refreshIfStale(maxAge: Self.staleThreshold)
+                await appState.profileService.createProfileIfNeeded(for: user)
             }
         }
-        .onChange(of: appState.authService.isSignedIn) { _, signedIn in
-            if signedIn, let user = appState.authService.user {
-                appState.profileService.startListening(for: user)
-                Task {
-                    await appState.profileService.createProfileIfNeeded(for: user)
-                }
-            }
-            else {
-                appState.profileService.stopListening()
-            }
-        }
-        .onAppear {
-            if let user = appState.authService.user {
-                appState.profileService.startListening(for: user)
-            }
-            appState.communityService.startListening()
-            appState.processPendingSharedItems()
+        else {
+            appState.profileService.stopListening()
         }
     }
 }
