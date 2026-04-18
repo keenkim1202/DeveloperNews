@@ -110,25 +110,25 @@ struct MainTabView: View {
         TabView(selection: tabSelection) {
             HomeView(appState: appState)
                 .tabItem {
-                    Label("Home", systemImage: "newspaper")
+                    Label(.home, systemImage: "newspaper")
                 }
                 .tag(AppTab.home)
 
             CommunityView(appState: appState)
                 .tabItem {
-                    Label("Community", systemImage: "person.2")
+                    Label(.community, systemImage: "person.2")
                 }
                 .tag(AppTab.community)
 
             SavedView(appState: appState)
                 .tabItem {
-                    Label("Bookmarks", systemImage: "bookmark")
+                    Label(.bookmarks, systemImage: "bookmark")
                 }
                 .tag(AppTab.saved)
 
             SettingsView(appState: appState)
                 .tabItem {
-                    Label("Settings", systemImage: "gearshape")
+                    Label(.settings, systemImage: "gearshape")
                 }
                 .tag(AppTab.settings)
         }

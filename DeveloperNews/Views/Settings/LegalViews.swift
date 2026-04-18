@@ -7,7 +7,7 @@ struct PrivacyPolicyView: View {
     var body: some View {
         SimpleWebView(url: Self.notionURL)
             .ignoresSafeArea(edges: .bottom)
-            .navigationTitle("Privacy policy")
+            .navigationTitle(.privacyPolicy)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .tabBar)
     }
@@ -33,36 +33,36 @@ struct TermsOfUseView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Group {
-                    sectionHeader("Use of the app")
-                    sectionBody("DeveloperNews is provided as is, without warranty of any kind. You use the app at your own discretion.")
+                    sectionHeader(.useOfTheApp)
+                    sectionBody(.developerNewsIsProvidedAsIsWithoutWarrantyOfAnyKindYouUseTheAppAtYourOwnDiscretion)
 
-                    sectionHeader("Third party content")
-                    sectionBody("Headlines, summaries, thumbnails, and links surfaced inside the app belong to their original publishers. The full article content remains hosted by the publisher and is opened in the publisher's own page when you tap a story.")
+                    sectionHeader(.thirdPartyContent)
+                    sectionBody(.headlinesSummariesThumbnailsAndLinksSurfacedInsideTheAppBelongToTheirOriginalPublishersTheFullArticleContentRemainsHostedByThePublisherAndIsOpenedInThePublishersOwnPageWhenYouTapAStory)
 
-                    sectionHeader("Acceptable use")
-                    sectionBody("You may not attempt to reverse engineer, redistribute, or scrape content from the app. Use the in-app browser only for personal, non commercial reading.")
+                    sectionHeader(.acceptableUse)
+                    sectionBody(.youMayNotAttemptToReverseEngineerRedistributeOrScrapeContentFromTheAppUseTheInAppBrowserOnlyForPersonalNonCommercialReading)
 
-                    sectionHeader("Limitation of liability")
-                    sectionBody("DeveloperNews is not responsible for the accuracy, availability, or behavior of third party content surfaced through the app, including any links opened in the in-app browser.")
+                    sectionHeader(.limitationOfLiability)
+                    sectionBody(.developerNewsIsNotResponsibleForTheAccuracyAvailabilityOrBehaviorOfThirdPartyContentSurfacedThroughTheAppIncludingAnyLinksOpenedInTheInAppBrowser)
 
-                    sectionHeader("Changes")
-                    sectionBody("These terms may be updated when meaningful product changes ship. Continued use of the app after an update constitutes acceptance of the revised terms.")
+                    sectionHeader(.changes)
+                    sectionBody(.theseTermsMayBeUpdatedWhenMeaningfulProductChangesShipContinuedUseOfTheAppAfterAnUpdateConstitutesAcceptanceOfTheRevisedTerms)
                 }
             }
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .navigationTitle("Terms of use")
+        .navigationTitle(.termsOfUse)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
     }
 
-    private func sectionHeader(_ text: String) -> some View {
+    private func sectionHeader(_ text: LocalizedStringResource) -> some View {
         Text(text)
             .font(.headline)
     }
 
-    private func sectionBody(_ text: String) -> some View {
+    private func sectionBody(_ text: LocalizedStringResource) -> some View {
         Text(text)
             .font(.body)
             .foregroundStyle(.secondary)

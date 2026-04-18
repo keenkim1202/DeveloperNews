@@ -20,9 +20,9 @@ struct CommunityView: View {
                         }
                     }
             }
-            .navigationTitle("Community")
+            .navigationTitle(.community)
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $viewModel.searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "community.searchPrompt")
+            .searchable(text: $viewModel.searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: .communitySearchPrompt)
             .toolbar {
                 if viewModel.isSignedIn {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -50,9 +50,9 @@ struct CommunityView: View {
         }
         else if viewModel.hasNoPosts {
             ContentUnavailableView {
-                Label("community.empty", systemImage: "person.2")
+                Label(.communityEmpty, systemImage: "person.2")
             } description: {
-                Text("community.emptyDescription")
+                Text(.communityEmptyDescription)
             }
         }
         else {

@@ -457,7 +457,7 @@ final class AppState {
                 kind: .article,
                 title: title,
                 summary: description,
-                sourceName: String(localized: "save.sharedItem"),
+                sourceName: String(localized: .saveSharedItem),
                 sourceCategory: .article,
                 authorName: nil,
                 url: url,
@@ -511,11 +511,11 @@ final class AppState {
         if result.totalSourceCount > 0,
            result.failedSourceNames.count == result.totalSourceCount,
            result.items.isEmpty {
-            errorMessage = String(localized: "error.unableToLoad")
+            errorMessage = String(localized: .errorUnableToLoad)
         }
 
         if notifyOnFailure, !result.failedSourceNames.isEmpty {
-            toastMessage = String(localized: "toast.sourcesUnavailable")
+            toastMessage = String(localized: .toastSourcesUnavailable)
             toastTrigger += 1
         }
 

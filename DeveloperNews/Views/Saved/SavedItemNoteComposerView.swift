@@ -46,7 +46,7 @@ struct SavedItemNoteComposerView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("save.description")
+                        Text(.saveDescription)
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
                         LimitedTextEditor(text: $description, limit: 2000)
@@ -54,7 +54,7 @@ struct SavedItemNoteComposerView: View {
                 }
                 .padding(20)
             }
-            .navigationTitle("saved.editNote")
+            .navigationTitle(.savedEditNote)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

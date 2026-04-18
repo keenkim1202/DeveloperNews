@@ -23,7 +23,7 @@ struct FeedbackView: View {
                             .padding(.top, 24)
                     }
 
-                    Text(try! AttributedString(markdown: String(localized: "feedback.instagramMessage"), options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+                    Text(try! AttributedString(markdown: String(localized: .feedbackInstagramMessage), options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
                         .font(.body)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
@@ -46,7 +46,7 @@ struct FeedbackView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, 40)
             }
-            .navigationTitle("Send feedback")
+            .navigationTitle(.sendFeedback)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

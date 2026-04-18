@@ -10,7 +10,7 @@ struct AddSavedItemView: View {
 
     var body: some View {
         DraftEditorScreen(
-            navigationTitle: "save.addItem",
+            navigationTitle: .saveAddItem,
             saveTitle: "Save",
             title: $title,
             description: $description,
@@ -40,7 +40,7 @@ struct AddSavedItemView: View {
             title: trimmedTitle,
             summary: trimmedDescription,
             sourceName: appState.profileService.displayName.isEmpty
-                ? String(localized: "save.myBookmark")
+                ? String(localized: .saveMyBookmark)
                 : appState.profileService.displayName,
             sourceCategory: .article,
             authorName: nil,

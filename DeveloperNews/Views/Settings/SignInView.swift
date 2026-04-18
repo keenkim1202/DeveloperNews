@@ -22,7 +22,7 @@ struct SignInView: View {
                                 Image("apple_logo")
                                     .resizable()
                                     .frame(width: 20, height: 20)
-                                Text("auth.signInWithApple")
+                                Text(.authSignInWithApple)
                                     .font(.body.weight(.medium))
                                     .foregroundStyle(.black)
                             }
@@ -44,7 +44,7 @@ struct SignInView: View {
                                 Image("google_logo")
                                     .resizable()
                                     .frame(width: 20, height: 20)
-                                Text("auth.signInWithGoogle")
+                                Text(.authSignInWithGoogle)
                                     .font(.body.weight(.medium))
                                     .foregroundStyle(.black)
                             }
@@ -62,10 +62,10 @@ struct SignInView: View {
                         .opacity(viewModel.hasAgreedToTerms ? 1 : 0.5)
                     }
 
-                    dividerWithText("auth.or")
+                    dividerWithText(.authOr)
 
                     VStack(spacing: 12) {
-                        TextField("auth.email", text: $viewModel.email)
+                        TextField(.authEmail, text: $viewModel.email)
                             .textContentType(.emailAddress)
                             .keyboardType(.emailAddress)
                             .autocorrectionDisabled()
@@ -81,14 +81,14 @@ struct SignInView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
 
-                        SecureField("auth.password", text: $viewModel.password)
+                        SecureField(.authPassword, text: $viewModel.password)
                             .textContentType(viewModel.isSignUp ? .newPassword : .password)
                             .padding(12)
                             .background(Color(.secondarySystemBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
 
                         Button(action: submitEmailForm) {
-                            Text(viewModel.isSignUp ? LocalizedStringResource("auth.createAccount") : LocalizedStringResource("auth.signInWithEmail"))
+                            Text(viewModel.isSignUp ? .authCreateAccount : .authSignInWithEmail)
                                 .font(.body.weight(.medium))
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 50)
@@ -107,7 +107,7 @@ struct SignInView: View {
                         }
 
                         Button(action: toggleSignUpMode) {
-                            Text(viewModel.isSignUp ? LocalizedStringResource("auth.alreadyHaveAccount") : LocalizedStringResource("auth.noAccount"))
+                            Text(viewModel.isSignUp ? .authAlreadyHaveAccount : .authNoAccount)
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
@@ -122,7 +122,7 @@ struct SignInView: View {
                 }
                 .padding(20)
             }
-            .navigationTitle("auth.signIn")
+            .navigationTitle(.authSignIn)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -182,7 +182,7 @@ struct SignInView: View {
     }
 
     private var termsAgreementAttributed: AttributedString {
-        let raw = String(localized: "auth.termsAgreement")
+        let raw = String(localized: .authTermsAgreement)
         let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
         return (try? AttributedString(markdown: raw, options: options)) ?? AttributedString(raw)
     }
@@ -261,7 +261,7 @@ struct PasswordResetView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
-                TextField("auth.email", text: $email)
+                TextField(.authEmail, text: $email)
                     .textContentType(.emailAddress)
                     .keyboardType(.emailAddress)
                     .autocorrectionDisabled()
@@ -324,7 +324,7 @@ struct PasswordResetView: View {
             authService.setErrorMessage(nil)
             let result = await authService.sendPasswordReset(email: email)
             if case .success = result {
-                successMessage = String(localized: "auth.passwordReset.success")
+                successMessage = String(localized: .authPasswordResetSuccess)
             }
         }
     }

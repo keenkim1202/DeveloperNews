@@ -40,18 +40,18 @@ struct ArticleDetailView: View {
 
             if let message = loadError {
                 ContentUnavailableView {
-                    Label("Could not load article", systemImage: "wifi.exclamationmark")
+                    Label(.couldNotLoadArticle, systemImage: "wifi.exclamationmark")
                 } description: {
                     Text(message)
                 } actions: {
                     Button(action: retryLoad) {
-                        Text("Try again")
+                        Text(.tryAgain)
                             .fontWeight(.semibold)
                     }
                     .buttonStyle(.borderedProminent)
 
                     ShareLink(item: item.url, subject: Text(item.title)) {
-                        Text("Open elsewhere")
+                        Text(.openElsewhere)
                     }
                 }
                 .background(Color(.systemBackground))
@@ -85,7 +85,7 @@ struct ArticleDetailView: View {
                 Button(action: toggleSaved) {
                     Image(systemName: appState.isSaved(item) ? "bookmark.fill" : "bookmark")
                 }
-                .accessibilityLabel(appState.isSaved(item) ? "Remove from saved" : "Save story")
+                .accessibilityLabel(appState.isSaved(item) ? .removeFromSaved : .saveStory)
             }
 
             if appState.isSaved(item) {
@@ -110,7 +110,7 @@ struct ArticleDetailView: View {
                         }
                     }
                     .disabled(isLoading || isTranslatingPage)
-                    .accessibilityLabel("Translate page")
+                    .accessibilityLabel(.translatePage)
                 }
             }
 
@@ -119,7 +119,7 @@ struct ArticleDetailView: View {
                     Image(systemName: "arrow.clockwise")
                 }
                 .disabled(isLoading)
-                .accessibilityLabel("Reload article")
+                .accessibilityLabel(.reloadArticle)
             }
 
             ToolbarItem(placement: .topBarTrailing) {

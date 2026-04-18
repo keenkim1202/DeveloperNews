@@ -8,14 +8,14 @@ struct TopicSelectionView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Pick your developer interests")
+                        Text(.pickYourDeveloperInterests)
                             .font(.largeTitle.bold())
-                        Text("Start with a few topics. We will use them to shape your first trending feed.")
+                        Text(.startWithAFewTopicsWeWillUseThemToShapeYourFirstTrendingFeed)
                             .foregroundStyle(.secondary)
                     }
 
                     HStack(spacing: 12) {
-                        Text("Selected")
+                        Text(.selected)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.secondary)
 

@@ -56,7 +56,7 @@ struct BookmarkDetailView: View {
                         ArticleDetailView(appState: appState, item: currentItem)
                     } label: {
                         HStack {
-                            Label("bookmark.openLink", systemImage: "safari")
+                            Label(.bookmarkOpenLink, systemImage: "safari")
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .font(.footnote)
@@ -72,13 +72,13 @@ struct BookmarkDetailView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 4) {
-                        Text("bookmark.createdAt")
+                        Text(.bookmarkCreatedAt)
                         Text(currentItem.publishedAt, style: .date)
                         Text(currentItem.publishedAt, style: .time)
                     }
                     if let updatedAt = currentItem.updatedAt {
                         HStack(spacing: 4) {
-                            Text("bookmark.updatedAt")
+                            Text(.bookmarkUpdatedAt)
                             Text(updatedAt, style: .date)
                             Text(updatedAt, style: .time)
                         }
@@ -87,7 +87,7 @@ struct BookmarkDetailView: View {
                 .font(.caption)
                 .foregroundStyle(.tertiary)
 
-                Button("bookmark.delete", role: .destructive, action: confirmDelete)
+                Button(.bookmarkDelete, role: .destructive, action: confirmDelete)
                     .font(.footnote)
                     .padding(.top, 8)
             }
@@ -96,7 +96,7 @@ struct BookmarkDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: onAppear)
-        .confirmationDialog("bookmark.deleteConfirm", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+        .confirmationDialog(.bookmarkDeleteConfirm, isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive, action: deleteBookmark)
         }
         .toolbar {
@@ -150,7 +150,7 @@ struct EditBookmarkView: View {
 
     var body: some View {
         DraftEditorScreen(
-            navigationTitle: "bookmark.edit",
+            navigationTitle: .bookmarkEdit,
             saveTitle: "Save",
             title: $title,
             description: $description,

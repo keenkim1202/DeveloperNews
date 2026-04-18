@@ -228,7 +228,7 @@ final class AuthService {
             if nsError.domain == AuthErrorDomain,
                nsError.code == AuthErrorCode.requiresRecentLogin.rawValue {
                 signOut()
-                errorMessage = String(localized: "auth.error.requiresRecentLogin")
+                errorMessage = String(localized: .authErrorRequiresRecentLogin)
                 return .requiresRecentLogin
             }
             errorMessage = error.localizedDescription
@@ -262,58 +262,58 @@ final class AuthService {
         let nsError = error as NSError
 
         if let authError = error as? AuthError {
-            return authError.errorDescription ?? String(localized: "auth.error.unknown")
+            return authError.errorDescription ?? String(localized: .authErrorUnknown)
         }
 
         guard nsError.domain == AuthErrorDomain else {
             if nsError.domain == NSURLErrorDomain {
-                return String(localized: "auth.error.networkError")
+                return String(localized: .authErrorNetworkError)
             }
-            return String(localized: "auth.error.unknown")
+            return String(localized: .authErrorUnknown)
         }
 
         guard let code = AuthErrorCode(rawValue: nsError.code) else {
-            return String(localized: "auth.error.unknown")
+            return String(localized: .authErrorUnknown)
         }
 
         switch code {
         case .invalidEmail:
-            return String(localized: "auth.error.invalidEmail")
+            return String(localized: .authErrorInvalidEmail)
         case .userNotFound:
             if let providerMessage = await providerSpecificMessage(for: attemptedEmail) {
                 return providerMessage
             }
-            return String(localized: "auth.error.userNotFound")
+            return String(localized: .authErrorUserNotFound)
         case .wrongPassword:
             if let providerMessage = await providerSpecificMessage(for: attemptedEmail) {
                 return providerMessage
             }
-            return String(localized: "auth.error.wrongPassword")
+            return String(localized: .authErrorWrongPassword)
         case .invalidCredential:
             if let providerMessage = await providerSpecificMessage(for: attemptedEmail) {
                 return providerMessage
             }
-            return String(localized: "auth.error.invalidCredentials")
+            return String(localized: .authErrorInvalidCredentials)
         case .emailAlreadyInUse:
             if let providerMessage = await providerSpecificMessage(for: attemptedEmail) {
                 return providerMessage
             }
-            return String(localized: "auth.error.emailAlreadyInUse")
+            return String(localized: .authErrorEmailAlreadyInUse)
         case .accountExistsWithDifferentCredential:
             if let providerMessage = await providerSpecificMessage(for: attemptedEmail) {
                 return providerMessage
             }
-            return String(localized: "auth.error.invalidCredentials")
+            return String(localized: .authErrorInvalidCredentials)
         case .weakPassword:
-            return String(localized: "auth.error.weakPassword")
+            return String(localized: .authErrorWeakPassword)
         case .networkError:
-            return String(localized: "auth.error.networkError")
+            return String(localized: .authErrorNetworkError)
         case .tooManyRequests:
-            return String(localized: "auth.error.tooManyRequests")
+            return String(localized: .authErrorTooManyRequests)
         case .userDisabled:
-            return String(localized: "auth.error.unknown")
+            return String(localized: .authErrorUnknown)
         default:
-            return String(localized: "auth.error.unknown")
+            return String(localized: .authErrorUnknown)
         }
     }
 
@@ -328,10 +328,10 @@ final class AuthService {
             guard !methods.isEmpty else { return nil }
 
             if methods.contains("google.com") {
-                return String(localized: "auth.error.providerGoogle")
+                return String(localized: .authErrorProviderGoogle)
             }
             if methods.contains("apple.com") {
-                return String(localized: "auth.error.providerApple")
+                return String(localized: .authErrorProviderApple)
             }
             return nil
         }
@@ -364,9 +364,9 @@ enum AuthError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidCredential: String(localized: "auth.error.invalidCredential")
-        case .missingClientID: String(localized: "auth.error.missingClientID")
-        case .missingRootViewController: String(localized: "auth.error.missingRootViewController")
+        case .invalidCredential: String(localized: .authErrorInvalidCredential)
+        case .missingClientID: String(localized: .authErrorMissingClientID)
+        case .missingRootViewController: String(localized: .authErrorMissingRootViewController)
         }
     }
 }
