@@ -222,15 +222,16 @@ struct CommunityPostDetailView: View {
             Button(.communityReportReasonInappropriate, action: reportInappropriate)
             Button(.communityReportReasonOther, action: openOtherReasonInput)
         }
-        .alert(.communityReportReasonOtherTitle, isPresented: $showOtherReasonInput) {
+        .alert(
+            .communityReportReasonOtherTitle,
+            message: .communityReportReasonOtherMessage,
+            isPresented: $showOtherReasonInput) {
             TextField(.communityReportReasonOtherPlaceholder, text: $otherReasonText)
                 .keenOnChange(of: otherReasonText, perform: onOtherReasonTextChange)
             Button(
                 "Cancel",
                 role: .cancel) {}
             Button(.communityReport, action: submitOtherReport)
-        } message: {
-            Text(.communityReportReasonOtherMessage)
         }
         .dialog(
             .communityBlockConfirmTitle,

@@ -38,4 +38,20 @@ extension View {
             }
         }
     }
+
+    func alert(
+        _ title: LocalizedStringResource,
+        message: LocalizedStringResource? = nil,
+        isPresented: Binding<Bool>,
+        @ViewBuilder actions: () -> some View
+    ) -> some View {
+        alert(
+            title,
+            isPresented: isPresented,
+            actions: actions) {
+            if let message {
+                Text(message)
+            }
+        }
+    }
 }

@@ -22,24 +22,26 @@ struct SettingsView: View {
             .sheet(isPresented: $viewModel.showSignIn) {
                 SignInView(appState: appState)
             }
-            .alert(.profileEditName, isPresented: $viewModel.showEditName) {
+            .alert(
+                .profileEditName,
+                message: .profileEditNameMessage,
+                isPresented: $viewModel.showEditName) {
                 TextField(.profileNamePlaceholder, text: $viewModel.editingName)
                 Button(
                     "Cancel",
                     role: .cancel) {}
                 Button("Save", action: saveDisplayName)
-            } message: {
-                Text(.profileEditNameMessage)
             }
-            .alert(.profileEditEmoji, isPresented: $viewModel.showEmojiPicker) {
+            .alert(
+                .profileEditEmoji,
+                message: .profileEditEmojiMessage,
+                isPresented: $viewModel.showEmojiPicker) {
                 TextField(.profileEmojiPlaceholder, text: $viewModel.editingEmoji)
                     .keenOnChange(of: viewModel.editingEmoji, perform: onEditingEmojiChange)
                 Button(
                     "Cancel",
                     role: .cancel) {}
                 Button("Save", action: saveProfileEmoji)
-            } message: {
-                Text(.profileEditEmojiMessage)
             }
             .sheet(isPresented: $viewModel.showFeedback) {
                 FeedbackView()
