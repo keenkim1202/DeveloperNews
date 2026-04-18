@@ -146,10 +146,12 @@ struct ArticleDetailView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
-        .onAppear {
-            appState.markAsRead(item)
-        }
+        .onAppear(perform: onAppear)
         .sheet(isPresented: $showEditNote) { noteEditorSheet }
+    }
+
+    private func onAppear() {
+        appState.markAsRead(item)
     }
 
     private var currentNote: String {

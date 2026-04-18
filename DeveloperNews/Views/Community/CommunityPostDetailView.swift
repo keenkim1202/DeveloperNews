@@ -247,9 +247,7 @@ struct CommunityPostDetailView: View {
         }
         .alert("community.reportReasonOtherTitle", isPresented: $showOtherReasonInput) {
             TextField("community.reportReasonOtherPlaceholder", text: $otherReasonText)
-                .onChange(of: otherReasonText) { _, new in
-                    if new.count > 200 { otherReasonText = String(new.prefix(200)) }
-                }
+                .keenOnChange(of: otherReasonText, perform: onOtherReasonTextChange)
             Button("Cancel", role: .cancel) {}
             Button("community.report") {
                 let trimmed = otherReasonText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -267,14 +265,20 @@ struct CommunityPostDetailView: View {
         } message: {
             Text("community.blockConfirmMessage")
         }
-        .onAppear {
-            appState.markPostAsRead(post.id)
-            appState.markURLAsRead("devnews://community/\(post.id)")
-            Task {
-                guard let uid = currentUserId else { return }
-                alreadyReported = await community.hasReportedPost(post.id, reporterId: uid)
-            }
+        .onAppear(perform: onAppear)
+    }
+
+    private func onAppear() {
+        appState.markPostAsRead(post.id)
+        appState.markURLAsRead("devnews://community/\(post.id)")
+        Task {
+            guard let uid = currentUserId else { return }
+            alreadyReported = await community.hasReportedPost(post.id, reporterId: uid)
         }
+    }
+
+    private func onOtherReasonTextChange(_ new: String) {
+        if new.count > 200 { otherReasonText = String(new.prefix(200)) }
     }
 
     private func submitReport(_ reason: String) {

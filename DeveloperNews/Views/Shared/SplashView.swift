@@ -19,13 +19,15 @@ struct SplashView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground).ignoresSafeArea())
-        .onAppear {
-            Task {
-                await appState.loadIfNeeded()
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                onComplete()
-            }
+        .onAppear(perform: onAppear)
+    }
+
+    private func onAppear() {
+        Task {
+            await appState.loadIfNeeded()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            onComplete()
         }
     }
 }

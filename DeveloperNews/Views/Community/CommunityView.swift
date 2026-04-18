@@ -13,7 +13,7 @@ struct CommunityView: View {
         NavigationStack {
             ScrollViewReader { proxy in
                 content
-                    .onChange(of: viewModel.scrollToTopTrigger) { _, _ in
+                    .keenOnChange(of: viewModel.scrollToTopTrigger) {
                         guard let anchor = viewModel.firstPostId else { return }
                         withAnimation {
                             proxy.scrollTo(anchor, anchor: .top)

@@ -13,7 +13,7 @@ struct SettingsView: View {
         NavigationStack {
             ScrollViewReader { proxy in
                 settingsList
-                    .onChange(of: viewModel.scrollToTopTrigger) { _, _ in
+                    .keenOnChange(of: viewModel.scrollToTopTrigger) {
                         withAnimation {
                             proxy.scrollTo("__settings_top__", anchor: .top)
                         }
@@ -37,15 +37,7 @@ struct SettingsView: View {
             }
             .alert("profile.editEmoji", isPresented: $viewModel.showEmojiPicker) {
                 TextField("profile.emojiPlaceholder", text: $viewModel.editingEmoji)
-                    .onChange(of: viewModel.editingEmoji) { _, new in
-                        let emojis = new.filter(\.isEmoji)
-                        if let last = emojis.last {
-                            viewModel.editingEmoji = String(last)
-                        }
-                        else {
-                            viewModel.editingEmoji = ""
-                        }
-                    }
+                    .keenOnChange(of: viewModel.editingEmoji, perform: onEditingEmojiChange)
                 Button("Cancel", role: .cancel) {}
                 Button("Save") {
                     guard !viewModel.editingEmoji.isEmpty else { return }
@@ -307,6 +299,16 @@ struct SettingsView: View {
             } footer: {
                 Text("auth.signInFooter")
             }
+        }
+    }
+
+    private func onEditingEmojiChange(_ new: String) {
+        let emojis = new.filter(\.isEmoji)
+        if let last = emojis.last {
+            viewModel.editingEmoji = String(last)
+        }
+        else {
+            viewModel.editingEmoji = ""
         }
     }
 }
