@@ -168,7 +168,10 @@ struct CommunityPostDetailView: View {
                 }
 
                 if isAuthor {
-                    Button(.communityDeletePost, role: .destructive, action: confirmDelete)
+                    Button(
+                        .communityDeletePost,
+                        role: .destructive,
+                        action: confirmDelete)
                         .font(.footnote)
                 }
                 else if currentUserId != nil {
@@ -207,7 +210,10 @@ struct CommunityPostDetailView: View {
             EditCommunityPostView(appState: appState, post: currentPost)
         }
         .confirmationDialog(.communityDeleteConfirm, isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-            Button("Delete", role: .destructive, action: deletePost)
+            Button(
+                "Delete",
+                role: .destructive,
+                action: deletePost)
         }
         .confirmationDialog(.communityReportConfirmTitle, isPresented: $showReportConfirm, titleVisibility: .visible) {
             Button(.communityReportReasonSpam, action: reportSpam)
@@ -217,13 +223,18 @@ struct CommunityPostDetailView: View {
         .alert(.communityReportReasonOtherTitle, isPresented: $showOtherReasonInput) {
             TextField(.communityReportReasonOtherPlaceholder, text: $otherReasonText)
                 .keenOnChange(of: otherReasonText, perform: onOtherReasonTextChange)
-            Button("Cancel", role: .cancel) {}
+            Button(
+                "Cancel",
+                role: .cancel) {}
             Button(.communityReport, action: submitOtherReport)
         } message: {
             Text(.communityReportReasonOtherMessage)
         }
         .confirmationDialog(.communityBlockConfirmTitle, isPresented: $showBlockConfirm, titleVisibility: .visible) {
-            Button(.communityBlockConfirmAction, role: .destructive, action: blockUser)
+            Button(
+                .communityBlockConfirmAction,
+                role: .destructive,
+                action: blockUser)
         } message: {
             Text(.communityBlockConfirmMessage)
         }

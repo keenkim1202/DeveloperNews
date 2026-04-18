@@ -16,7 +16,9 @@ struct BlockedUsersView: View {
                                 .font(.footnote)
                                 .lineLimit(1)
                             Spacer()
-                            Button(.settingsUnblock, role: .destructive) {
+                            Button(
+                                .settingsUnblock,
+                                role: .destructive) {
                                 unblockUser(userId)
                             }
                             .font(.footnote)
