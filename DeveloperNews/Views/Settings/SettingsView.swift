@@ -45,19 +45,14 @@ struct SettingsView: View {
                 FeedbackView()
                     .presentationDetents([.large])
             }
-            .confirmationDialog(
+            .dialog(
                 "auth.deleteAccount.confirmTitle",
-                isPresented: $viewModel.showDeleteAccountConfirm,
-                titleVisibility: .visible) {
+                message: "auth.deleteAccount.confirmMessage",
+                isPresented: $viewModel.showDeleteAccountConfirm) {
                 Button(
                     "auth.deleteAccount.confirmAction",
                     role: .destructive,
                     action: deleteAccount)
-                Button(
-                    "Cancel",
-                    role: .cancel) {}
-            } message: {
-                Text("auth.deleteAccount.confirmMessage")
             }
         }
     }

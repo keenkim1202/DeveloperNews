@@ -209,13 +209,15 @@ struct CommunityPostDetailView: View {
         .sheet(isPresented: $showEditPost) {
             EditCommunityPostView(appState: appState, post: currentPost)
         }
-        .confirmationDialog(.communityDeleteConfirm, isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+        .dialog(.communityDeleteConfirm, isPresented: $showDeleteConfirm) {
             Button(
                 "Delete",
                 role: .destructive,
                 action: deletePost)
         }
-        .confirmationDialog(.communityReportConfirmTitle, isPresented: $showReportConfirm, titleVisibility: .visible) {
+        .dialog(
+            .communityReportConfirmTitle,
+            isPresented: $showReportConfirm) {
             Button(.communityReportReasonSpam, action: reportSpam)
             Button(.communityReportReasonInappropriate, action: reportInappropriate)
             Button(.communityReportReasonOther, action: openOtherReasonInput)
@@ -230,13 +232,14 @@ struct CommunityPostDetailView: View {
         } message: {
             Text(.communityReportReasonOtherMessage)
         }
-        .confirmationDialog(.communityBlockConfirmTitle, isPresented: $showBlockConfirm, titleVisibility: .visible) {
+        .dialog(
+            .communityBlockConfirmTitle,
+            message: .communityBlockConfirmMessage,
+            isPresented: $showBlockConfirm) {
             Button(
                 .communityBlockConfirmAction,
                 role: .destructive,
                 action: blockUser)
-        } message: {
-            Text(.communityBlockConfirmMessage)
         }
         .onAppear(perform: onAppear)
     }

@@ -99,7 +99,7 @@ struct BookmarkDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: onAppear)
-        .confirmationDialog(.bookmarkDeleteConfirm, isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+        .dialog(.bookmarkDeleteConfirm, isPresented: $showDeleteConfirm) {
             Button(
                 "Delete",
                 role: .destructive,
