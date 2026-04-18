@@ -24,7 +24,9 @@ struct SettingsView: View {
             }
             .alert(.profileEditName, isPresented: $viewModel.showEditName) {
                 TextField(.profileNamePlaceholder, text: $viewModel.editingName)
-                Button("Cancel", role: .cancel) {}
+                Button(
+                    "Cancel",
+                    role: .cancel) {}
                 Button("Save", action: saveDisplayName)
             } message: {
                 Text(.profileEditNameMessage)
@@ -32,7 +34,9 @@ struct SettingsView: View {
             .alert(.profileEditEmoji, isPresented: $viewModel.showEmojiPicker) {
                 TextField(.profileEmojiPlaceholder, text: $viewModel.editingEmoji)
                     .keenOnChange(of: viewModel.editingEmoji, perform: onEditingEmojiChange)
-                Button("Cancel", role: .cancel) {}
+                Button(
+                    "Cancel",
+                    role: .cancel) {}
                 Button("Save", action: saveProfileEmoji)
             } message: {
                 Text(.profileEditEmojiMessage)
@@ -45,8 +49,13 @@ struct SettingsView: View {
                 "auth.deleteAccount.confirmTitle",
                 isPresented: $viewModel.showDeleteAccountConfirm,
                 titleVisibility: .visible) {
-                Button("auth.deleteAccount.confirmAction", role: .destructive, action: deleteAccount)
-                Button("Cancel", role: .cancel) {}
+                Button(
+                    "auth.deleteAccount.confirmAction",
+                    role: .destructive,
+                    action: deleteAccount)
+                Button(
+                    "Cancel",
+                    role: .cancel) {}
             } message: {
                 Text("auth.deleteAccount.confirmMessage")
             }
@@ -146,7 +155,10 @@ struct SettingsView: View {
                     Label(.settingsTranslation, systemImage: "translate")
                 }
 
-                Button(.resetTopicSelection, role: .destructive, action: resetTopics)
+                Button(
+                    .resetTopicSelection,
+                    role: .destructive,
+                    action: resetTopics)
 
                 NavigationLink {
                     BlockedUsersView(appState: appState)
@@ -241,9 +253,15 @@ struct SettingsView: View {
                     Label(.profileChangeName, systemImage: "pencil")
                 }
 
-                Button(.authSignOut, role: .destructive, action: signOut)
+                Button(
+                    .authSignOut,
+                    role: .destructive,
+                    action: signOut)
 
-                Button(.authDeleteAccount, role: .destructive, action: confirmDeleteAccount)
+                Button(
+                    .authDeleteAccount,
+                    role: .destructive,
+                    action: confirmDeleteAccount)
             } header: {
                 Text(.authAccount)
             }

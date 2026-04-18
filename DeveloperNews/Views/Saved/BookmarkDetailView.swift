@@ -87,7 +87,10 @@ struct BookmarkDetailView: View {
                 .font(.caption)
                 .foregroundStyle(.tertiary)
 
-                Button(.bookmarkDelete, role: .destructive, action: confirmDelete)
+                Button(
+                    .bookmarkDelete,
+                    role: .destructive,
+                    action: confirmDelete)
                     .font(.footnote)
                     .padding(.top, 8)
             }
@@ -97,7 +100,10 @@ struct BookmarkDetailView: View {
         .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: onAppear)
         .confirmationDialog(.bookmarkDeleteConfirm, isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-            Button("Delete", role: .destructive, action: deleteBookmark)
+            Button(
+                "Delete",
+                role: .destructive,
+                action: deleteBookmark)
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
