@@ -254,7 +254,9 @@ struct CommunityPostDetailView: View {
     }
 
     private func onOtherReasonTextChange(_ new: String) {
-        if new.count > 200 { otherReasonText = String(new.prefix(200)) }
+        if new.count > 200 {
+            otherReasonText = String(new.prefix(200))
+        }
     }
 
     private func toggleFollow() {

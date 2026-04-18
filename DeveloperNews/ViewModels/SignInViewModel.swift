@@ -34,7 +34,9 @@ final class SignInViewModel {
 
     var canSubmitEmailForm: Bool {
         guard !email.isEmpty, !password.isEmpty, isEmailFormatValid else { return false }
-        if isSignUp { return hasAgreedToTerms }
+        if isSignUp {
+            return hasAgreedToTerms
+        }
         return true
     }
 
