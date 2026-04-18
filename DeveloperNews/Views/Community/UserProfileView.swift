@@ -70,12 +70,7 @@ struct UserProfileView: View {
                     }
 
                     if !isOwnProfile, currentUserId != nil {
-                        Button {
-                            Task {
-                                await appState.profileService.toggleFollow(authorId)
-                                followerCount = await appState.profileService.fetchFollowerCount(for: authorId)
-                            }
-                        } label: {
+                        Button(action: toggleFollow) {
                             Text(isFollowingAuthor
                                  ? LocalizedStringResource("community.following")
                                  : LocalizedStringResource("community.follow"))
@@ -133,6 +128,13 @@ struct UserProfileView: View {
         .task {
             followerCount = await appState.profileService.fetchFollowerCount(for: authorId)
             followingCount = await appState.profileService.fetchFollowingCount(for: authorId)
+        }
+    }
+
+    private func toggleFollow() {
+        Task {
+            await appState.profileService.toggleFollow(authorId)
+            followerCount = await appState.profileService.fetchFollowerCount(for: authorId)
         }
     }
 }

@@ -17,7 +17,7 @@ struct BlockedUsersView: View {
                                 .lineLimit(1)
                             Spacer()
                             Button("settings.unblock", role: .destructive) {
-                                appState.unblockUser(userId)
+                                unblockUser(userId)
                             }
                             .font(.footnote)
                         }
@@ -28,6 +28,10 @@ struct BlockedUsersView: View {
         .navigationTitle("settings.blockedUsers")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+    }
+
+    private func unblockUser(_ userId: String) {
+        appState.unblockUser(userId)
     }
 }
 

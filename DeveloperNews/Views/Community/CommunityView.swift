@@ -26,9 +26,7 @@ struct CommunityView: View {
             .toolbar {
                 if viewModel.isSignedIn {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            viewModel.showCreatePost = true
-                        } label: {
+                        Button(action: openCreatePost) {
                             Image(systemName: "plus")
                         }
                     }
@@ -38,6 +36,10 @@ struct CommunityView: View {
                 CreatePostView(appState: appState)
             }
         }
+    }
+
+    private func openCreatePost() {
+        viewModel.showCreatePost = true
     }
 
     @ViewBuilder
@@ -110,9 +112,7 @@ struct CommunityPostRow: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 if let onAuthorTap {
-                    Button {
-                        onAuthorTap()
-                    } label: {
+                    Button(action: onAuthorTap) {
                         HStack(spacing: 4) {
                             authorIcon
                             Text(post.authorName)

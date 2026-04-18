@@ -50,10 +50,14 @@ struct FeedbackView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel", action: cancel)
                 }
             }
         }
+    }
+
+    private func cancel() {
+        dismiss()
     }
 }
 

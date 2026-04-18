@@ -36,7 +36,7 @@ struct TopicSelectionView: View {
                             let isDisabled = !isSelected && !appState.canSelectMoreTopics
 
                             Button {
-                                appState.toggleTopic(topic)
+                                toggleTopic(topic)
                             } label: {
                                 HStack {
                                     Image(systemName: topic.symbolName)
@@ -63,6 +63,10 @@ struct TopicSelectionView: View {
             }
             .navigationTitle("DeveloperNews")
         }
+    }
+
+    private func toggleTopic(_ topic: Topic) {
+        appState.toggleTopic(topic)
     }
 }
 

@@ -38,9 +38,7 @@ struct SavedItemNoteComposerView: View {
                             .background(Color(.secondarySystemBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                        Button {
-                            UIPasteboard.general.string = item.url.absoluteString
-                        } label: {
+                        Button(action: copyLink) {
                             Label("Copy link", systemImage: "doc.on.doc")
                                 .font(.subheadline.weight(.semibold))
                         }
@@ -60,16 +58,26 @@ struct SavedItemNoteComposerView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel", action: cancel)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        saveChanges()
-                        dismiss()
-                    }
+                    Button("Save", action: save)
                 }
             }
         }
+    }
+
+    private func copyLink() {
+        UIPasteboard.general.string = item.url.absoluteString
+    }
+
+    private func cancel() {
+        dismiss()
+    }
+
+    private func save() {
+        saveChanges()
+        dismiss()
     }
 
     private func saveChanges() {

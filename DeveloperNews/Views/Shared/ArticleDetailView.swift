@@ -44,10 +44,7 @@ struct ArticleDetailView: View {
                 } description: {
                     Text(message)
                 } actions: {
-                    Button {
-                        loadError = nil
-                        reloadTrigger &+= 1
-                    } label: {
+                    Button(action: retryLoad) {
                         Text("Try again")
                             .fontWeight(.semibold)
                     }
@@ -85,9 +82,7 @@ struct ArticleDetailView: View {
             }
 
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    appState.toggleSaved(item)
-                } label: {
+                Button(action: toggleSaved) {
                     Image(systemName: appState.isSaved(item) ? "bookmark.fill" : "bookmark")
                 }
                 .accessibilityLabel(appState.isSaved(item) ? "Remove from saved" : "Save story")
@@ -95,9 +90,7 @@ struct ArticleDetailView: View {
 
             if appState.isSaved(item) {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showEditNote = true
-                    } label: {
+                    Button(action: openNoteEditor) {
                         Image(systemName: currentNote.isEmpty ? "note.text.badge.plus" : "note.text")
                             .foregroundStyle(currentNote.isEmpty ? Color.primary : Color.accentColor)
                     }
@@ -106,14 +99,7 @@ struct ArticleDetailView: View {
 
             if translator.canTranslate {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        if isPageTranslated {
-                            restoreOriginalPage()
-                        }
-                        else {
-                            pageTranslationTrigger &+= 1
-                        }
-                    } label: {
+                    Button(action: togglePageTranslation) {
                         if isTranslatingPage {
                             ProgressView()
                                 .controlSize(.small)
@@ -129,9 +115,7 @@ struct ArticleDetailView: View {
             }
 
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    reloadTrigger &+= 1
-                } label: {
+                Button(action: reload) {
                     Image(systemName: "arrow.clockwise")
                 }
                 .disabled(isLoading)
@@ -152,6 +136,32 @@ struct ArticleDetailView: View {
 
     private func onAppear() {
         appState.markAsRead(item)
+    }
+
+    private func retryLoad() {
+        loadError = nil
+        reloadTrigger &+= 1
+    }
+
+    private func toggleSaved() {
+        appState.toggleSaved(item)
+    }
+
+    private func openNoteEditor() {
+        showEditNote = true
+    }
+
+    private func togglePageTranslation() {
+        if isPageTranslated {
+            restoreOriginalPage()
+        }
+        else {
+            pageTranslationTrigger &+= 1
+        }
+    }
+
+    private func reload() {
+        reloadTrigger &+= 1
     }
 
     private var currentNote: String {

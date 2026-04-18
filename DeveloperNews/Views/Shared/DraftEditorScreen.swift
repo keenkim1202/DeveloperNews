@@ -67,12 +67,7 @@ struct DraftEditorScreen: View {
                 Section {
                     ForEach(Topic.allCases) { topic in
                         Button {
-                            if selectedTopics.contains(topic) {
-                                selectedTopics.remove(topic)
-                            }
-                            else {
-                                selectedTopics.insert(topic)
-                            }
+                            toggleTopic(topic)
                         } label: {
                             HStack {
                                 Label {
@@ -98,18 +93,33 @@ struct DraftEditorScreen: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel", action: cancel)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(saveTitle) {
-                        onSave(title, description, link, selectedTopics)
-                        dismiss()
-                    }
-                    .disabled(!isValid)
+                    Button(saveTitle, action: save)
+                        .disabled(!isValid)
                 }
             }
             .scrollDismissesKeyboard(.interactively)
         }
+    }
+
+    private func toggleTopic(_ topic: Topic) {
+        if selectedTopics.contains(topic) {
+            selectedTopics.remove(topic)
+        }
+        else {
+            selectedTopics.insert(topic)
+        }
+    }
+
+    private func cancel() {
+        dismiss()
+    }
+
+    private func save() {
+        onSave(title, description, link, selectedTopics)
+        dismiss()
     }
 }
 
