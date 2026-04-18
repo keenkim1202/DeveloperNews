@@ -22,7 +22,7 @@ struct DevToSourceClient: ContentSourceClient {
         guard let url = components.url else { return [] }
 
         var request = URLRequest(url: url)
-        request.setValue(AppContact.userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue(AppIdentity.userAgent, forHTTPHeaderField: "User-Agent")
 
         let (data, _) = try await session.data(for: request)
         let decoder = JSONDecoder()
@@ -45,8 +45,7 @@ struct DevToSourceClient: ContentSourceClient {
                 topics: inferredTopics(tags: article.tagList),
                 trendScore: trendScore(reactions: article.publicReactionsCount, comments: article.commentsCount),
                 thumbnailURL: thumbnail,
-                engagement: EngagementMetrics(reactionCount: article.publicReactionsCount, commentCount: article.commentsCount)
-            )
+                engagement: EngagementMetrics(reactionCount: article.publicReactionsCount, commentCount: article.commentsCount))
         }
     }
 

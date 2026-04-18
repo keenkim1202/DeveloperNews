@@ -77,8 +77,7 @@ struct GitHubTrendingSourceClient: ContentSourceClient {
                 topics: inferredTopics(language: repo.language, topics: repo.topics),
                 trendScore: score,
                 thumbnailURL: nil,
-                engagement: EngagementMetrics(reactionCount: repo.stargazersCount, commentCount: repo.forksCount)
-            )
+                engagement: EngagementMetrics(reactionCount: repo.stargazersCount, commentCount: repo.forksCount))
         }
     }
 
@@ -115,7 +114,7 @@ struct GitHubTrendingSourceClient: ContentSourceClient {
         }
 
         var request = URLRequest(url: url)
-        request.setValue(AppContact.userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue(AppIdentity.userAgent, forHTTPHeaderField: "User-Agent")
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
 
         let (data, _) = try await session.data(for: request)

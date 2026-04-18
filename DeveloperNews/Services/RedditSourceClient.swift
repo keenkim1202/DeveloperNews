@@ -49,7 +49,7 @@ struct RedditSourceClient: ContentSourceClient {
     private func fetchItems(for feed: RedditFeedDefinition) async throws -> [ContentItem] {
         let url = URL(string: "https://www.reddit.com/r/\(feed.subreddit).json")!
         var request = URLRequest(url: url)
-        request.setValue(AppContact.userAgent, forHTTPHeaderField: "User-Agent")
+        request.setValue(AppIdentity.userAgent, forHTTPHeaderField: "User-Agent")
 
         let (data, _) = try await session.data(for: request)
         let response = try JSONDecoder().decode(RedditListingResponse.self, from: data)
@@ -92,8 +92,7 @@ struct RedditSourceClient: ContentSourceClient {
                 topics: topics,
                 trendScore: trendScore(score: post.score, commentCount: post.numComments, publishedAt: publishedAt),
                 thumbnailURL: thumbnailURL(from: post),
-                engagement: EngagementMetrics(reactionCount: post.score, commentCount: post.numComments)
-            )
+                engagement: EngagementMetrics(reactionCount: post.score, commentCount: post.numComments))
         }
     }
 

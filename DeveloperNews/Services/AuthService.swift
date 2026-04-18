@@ -64,8 +64,7 @@ final class AuthService {
             let credential = OAuthProvider.appleCredential(
                 withIDToken: tokenString,
                 rawNonce: storedNonce,
-                fullName: appleIDCredential.fullName
-            )
+                fullName: appleIDCredential.fullName)
 
             let authResult = try await Auth.auth().signIn(with: credential)
             return authResult.additionalUserInfo?.isNewUser ?? false
@@ -123,8 +122,7 @@ final class AuthService {
 
             let credential = GoogleAuthProvider.credential(
                 withIDToken: idToken,
-                accessToken: result.user.accessToken.tokenString
-            )
+                accessToken: result.user.accessToken.tokenString)
 
             let authResult = try await Auth.auth().signIn(with: credential)
             return authResult.additionalUserInfo?.isNewUser ?? false
