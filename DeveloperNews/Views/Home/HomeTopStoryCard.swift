@@ -23,11 +23,7 @@ struct HomeTopStoryCard: View {
 
                 Spacer()
 
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        appState.dismissTopStory()
-                    }
-                } label: {
+                Button(action: hideTopStory) {
                     HStack(spacing: 4) {
                         Text("Hide for a day")
                         Image(systemName: "xmark")
@@ -79,14 +75,7 @@ struct HomeTopStoryCard: View {
             .buttonStyle(.plain)
 
             if translator.canTranslate {
-                Button {
-                    if translator.isTranslated(item) {
-                        showingTranslation.toggle()
-                    }
-                    else {
-                        translationTrigger &+= 1
-                    }
-                } label: {
+                Button(action: toggleTranslation) {
                     HStack(spacing: 2) {
                         Image(systemName: "translate")
                         Text(showingTranslation ? "translation.showOriginal" : "translation.showTranslated")
@@ -111,6 +100,21 @@ struct HomeTopStoryCard: View {
                         showingTranslation = true
                     }
             }
+        }
+    }
+
+    private func hideTopStory() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            appState.dismissTopStory()
+        }
+    }
+
+    private func toggleTranslation() {
+        if translator.isTranslated(item) {
+            showingTranslation.toggle()
+        }
+        else {
+            translationTrigger &+= 1
         }
     }
 }

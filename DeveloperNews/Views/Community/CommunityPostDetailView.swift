@@ -52,11 +52,7 @@ struct CommunityPostDetailView: View {
                     .buttonStyle(.plain)
 
                     if !isAuthor, currentUserId != nil {
-                        Button {
-                            Task {
-                                await appState.profileService.toggleFollow(currentPost.authorId)
-                            }
-                        } label: {
+                        Button(action: toggleFollow) {
                             Text(isFollowingAuthor
                                  ? LocalizedStringResource("community.following")
                                  : LocalizedStringResource("community.follow"))
@@ -159,12 +155,7 @@ struct CommunityPostDetailView: View {
                 .foregroundStyle(.tertiary)
 
                 HStack {
-                    Button {
-                        guard let uid = currentUserId else { return }
-                        Task {
-                            await community.toggleLike(currentPost, userId: uid)
-                        }
-                    } label: {
+                    Button(action: toggleLike) {
                         HStack(spacing: 4) {
                             Image(systemName: isLiked ? "heart.fill" : "heart")
                                 .foregroundStyle(isLiked ? .red : .secondary)
@@ -179,23 +170,17 @@ struct CommunityPostDetailView: View {
                 }
 
                 if isAuthor {
-                    Button("community.deletePost", role: .destructive) {
-                        showDeleteConfirm = true
-                    }
-                    .font(.footnote)
+                    Button("community.deletePost", role: .destructive, action: confirmDelete)
+                        .font(.footnote)
                 }
                 else if currentUserId != nil {
                     HStack(spacing: 16) {
-                        Button("community.report") {
-                            showReportConfirm = true
-                        }
-                        .disabled(alreadyReported)
-                        .foregroundStyle(alreadyReported ? Color.secondary : Color.red)
+                        Button("community.report", action: confirmReport)
+                            .disabled(alreadyReported)
+                            .foregroundStyle(alreadyReported ? Color.secondary : Color.red)
 
-                        Button("community.blockUser") {
-                            showBlockConfirm = true
-                        }
-                        .foregroundStyle(.red)
+                        Button("community.blockUser", action: confirmBlockUser)
+                            .foregroundStyle(.red)
                     }
                     .font(.footnote)
 
@@ -213,9 +198,7 @@ struct CommunityPostDetailView: View {
         .toolbar {
             if isAuthor {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showEditPost = true
-                    } label: {
+                    Button(action: openEditPost) {
                         Image(systemName: "pencil")
                     }
                     .accessibilityLabel("community.editPost")
@@ -226,42 +209,23 @@ struct CommunityPostDetailView: View {
             EditCommunityPostView(appState: appState, post: currentPost)
         }
         .confirmationDialog("community.deleteConfirm", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-            Button("Delete", role: .destructive) {
-                Task {
-                    await community.deletePost(currentPost)
-                    dismiss()
-                }
-            }
+            Button("Delete", role: .destructive, action: deletePost)
         }
         .confirmationDialog("community.reportConfirmTitle", isPresented: $showReportConfirm, titleVisibility: .visible) {
-            Button("community.reportReasonSpam") {
-                submitReport("spam")
-            }
-            Button("community.reportReasonInappropriate") {
-                submitReport("inappropriate")
-            }
-            Button("community.reportReasonOther") {
-                otherReasonText = ""
-                showOtherReasonInput = true
-            }
+            Button("community.reportReasonSpam", action: reportSpam)
+            Button("community.reportReasonInappropriate", action: reportInappropriate)
+            Button("community.reportReasonOther", action: openOtherReasonInput)
         }
         .alert("community.reportReasonOtherTitle", isPresented: $showOtherReasonInput) {
             TextField("community.reportReasonOtherPlaceholder", text: $otherReasonText)
                 .keenOnChange(of: otherReasonText, perform: onOtherReasonTextChange)
             Button("Cancel", role: .cancel) {}
-            Button("community.report") {
-                let trimmed = otherReasonText.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty else { return }
-                submitReport("other: \(trimmed)")
-            }
+            Button("community.report", action: submitOtherReport)
         } message: {
             Text("community.reportReasonOtherMessage")
         }
         .confirmationDialog("community.blockConfirmTitle", isPresented: $showBlockConfirm, titleVisibility: .visible) {
-            Button("community.blockConfirmAction", role: .destructive) {
-                appState.blockUser(currentPost.authorId)
-                dismiss()
-            }
+            Button("community.blockConfirmAction", role: .destructive, action: blockUser)
         } message: {
             Text("community.blockConfirmMessage")
         }
@@ -279,6 +243,66 @@ struct CommunityPostDetailView: View {
 
     private func onOtherReasonTextChange(_ new: String) {
         if new.count > 200 { otherReasonText = String(new.prefix(200)) }
+    }
+
+    private func toggleFollow() {
+        Task {
+            await appState.profileService.toggleFollow(currentPost.authorId)
+        }
+    }
+
+    private func toggleLike() {
+        guard let uid = currentUserId else { return }
+        Task {
+            await community.toggleLike(currentPost, userId: uid)
+        }
+    }
+
+    private func confirmDelete() {
+        showDeleteConfirm = true
+    }
+
+    private func confirmReport() {
+        showReportConfirm = true
+    }
+
+    private func confirmBlockUser() {
+        showBlockConfirm = true
+    }
+
+    private func openEditPost() {
+        showEditPost = true
+    }
+
+    private func deletePost() {
+        Task {
+            await community.deletePost(currentPost)
+            dismiss()
+        }
+    }
+
+    private func reportSpam() {
+        submitReport("spam")
+    }
+
+    private func reportInappropriate() {
+        submitReport("inappropriate")
+    }
+
+    private func openOtherReasonInput() {
+        otherReasonText = ""
+        showOtherReasonInput = true
+    }
+
+    private func submitOtherReport() {
+        let trimmed = otherReasonText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        submitReport("other: \(trimmed)")
+    }
+
+    private func blockUser() {
+        appState.blockUser(currentPost.authorId)
+        dismiss()
     }
 
     private func submitReport(_ reason: String) {

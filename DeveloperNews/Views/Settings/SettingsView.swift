@@ -25,13 +25,7 @@ struct SettingsView: View {
             .alert("profile.editName", isPresented: $viewModel.showEditName) {
                 TextField("profile.namePlaceholder", text: $viewModel.editingName)
                 Button("Cancel", role: .cancel) {}
-                Button("Save") {
-                    let trimmed = viewModel.editingName.trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !trimmed.isEmpty else { return }
-                    Task {
-                        await viewModel.updateDisplayName(trimmed)
-                    }
-                }
+                Button("Save", action: saveDisplayName)
             } message: {
                 Text("profile.editNameMessage")
             }
@@ -39,12 +33,7 @@ struct SettingsView: View {
                 TextField("profile.emojiPlaceholder", text: $viewModel.editingEmoji)
                     .keenOnChange(of: viewModel.editingEmoji, perform: onEditingEmojiChange)
                 Button("Cancel", role: .cancel) {}
-                Button("Save") {
-                    guard !viewModel.editingEmoji.isEmpty else { return }
-                    Task {
-                        await viewModel.updateProfileEmoji(viewModel.editingEmoji)
-                    }
-                }
+                Button("Save", action: saveProfileEmoji)
             } message: {
                 Text("profile.editEmojiMessage")
             }
@@ -56,11 +45,7 @@ struct SettingsView: View {
                 "auth.deleteAccount.confirmTitle",
                 isPresented: $viewModel.showDeleteAccountConfirm,
                 titleVisibility: .visible) {
-                Button("auth.deleteAccount.confirmAction", role: .destructive) {
-                    Task {
-                        await viewModel.deleteAccount()
-                    }
-                }
+                Button("auth.deleteAccount.confirmAction", role: .destructive, action: deleteAccount)
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("auth.deleteAccount.confirmMessage")
@@ -83,7 +68,7 @@ struct SettingsView: View {
                     let isDisabled = !isSelected && !viewModel.canSelectMoreTopics()
 
                     Button {
-                        viewModel.toggleTopic(topic)
+                        toggleTopic(topic)
                     } label: {
                         HStack {
                             Label {
@@ -139,11 +124,7 @@ struct SettingsView: View {
             }
 
             Section {
-                Button {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
-                    }
-                } label: {
+                Button(action: openSystemSettings) {
                     HStack {
                         Label("Language", systemImage: "globe")
                         Spacer()
@@ -165,9 +146,7 @@ struct SettingsView: View {
                     Label("settings.translation", systemImage: "translate")
                 }
 
-                Button("Reset topic selection", role: .destructive) {
-                    viewModel.resetTopics()
-                }
+                Button("Reset topic selection", role: .destructive, action: resetTopics)
 
                 NavigationLink {
                     BlockedUsersView(appState: appState)
@@ -205,9 +184,7 @@ struct SettingsView: View {
                     Label("Terms of use", systemImage: "doc.plaintext")
                 }
 
-                Button {
-                    viewModel.showFeedback = true
-                } label: {
+                Button(action: openFeedback) {
                     Label("Send feedback", systemImage: "envelope")
                 }
 
@@ -256,36 +233,24 @@ struct SettingsView: View {
                 }
                 .padding(.vertical, 4)
 
-                Button {
-                    viewModel.editingEmoji = ""
-                    viewModel.showEmojiPicker = true
-                } label: {
+                Button(action: openEmojiPicker) {
                     Label("profile.changeEmoji", systemImage: "face.smiling")
                 }
 
-                Button {
-                    viewModel.editingName = viewModel.displayName
-                    viewModel.showEditName = true
-                } label: {
+                Button(action: openNameEditor) {
                     Label("profile.changeName", systemImage: "pencil")
                 }
 
-                Button("auth.signOut", role: .destructive) {
-                    viewModel.signOut()
-                }
+                Button("auth.signOut", role: .destructive, action: signOut)
 
-                Button("auth.deleteAccount", role: .destructive) {
-                    viewModel.showDeleteAccountConfirm = true
-                }
+                Button("auth.deleteAccount", role: .destructive, action: confirmDeleteAccount)
             } header: {
                 Text("auth.account")
             }
         }
         else {
             Section {
-                Button {
-                    viewModel.showSignIn = true
-                } label: {
+                Button(action: openSignIn) {
                     HStack {
                         Label("auth.signIn", systemImage: "person.crop.circle")
                         Spacer()
@@ -310,5 +275,66 @@ struct SettingsView: View {
         else {
             viewModel.editingEmoji = ""
         }
+    }
+
+    private func saveDisplayName() {
+        let trimmed = viewModel.editingName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        Task {
+            await viewModel.updateDisplayName(trimmed)
+        }
+    }
+
+    private func saveProfileEmoji() {
+        guard !viewModel.editingEmoji.isEmpty else { return }
+        Task {
+            await viewModel.updateProfileEmoji(viewModel.editingEmoji)
+        }
+    }
+
+    private func deleteAccount() {
+        Task {
+            await viewModel.deleteAccount()
+        }
+    }
+
+    private func toggleTopic(_ topic: Topic) {
+        viewModel.toggleTopic(topic)
+    }
+
+    private func openSystemSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    private func resetTopics() {
+        viewModel.resetTopics()
+    }
+
+    private func openFeedback() {
+        viewModel.showFeedback = true
+    }
+
+    private func openEmojiPicker() {
+        viewModel.editingEmoji = ""
+        viewModel.showEmojiPicker = true
+    }
+
+    private func openNameEditor() {
+        viewModel.editingName = viewModel.displayName
+        viewModel.showEditName = true
+    }
+
+    private func signOut() {
+        viewModel.signOut()
+    }
+
+    private func confirmDeleteAccount() {
+        viewModel.showDeleteAccountConfirm = true
+    }
+
+    private func openSignIn() {
+        viewModel.showSignIn = true
     }
 }

@@ -88,14 +88,7 @@ struct FeedItemRow: View {
                 }
 
                 if translator.canTranslate {
-                    Button {
-                        if translator.isTranslated(item) {
-                            showingTranslation.toggle()
-                        }
-                        else {
-                            translationTrigger &+= 1
-                        }
-                    } label: {
+                    Button(action: toggleTranslation) {
                         HStack(spacing: 2) {
                             Image(systemName: "translate")
                             Text(showingTranslation ? "translation.showOriginal" : "translation.showTranslated")
@@ -121,6 +114,15 @@ struct FeedItemRow: View {
                         showingTranslation = true
                     }
             }
+        }
+    }
+
+    private func toggleTranslation() {
+        if translator.isTranslated(item) {
+            showingTranslation.toggle()
+        }
+        else {
+            translationTrigger &+= 1
         }
     }
 }
@@ -171,9 +173,7 @@ struct FeedItemMetaView: View {
                 }
 
                 if item.sourceCategory == .following, let onAuthorTap {
-                    Button {
-                        onAuthorTap()
-                    } label: {
+                    Button(action: onAuthorTap) {
                         HStack(spacing: 4) {
                             if let emoji = authorEmoji {
                                 Text(emoji)

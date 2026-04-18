@@ -87,11 +87,9 @@ struct BookmarkDetailView: View {
                 .font(.caption)
                 .foregroundStyle(.tertiary)
 
-                Button("bookmark.delete", role: .destructive) {
-                    showDeleteConfirm = true
-                }
-                .font(.footnote)
-                .padding(.top, 8)
+                Button("bookmark.delete", role: .destructive, action: confirmDelete)
+                    .font(.footnote)
+                    .padding(.top, 8)
             }
             .padding(20)
         }
@@ -99,16 +97,11 @@ struct BookmarkDetailView: View {
         .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: onAppear)
         .confirmationDialog("bookmark.deleteConfirm", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-            Button("Delete", role: .destructive) {
-                appState.removeSavedItem(at: currentItem.url)
-                dismiss()
-            }
+            Button("Delete", role: .destructive, action: deleteBookmark)
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showEdit = true
-                } label: {
+                Button(action: openEdit) {
                     Image(systemName: "pencil")
                 }
             }
@@ -120,6 +113,19 @@ struct BookmarkDetailView: View {
 
     private func onAppear() {
         appState.markAsRead(currentItem)
+    }
+
+    private func confirmDelete() {
+        showDeleteConfirm = true
+    }
+
+    private func deleteBookmark() {
+        appState.removeSavedItem(at: currentItem.url)
+        dismiss()
+    }
+
+    private func openEdit() {
+        showEdit = true
     }
 }
 

@@ -26,9 +26,7 @@ struct SavedView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 12) {
-                        Button {
-                            viewModel.showAddItem = true
-                        } label: {
+                        Button(action: openAddItem) {
                             Image(systemName: "plus")
                         }
 
@@ -63,9 +61,7 @@ struct SavedView: View {
             } description: {
                 Text("Open a story you want to come back to and tap save. It will show up here.")
             } actions: {
-                Button {
-                    viewModel.navigateToHome()
-                } label: {
+                Button(action: goToHome) {
                     Text("Browse trending")
                         .fontWeight(.semibold)
                 }
@@ -91,6 +87,14 @@ struct SavedView: View {
                 showsSummary: false,
                 scrollToTopTrigger: viewModel.scrollToTopTrigger)
         }
+    }
+
+    private func openAddItem() {
+        viewModel.showAddItem = true
+    }
+
+    private func goToHome() {
+        viewModel.navigateToHome()
     }
 }
 

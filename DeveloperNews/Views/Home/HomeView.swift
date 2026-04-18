@@ -59,9 +59,7 @@ struct HomeView: View {
             } description: {
                 Text(errorMessage)
             } actions: {
-                Button {
-                    Task { await viewModel.reload() }
-                } label: {
+                Button(action: reloadContent) {
                     Text("Try again")
                         .fontWeight(.semibold)
                 }
@@ -96,6 +94,10 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    private func reloadContent() {
+        Task { await viewModel.reload() }
     }
 }
 

@@ -17,12 +17,7 @@ struct SignInView: View {
                     termsCheckbox
 
                     VStack(spacing: 12) {
-                        Button {
-                            Task {
-                                await viewModel.signInWithApple()
-                                if viewModel.isSignedIn { dismiss() }
-                            }
-                        } label: {
+                        Button(action: signInWithApple) {
                             HStack(spacing: 8) {
                                 Image("apple_logo")
                                     .resizable()
@@ -44,12 +39,7 @@ struct SignInView: View {
                         .disabled(!viewModel.hasAgreedToTerms)
                         .opacity(viewModel.hasAgreedToTerms ? 1 : 0.5)
 
-                        Button {
-                            Task {
-                                await viewModel.signInWithGoogle()
-                                if viewModel.isSignedIn { dismiss() }
-                            }
-                        } label: {
+                        Button(action: signInWithGoogle) {
                             HStack(spacing: 8) {
                                 Image("google_logo")
                                     .resizable()
@@ -97,12 +87,7 @@ struct SignInView: View {
                             .background(Color(.secondarySystemBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                        Button {
-                            Task {
-                                await viewModel.submitEmailForm()
-                                if viewModel.isSignedIn { dismiss() }
-                            }
-                        } label: {
+                        Button(action: submitEmailForm) {
                             Text(viewModel.isSignUp ? LocalizedStringResource("auth.createAccount") : LocalizedStringResource("auth.signInWithEmail"))
                                 .font(.body.weight(.medium))
                                 .frame(maxWidth: .infinity)
@@ -114,18 +99,14 @@ struct SignInView: View {
                         .disabled(!viewModel.canSubmitEmailForm)
 
                         if !viewModel.isSignUp {
-                            Button {
-                                viewModel.openPasswordReset()
-                            } label: {
+                            Button(action: openPasswordReset) {
                                 Text("auth.forgotPassword")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
                         }
 
-                        Button {
-                            viewModel.toggleMode()
-                        } label: {
+                        Button(action: toggleSignUpMode) {
                             Text(viewModel.isSignUp ? LocalizedStringResource("auth.alreadyHaveAccount") : LocalizedStringResource("auth.noAccount"))
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
@@ -145,7 +126,7 @@ struct SignInView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel", action: cancel)
                 }
             }
             .onTapGesture {
@@ -172,9 +153,7 @@ struct SignInView: View {
 
     private var termsCheckbox: some View {
         HStack(alignment: .top, spacing: 12) {
-            Button {
-                viewModel.hasAgreedToTerms.toggle()
-            } label: {
+            Button(action: toggleTermsAgreement) {
                 Image(systemName: viewModel.hasAgreedToTerms ? "checkmark.square.fill" : "square")
                     .font(.title3)
                     .foregroundStyle(viewModel.hasAgreedToTerms ? Color.accentColor : .secondary)
@@ -206,6 +185,43 @@ struct SignInView: View {
         let raw = String(localized: "auth.termsAgreement")
         let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
         return (try? AttributedString(markdown: raw, options: options)) ?? AttributedString(raw)
+    }
+
+    private func signInWithApple() {
+        Task {
+            await viewModel.signInWithApple()
+            if viewModel.isSignedIn { dismiss() }
+        }
+    }
+
+    private func signInWithGoogle() {
+        Task {
+            await viewModel.signInWithGoogle()
+            if viewModel.isSignedIn { dismiss() }
+        }
+    }
+
+    private func submitEmailForm() {
+        Task {
+            await viewModel.submitEmailForm()
+            if viewModel.isSignedIn { dismiss() }
+        }
+    }
+
+    private func openPasswordReset() {
+        viewModel.openPasswordReset()
+    }
+
+    private func toggleSignUpMode() {
+        viewModel.toggleMode()
+    }
+
+    private func toggleTermsAgreement() {
+        viewModel.hasAgreedToTerms.toggle()
+    }
+
+    private func cancel() {
+        dismiss()
     }
 
     private func dividerWithText(_ text: LocalizedStringResource) -> some View {
@@ -254,16 +270,7 @@ struct PasswordResetView: View {
                     .background(Color(.secondarySystemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
-                Button {
-                    Task {
-                        successMessage = nil
-                        authService.setErrorMessage(nil)
-                        let result = await authService.sendPasswordReset(email: email)
-                        if case .success = result {
-                            successMessage = String(localized: "auth.passwordReset.success")
-                        }
-                    }
-                } label: {
+                Button(action: sendPasswordReset) {
                     Text("auth.passwordReset.send")
                         .font(.body.weight(.medium))
                         .frame(maxWidth: .infinity)
@@ -295,10 +302,7 @@ struct PasswordResetView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        authService.setErrorMessage(nil)
-                        dismiss()
-                    }
+                    Button("Cancel", action: cancel)
                 }
             }
             .onTapGesture {
@@ -312,5 +316,21 @@ struct PasswordResetView: View {
                 }
             }
         }
+    }
+
+    private func sendPasswordReset() {
+        Task {
+            successMessage = nil
+            authService.setErrorMessage(nil)
+            let result = await authService.sendPasswordReset(email: email)
+            if case .success = result {
+                successMessage = String(localized: "auth.passwordReset.success")
+            }
+        }
+    }
+
+    private func cancel() {
+        authService.setErrorMessage(nil)
+        dismiss()
     }
 }
