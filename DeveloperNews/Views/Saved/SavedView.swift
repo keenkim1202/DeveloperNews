@@ -20,9 +20,9 @@ struct SavedView: View {
 
                 content
             }
-            .navigationTitle("Bookmarks")
+            .navigationTitle(.bookmarks)
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $viewModel.searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search saved stories")
+            .searchable(text: $viewModel.searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: .searchSavedStories)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 12) {
@@ -32,7 +32,7 @@ struct SavedView: View {
 
                         if !viewModel.savedItems.isEmpty {
                             Menu {
-                                Picker("Sort", selection: Binding(
+                                Picker(.sort, selection: Binding(
                                     get: { viewModel.savedSortOrder },
                                     set: { viewModel.setSavedSortOrder($0) }
                                 )) {
@@ -57,12 +57,12 @@ struct SavedView: View {
     private var content: some View {
         if viewModel.savedItems.isEmpty {
             ContentUnavailableView {
-                Label("No saved stories yet", systemImage: "bookmark")
+                Label(.noSavedStoriesYet, systemImage: "bookmark")
             } description: {
-                Text("Open a story you want to come back to and tap save. It will show up here.")
+                Text(.openAStoryYouWantToComeBackToAndTapSaveItWillShowUpHere)
             } actions: {
                 Button(action: goToHome) {
-                    Text("Browse trending")
+                    Text(.browseTrending)
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.borderedProminent)
@@ -71,9 +71,9 @@ struct SavedView: View {
         else if !viewModel.hasAnyMatches {
             if viewModel.searchQuery.isEmpty {
                 ContentUnavailableView(
-                    "No saved stories in selected topics",
+                    .noSavedStoriesInSelectedTopics,
                     systemImage: "tray",
-                    description: Text("Tap All to clear the topic filter or pick different topics above."))
+                    description: Text(.tapAllToClearTheTopicFilterOrPickDifferentTopicsAbove))
             }
             else {
                 ContentUnavailableView.search(text: viewModel.searchQuery)
@@ -107,7 +107,7 @@ struct SavedTopicFilterBar: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 FocusChip(
-                    title: "focus.all",
+                    title: .focusAll,
                     systemImage: "square.grid.2x2",
                     isSelected: selectedFilters.wrappedValue.isEmpty) {
                     selectedFilters.wrappedValue.removeAll()

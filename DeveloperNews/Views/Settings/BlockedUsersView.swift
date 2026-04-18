@@ -6,7 +6,7 @@ struct BlockedUsersView: View {
     var body: some View {
         Group {
             if appState.blockedUserIds.isEmpty {
-                ContentUnavailableView("settings.noBlockedUsers", systemImage: "person.slash")
+                ContentUnavailableView(.settingsNoBlockedUsers, systemImage: "person.slash")
             }
             else {
                 List {
@@ -16,7 +16,7 @@ struct BlockedUsersView: View {
                                 .font(.footnote)
                                 .lineLimit(1)
                             Spacer()
-                            Button("settings.unblock", role: .destructive) {
+                            Button(.settingsUnblock, role: .destructive) {
                                 unblockUser(userId)
                             }
                             .font(.footnote)
@@ -25,7 +25,7 @@ struct BlockedUsersView: View {
                 }
             }
         }
-        .navigationTitle("settings.blockedUsers")
+        .navigationTitle(.settingsBlockedUsers)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
     }

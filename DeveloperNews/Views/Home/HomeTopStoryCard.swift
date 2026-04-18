@@ -17,7 +17,7 @@ struct HomeTopStoryCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Label("Top story", systemImage: "sparkles")
+                Label(.topStory, systemImage: "sparkles")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tint)
 
@@ -25,7 +25,7 @@ struct HomeTopStoryCard: View {
 
                 Button(action: hideTopStory) {
                     HStack(spacing: 4) {
-                        Text("Hide for a day")
+                        Text(.hideForADay)
                         Image(systemName: "xmark")
                     }
                     .font(.caption2.weight(.semibold))
@@ -37,7 +37,7 @@ struct HomeTopStoryCard: View {
                     .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Hide top story for a day")
+                .accessibilityLabel(.hideTopStoryForADay)
             }
 
             NavigationLink {
@@ -78,7 +78,7 @@ struct HomeTopStoryCard: View {
                 Button(action: toggleTranslation) {
                     HStack(spacing: 2) {
                         Image(systemName: "translate")
-                        Text(showingTranslation ? "translation.showOriginal" : "translation.showTranslated")
+                        Text(showingTranslation ? .translationShowOriginal : .translationShowTranslated)
                     }
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(showingTranslation ? Color.accentColor : Color.primary)

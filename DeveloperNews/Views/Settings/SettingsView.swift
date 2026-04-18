@@ -22,20 +22,20 @@ struct SettingsView: View {
             .sheet(isPresented: $viewModel.showSignIn) {
                 SignInView(appState: appState)
             }
-            .alert("profile.editName", isPresented: $viewModel.showEditName) {
-                TextField("profile.namePlaceholder", text: $viewModel.editingName)
+            .alert(.profileEditName, isPresented: $viewModel.showEditName) {
+                TextField(.profileNamePlaceholder, text: $viewModel.editingName)
                 Button("Cancel", role: .cancel) {}
                 Button("Save", action: saveDisplayName)
             } message: {
-                Text("profile.editNameMessage")
+                Text(.profileEditNameMessage)
             }
-            .alert("profile.editEmoji", isPresented: $viewModel.showEmojiPicker) {
-                TextField("profile.emojiPlaceholder", text: $viewModel.editingEmoji)
+            .alert(.profileEditEmoji, isPresented: $viewModel.showEmojiPicker) {
+                TextField(.profileEmojiPlaceholder, text: $viewModel.editingEmoji)
                     .keenOnChange(of: viewModel.editingEmoji, perform: onEditingEmojiChange)
                 Button("Cancel", role: .cancel) {}
                 Button("Save", action: saveProfileEmoji)
             } message: {
-                Text("profile.editEmojiMessage")
+                Text(.profileEditEmojiMessage)
             }
             .sheet(isPresented: $viewModel.showFeedback) {
                 FeedbackView()
@@ -58,7 +58,7 @@ struct SettingsView: View {
             accountSection
                 .id("__settings_top__")
 
-            Section("Your topics") {
+            Section(.yourTopics) {
                 Text("\(viewModel.selectedTopics.count) of \(AppState.maxSelectedTopics) selected")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -105,28 +105,28 @@ struct SettingsView: View {
                     }
                 }
             } header: {
-                Text("Sources")
+                Text(.sources)
             } footer: {
-                Text("Turn off a source to hide it from the home feed.")
+                Text(.turnOffASourceToHideItFromTheHomeFeed)
             }
 
             Section {
-                Toggle("Daily trending alerts", isOn: Binding(
+                Toggle(.dailyTrendingAlerts, isOn: Binding(
                     get: { viewModel.notificationsEnabled },
                     set: { viewModel.setNotificationsEnabled($0) }
                 ))
 
-                Text("Push delivery is coming soon. Your choice is saved on this device for now.")
+                Text(.pushDeliveryIsComingSoonYourChoiceIsSavedOnThisDeviceForNow)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } header: {
-                Text("Notifications")
+                Text(.notifications)
             }
 
             Section {
                 Button(action: openSystemSettings) {
                     HStack {
-                        Label("Language", systemImage: "globe")
+                        Label(.language, systemImage: "globe")
                         Spacer()
                         Image(systemName: "arrow.up.forward.square")
                             .font(.footnote)
@@ -138,21 +138,21 @@ struct SettingsView: View {
                     get: { viewModel.translationLanguageCode ?? "" },
                     set: { viewModel.setTranslationLanguage($0.isEmpty ? nil : $0) }
                 )) {
-                    Text("settings.translationOff").tag("")
+                    Text(.settingsTranslationOff).tag("")
                     ForEach(translationLanguages, id: \.code) { lang in
                         Text(lang.name).tag(lang.code)
                     }
                 } label: {
-                    Label("settings.translation", systemImage: "translate")
+                    Label(.settingsTranslation, systemImage: "translate")
                 }
 
-                Button("Reset topic selection", role: .destructive, action: resetTopics)
+                Button(.resetTopicSelection, role: .destructive, action: resetTopics)
 
                 NavigationLink {
                     BlockedUsersView(appState: appState)
                 } label: {
                     HStack {
-                        Label("settings.blockedUsers", systemImage: "person.slash")
+                        Label(.settingsBlockedUsers, systemImage: "person.slash")
                         Spacer()
                         if !viewModel.blockedUserIds.isEmpty {
                             Text("\(viewModel.blockedUserIds.count)")
@@ -162,38 +162,38 @@ struct SettingsView: View {
                     }
                 }
             } header: {
-                Text("App")
+                Text(.app)
             }
 
             Section {
                 NavigationLink {
                     SourcesAttributionView()
                 } label: {
-                    Label("Content sources", systemImage: "doc.text")
+                    Label(.contentSources, systemImage: "doc.text")
                 }
 
                 NavigationLink {
                     PrivacyPolicyView()
                 } label: {
-                    Label("Privacy policy", systemImage: "hand.raised")
+                    Label(.privacyPolicy, systemImage: "hand.raised")
                 }
 
                 NavigationLink {
                     TermsOfUseView()
                 } label: {
-                    Label("Terms of use", systemImage: "doc.plaintext")
+                    Label(.termsOfUse, systemImage: "doc.plaintext")
                 }
 
                 Button(action: openFeedback) {
-                    Label("Send feedback", systemImage: "envelope")
+                    Label(.sendFeedback, systemImage: "envelope")
                 }
 
-                LabeledContent("Version", value: appVersionString)
+                LabeledContent(.version, value: appVersionString)
             } header: {
-                Text("About")
+                Text(.about)
             }
         }
-        .navigationTitle("Settings")
+        .navigationTitle(.settings)
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -220,7 +220,7 @@ struct SettingsView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(viewModel.displayName.isEmpty ? String(localized: "auth.anonymousUser") : viewModel.displayName)
+                            Text(viewModel.displayName.isEmpty ? String(localized: .authAnonymousUser) : viewModel.displayName)
                                 .font(.headline)
                                 .foregroundStyle(.primary)
                             if let email = viewModel.email {
@@ -234,25 +234,25 @@ struct SettingsView: View {
                 .padding(.vertical, 4)
 
                 Button(action: openEmojiPicker) {
-                    Label("profile.changeEmoji", systemImage: "face.smiling")
+                    Label(.profileChangeEmoji, systemImage: "face.smiling")
                 }
 
                 Button(action: openNameEditor) {
-                    Label("profile.changeName", systemImage: "pencil")
+                    Label(.profileChangeName, systemImage: "pencil")
                 }
 
-                Button("auth.signOut", role: .destructive, action: signOut)
+                Button(.authSignOut, role: .destructive, action: signOut)
 
-                Button("auth.deleteAccount", role: .destructive, action: confirmDeleteAccount)
+                Button(.authDeleteAccount, role: .destructive, action: confirmDeleteAccount)
             } header: {
-                Text("auth.account")
+                Text(.authAccount)
             }
         }
         else {
             Section {
                 Button(action: openSignIn) {
                     HStack {
-                        Label("auth.signIn", systemImage: "person.crop.circle")
+                        Label(.authSignIn, systemImage: "person.crop.circle")
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.footnote)
@@ -260,9 +260,9 @@ struct SettingsView: View {
                     }
                 }
             } header: {
-                Text("auth.account")
+                Text(.authAccount)
             } footer: {
-                Text("auth.signInFooter")
+                Text(.authSignInFooter)
             }
         }
     }

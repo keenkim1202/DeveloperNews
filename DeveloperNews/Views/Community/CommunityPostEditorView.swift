@@ -24,8 +24,8 @@ struct CommunityPostEditorView: View {
 
     var body: some View {
         DraftEditorScreen(
-            navigationTitle: isEditing ? "community.editPost" : "community.newPost",
-            saveTitle: isEditing ? "community.savePost" : "community.post",
+            navigationTitle: isEditing ? .communityEditPost : .communityNewPost,
+            saveTitle: isEditing ? .communitySavePost : .communityPost,
             title: $title,
             description: $description,
             link: $link,

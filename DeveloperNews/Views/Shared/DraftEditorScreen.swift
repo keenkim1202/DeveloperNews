@@ -47,21 +47,21 @@ struct DraftEditorScreen: View {
         NavigationStack {
             Form {
                 Section {
-                    LimitedTextField(text: $title, limit: titleLimit, prompt: "save.titlePlaceholder")
+                    LimitedTextField(text: $title, limit: titleLimit, prompt: .saveTitlePlaceholder)
 
-                    TextField("save.linkPlaceholder", text: $link)
+                    TextField(.saveLinkPlaceholder, text: $link)
                         .textContentType(.URL)
                         .keyboardType(.URL)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                 } header: {
-                    Text("save.details")
+                    Text(.saveDetails)
                 }
 
                 Section {
                     LimitedTextEditor(text: $description, limit: descriptionLimit)
                 } header: {
-                    Text("save.description")
+                    Text(.saveDescription)
                 }
 
                 Section {
@@ -86,7 +86,7 @@ struct DraftEditorScreen: View {
                         .buttonStyle(.plain)
                     }
                 } header: {
-                    Text("save.topic")
+                    Text(.saveTopic)
                 }
             }
             .navigationTitle(navigationTitle)

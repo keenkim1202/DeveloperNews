@@ -38,7 +38,7 @@ struct UserProfileView: View {
                         VStack {
                             Text("\(authorPosts.count)")
                                 .font(.headline)
-                            Text("profile.posts")
+                            Text(.profilePosts)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -46,7 +46,7 @@ struct UserProfileView: View {
                         VStack {
                             Text("\(followerCount)")
                                 .font(.headline)
-                            Text("profile.followers")
+                            Text(.profileFollowers)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -54,7 +54,7 @@ struct UserProfileView: View {
                         VStack {
                             Text("\(followingCount)")
                                 .font(.headline)
-                            Text("community.following")
+                            Text(.communityFollowing)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -63,7 +63,7 @@ struct UserProfileView: View {
                             let totalLikes = authorPosts.reduce(0) { $0 + $1.likeCount }
                             Text("\(totalLikes)")
                                 .font(.headline)
-                            Text("profile.likes")
+                            Text(.profileLikes)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -71,9 +71,7 @@ struct UserProfileView: View {
 
                     if !isOwnProfile, currentUserId != nil {
                         Button(action: toggleFollow) {
-                            Text(isFollowingAuthor
-                                 ? LocalizedStringResource("community.following")
-                                 : LocalizedStringResource("community.follow"))
+                            Text(isFollowingAuthor ? .communityFollowing : .communityFollow)
                                 .font(.subheadline.weight(.semibold))
                                 .frame(width: 120, height: 34)
                                 .background(
@@ -95,7 +93,7 @@ struct UserProfileView: View {
                     .padding(.horizontal, 20)
 
                 if authorPosts.isEmpty {
-                    Text("profile.noPosts")
+                    Text(.profileNoPosts)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .padding(.top, 20)

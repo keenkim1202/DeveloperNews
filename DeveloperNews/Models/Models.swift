@@ -11,18 +11,6 @@ enum Topic: String, CaseIterable, Identifiable, Hashable, Codable {
 
     var id: String { rawValue }
 
-    var title: LocalizedStringResource {
-        switch self {
-        case .web: "topic.web"
-        case .ios: "topic.ios"
-        case .android: "topic.android"
-        case .backend: "topic.backend"
-        case .ai: "topic.ai"
-        case .security: "topic.security"
-        case .product: "topic.product"
-        }
-    }
-
     var symbolName: String {
         switch self {
         case .web: "globe"
@@ -53,13 +41,6 @@ enum SavedSortOrder: String, CaseIterable, Identifiable, Hashable {
     case trending
 
     var id: String { rawValue }
-
-    var title: LocalizedStringResource {
-        switch self {
-        case .recentlySaved: "savedSort.recentlySaved"
-        case .trending: "savedSort.trending"
-        }
-    }
 }
 
 enum SourceCategory: String, CaseIterable, Identifiable, Hashable, Codable {
@@ -70,16 +51,6 @@ enum SourceCategory: String, CaseIterable, Identifiable, Hashable, Codable {
     case following
 
     var id: String { rawValue }
-
-    var title: LocalizedStringResource {
-        switch self {
-        case .article: "source.articles"
-        case .hackerNews: "source.hackerNews"
-        case .reddit: "source.reddit"
-        case .github: "source.github"
-        case .following: "source.following"
-        }
-    }
 
     var symbolName: String {
         switch self {
@@ -96,13 +67,6 @@ struct ContentItem: Identifiable, Hashable, Codable {
     enum Kind: String, Codable {
         case article
         case discussion
-
-        var title: LocalizedStringResource {
-            switch self {
-            case .article: "kind.article"
-            case .discussion: "kind.discussion"
-            }
-        }
 
         var symbolName: String {
             switch self {

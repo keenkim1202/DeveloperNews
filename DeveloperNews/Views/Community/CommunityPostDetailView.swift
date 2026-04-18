@@ -53,9 +53,7 @@ struct CommunityPostDetailView: View {
 
                     if !isAuthor, currentUserId != nil {
                         Button(action: toggleFollow) {
-                            Text(isFollowingAuthor
-                                 ? LocalizedStringResource("community.following")
-                                 : LocalizedStringResource("community.follow"))
+                            Text(isFollowingAuthor ? .communityFollowing : .communityFollow)
                                 .font(.caption2.weight(.semibold))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
@@ -123,7 +121,7 @@ struct CommunityPostDetailView: View {
                         ArticleDetailView(appState: appState, item: linkItem)
                     } label: {
                         HStack {
-                            Label("bookmark.openLink", systemImage: "safari")
+                            Label(.bookmarkOpenLink, systemImage: "safari")
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .font(.footnote)
@@ -139,13 +137,13 @@ struct CommunityPostDetailView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 4) {
-                        Text("community.createdAt")
+                        Text(.communityCreatedAt)
                         Text(currentPost.createdAt, style: .date)
                         Text(currentPost.createdAt, style: .time)
                     }
                     if let updatedAt = currentPost.updatedAt {
                         HStack(spacing: 4) {
-                            Text("community.updatedAt")
+                            Text(.communityUpdatedAt)
                             Text(updatedAt, style: .date)
                             Text(updatedAt, style: .time)
                         }
@@ -170,22 +168,22 @@ struct CommunityPostDetailView: View {
                 }
 
                 if isAuthor {
-                    Button("community.deletePost", role: .destructive, action: confirmDelete)
+                    Button(.communityDeletePost, role: .destructive, action: confirmDelete)
                         .font(.footnote)
                 }
                 else if currentUserId != nil {
                     HStack(spacing: 16) {
-                        Button("community.report", action: confirmReport)
+                        Button(.communityReport, action: confirmReport)
                             .disabled(alreadyReported)
                             .foregroundStyle(alreadyReported ? Color.secondary : Color.red)
 
-                        Button("community.blockUser", action: confirmBlockUser)
+                        Button(.communityBlockUser, action: confirmBlockUser)
                             .foregroundStyle(.red)
                     }
                     .font(.footnote)
 
                     if alreadyReported {
-                        Text("community.alreadyReported")
+                        Text(.communityAlreadyReported)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -201,33 +199,33 @@ struct CommunityPostDetailView: View {
                     Button(action: openEditPost) {
                         Image(systemName: "pencil")
                     }
-                    .accessibilityLabel("community.editPost")
+                    .accessibilityLabel(.communityEditPost)
                 }
             }
         }
         .sheet(isPresented: $showEditPost) {
             EditCommunityPostView(appState: appState, post: currentPost)
         }
-        .confirmationDialog("community.deleteConfirm", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+        .confirmationDialog(.communityDeleteConfirm, isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete", role: .destructive, action: deletePost)
         }
-        .confirmationDialog("community.reportConfirmTitle", isPresented: $showReportConfirm, titleVisibility: .visible) {
-            Button("community.reportReasonSpam", action: reportSpam)
-            Button("community.reportReasonInappropriate", action: reportInappropriate)
-            Button("community.reportReasonOther", action: openOtherReasonInput)
+        .confirmationDialog(.communityReportConfirmTitle, isPresented: $showReportConfirm, titleVisibility: .visible) {
+            Button(.communityReportReasonSpam, action: reportSpam)
+            Button(.communityReportReasonInappropriate, action: reportInappropriate)
+            Button(.communityReportReasonOther, action: openOtherReasonInput)
         }
-        .alert("community.reportReasonOtherTitle", isPresented: $showOtherReasonInput) {
-            TextField("community.reportReasonOtherPlaceholder", text: $otherReasonText)
+        .alert(.communityReportReasonOtherTitle, isPresented: $showOtherReasonInput) {
+            TextField(.communityReportReasonOtherPlaceholder, text: $otherReasonText)
                 .keenOnChange(of: otherReasonText, perform: onOtherReasonTextChange)
             Button("Cancel", role: .cancel) {}
-            Button("community.report", action: submitOtherReport)
+            Button(.communityReport, action: submitOtherReport)
         } message: {
-            Text("community.reportReasonOtherMessage")
+            Text(.communityReportReasonOtherMessage)
         }
-        .confirmationDialog("community.blockConfirmTitle", isPresented: $showBlockConfirm, titleVisibility: .visible) {
-            Button("community.blockConfirmAction", role: .destructive, action: blockUser)
+        .confirmationDialog(.communityBlockConfirmTitle, isPresented: $showBlockConfirm, titleVisibility: .visible) {
+            Button(.communityBlockConfirmAction, role: .destructive, action: blockUser)
         } message: {
-            Text("community.blockConfirmMessage")
+            Text(.communityBlockConfirmMessage)
         }
         .onAppear(perform: onAppear)
     }

@@ -91,7 +91,7 @@ struct FeedItemRow: View {
                     Button(action: toggleTranslation) {
                         HStack(spacing: 2) {
                             Image(systemName: "translate")
-                            Text(showingTranslation ? "translation.showOriginal" : "translation.showTranslated")
+                            Text(showingTranslation ? .translationShowOriginal : .translationShowTranslated)
                         }
                         .font(.caption2.weight(.medium))
                         .foregroundStyle(showingTranslation ? Color.accentColor : Color.primary)

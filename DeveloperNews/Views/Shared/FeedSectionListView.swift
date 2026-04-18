@@ -71,7 +71,7 @@ struct FeedSectionListView: View {
             }
 
             if !discussionItems.isEmpty {
-                Section("Discussions") {
+                Section(.discussions) {
                     ForEach(discussionItems) { item in
                         FeedItemRow(appState: appState, item: item, selectedAuthor: $selectedAuthor)
                     }
@@ -84,7 +84,7 @@ struct FeedSectionListView: View {
                         Spacer()
                         ProgressView()
                             .controlSize(.small)
-                        Text("Loading more")
+                        Text(.loadingMore)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()

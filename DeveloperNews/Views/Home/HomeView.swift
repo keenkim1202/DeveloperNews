@@ -22,7 +22,7 @@ struct HomeView: View {
 
                 feedContent
             }
-            .navigationTitle("Trending")
+            .navigationTitle(.trending)
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $viewModel.searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search stories")
             .refreshable {
@@ -40,11 +40,11 @@ struct HomeView: View {
                     .tint(.accentColor)
 
                 VStack(spacing: 4) {
-                    Text("Loading stories")
+                    Text(.loadingStories)
                         .font(.headline)
                         .foregroundStyle(.secondary)
 
-                    Text("Fetching the latest developer stories for your selected topics...")
+                    Text(.fetchingTheLatestDeveloperStoriesForYourSelectedTopics)
                         .font(.footnote)
                         .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)
@@ -55,12 +55,12 @@ struct HomeView: View {
         }
         else if let errorMessage = viewModel.errorMessage, !viewModel.hasLoadedContent {
             ContentUnavailableView {
-                Label("Could not load stories", systemImage: "wifi.exclamationmark")
+                Label(.couldNotLoadStories, systemImage: "wifi.exclamationmark")
             } description: {
                 Text(errorMessage)
             } actions: {
                 Button(action: reloadContent) {
-                    Text("Try again")
+                    Text(.tryAgain)
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.borderedProminent)
@@ -69,9 +69,9 @@ struct HomeView: View {
         }
         else if viewModel.personalizedItems.isEmpty {
             ContentUnavailableView(
-                "No stories for current topics",
+                .noStoriesForCurrentTopics,
                 systemImage: "tray",
-                description: Text("Try choosing a few more topics or refresh again in a moment."))
+                description: Text(.tryChoosingAFewMoreTopicsOrRefreshAgainInAMoment))
         }
         else {
             FeedSectionListView(
@@ -115,7 +115,7 @@ struct HomeTopicFocusBar: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 FocusChip(
-                    title: "focus.all",
+                    title: .focusAll,
                     systemImage: "square.grid.2x2",
                     isSelected: focusedTopic == nil) {
                     onClearFocus()
