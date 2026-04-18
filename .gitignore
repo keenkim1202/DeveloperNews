@@ -61,6 +61,7 @@ GoogleService-Info.plist
 # AI tooling
 .codex/
 .agents/
+.claude/
 
 # fastlane
 #
