@@ -9,9 +9,15 @@ struct UserProfileView: View {
     @State private var followerCount = 0
     @State private var followingCount = 0
 
-    private var currentUserId: String? { appState.authService.userId }
-    private var isOwnProfile: Bool { currentUserId == authorId }
-    private var isFollowingAuthor: Bool { appState.profileService.isFollowing(authorId) }
+    private var currentUserId: String? {
+        appState.authService.userId
+    }
+    private var isOwnProfile: Bool {
+        currentUserId == authorId
+    }
+    private var isFollowingAuthor: Bool {
+        appState.profileService.isFollowing(authorId)
+    }
 
     private var authorPosts: [CommunityPost] {
         appState.communityService.posts.filter { $0.authorId == authorId }

@@ -48,13 +48,16 @@ struct SettingsView: View {
             .dialog(
                 "auth.deleteAccount.confirmTitle",
                 message: "auth.deleteAccount.confirmMessage",
-                isPresented: $viewModel.showDeleteAccountConfirm) {
-                Button(
-                    "auth.deleteAccount.confirmAction",
-                    role: .destructive,
-                    action: deleteAccount)
-            }
+                isPresented: $viewModel.showDeleteAccountConfirm,
+                buttons: deleteAccountConfirmDialogView)
         }
+    }
+
+    private var deleteAccountConfirmDialogView: some View {
+        Button(
+            "auth.deleteAccount.confirmAction",
+            role: .destructive,
+            action: deleteAccount)
     }
 
     private var settingsList: some View {

@@ -22,17 +22,18 @@ extension View {
         onChange(of: value) { old, new in action(old, new) }
     }
 
-    func dialog(
+    func dialog<Buttons: View>(
         _ title: LocalizedStringResource,
         message: LocalizedStringResource? = nil,
         isPresented: Binding<Bool>,
-        @ViewBuilder actions: () -> some View
+        buttons: Buttons
     ) -> some View {
         confirmationDialog(
             title,
             isPresented: isPresented,
-            titleVisibility: .visible,
-            actions: actions) {
+            titleVisibility: .visible) {
+            buttons
+        } message: {
             if let message {
                 Text(message)
             }

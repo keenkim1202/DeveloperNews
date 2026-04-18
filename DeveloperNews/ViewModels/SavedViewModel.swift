@@ -14,9 +14,15 @@ final class SavedViewModel {
         self.appState = appState
     }
 
-    var savedItems: [ContentItem] { appState.savedItems }
-    var savedSortOrder: SavedSortOrder { appState.savedSortOrder }
-    var scrollToTopTrigger: Int { appState.savedScrollToTopTrigger }
+    var savedItems: [ContentItem] {
+        appState.savedItems
+    }
+    var savedSortOrder: SavedSortOrder {
+        appState.savedSortOrder
+    }
+    var scrollToTopTrigger: Int {
+        appState.savedScrollToTopTrigger
+    }
 
     var availableTopics: [Topic] {
         let union = Set(savedItems.flatMap(\.topics))

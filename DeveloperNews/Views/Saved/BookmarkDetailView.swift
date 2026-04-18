@@ -99,12 +99,10 @@ struct BookmarkDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: onAppear)
-        .dialog(.bookmarkDeleteConfirm, isPresented: $showDeleteConfirm) {
-            Button(
-                "Delete",
-                role: .destructive,
-                action: deleteBookmark)
-        }
+        .dialog(
+            .bookmarkDeleteConfirm,
+            isPresented: $showDeleteConfirm,
+            buttons: bookmarkDeleteConfirmDialogView)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: openEdit) {
@@ -115,6 +113,13 @@ struct BookmarkDetailView: View {
         .sheet(isPresented: $showEdit) {
             EditBookmarkView(appState: appState, item: currentItem)
         }
+    }
+
+    private var bookmarkDeleteConfirmDialogView: some View {
+        Button(
+            "Delete",
+            role: .destructive,
+            action: deleteBookmark)
     }
 
     private func onAppear() {

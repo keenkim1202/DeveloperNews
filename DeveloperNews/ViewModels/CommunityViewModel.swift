@@ -14,11 +14,21 @@ final class CommunityViewModel {
         self.appState = appState
     }
 
-    var isSignedIn: Bool { appState.authService.isSignedIn }
-    var scrollToTopTrigger: Int { appState.communityScrollToTopTrigger }
-    var isLoadingPosts: Bool { appState.communityService.isLoading }
-    var hasNoPosts: Bool { appState.communityService.posts.isEmpty }
-    var firstPostId: String? { appState.communityService.posts.first?.id }
+    var isSignedIn: Bool {
+        appState.authService.isSignedIn
+    }
+    var scrollToTopTrigger: Int {
+        appState.communityScrollToTopTrigger
+    }
+    var isLoadingPosts: Bool {
+        appState.communityService.isLoading
+    }
+    var hasNoPosts: Bool {
+        appState.communityService.posts.isEmpty
+    }
+    var firstPostId: String? {
+        appState.communityService.posts.first?.id
+    }
 
     var filteredPosts: [CommunityPost] {
         let posts = appState.communityService.filteredPosts(excludingUserIds: appState.blockedUserIds)

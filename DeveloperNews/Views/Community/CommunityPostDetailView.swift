@@ -12,9 +12,15 @@ struct CommunityPostDetailView: View {
     @State private var alreadyReported = false
     @Environment(\.dismiss) private var dismiss
 
-    private var community: CommunityService { appState.communityService }
-    private var currentUserId: String? { appState.authService.userId }
-    private var isAuthor: Bool { currentUserId == post.authorId }
+    private var community: CommunityService {
+        appState.communityService
+    }
+    private var currentUserId: String? {
+        appState.authService.userId
+    }
+    private var isAuthor: Bool {
+        currentUserId == post.authorId
+    }
     private var isLiked: Bool {
         guard let uid = currentUserId else { return false }
         return post.likedBy.contains(uid)
@@ -209,19 +215,14 @@ struct CommunityPostDetailView: View {
         .sheet(isPresented: $showEditPost) {
             EditCommunityPostView(appState: appState, post: currentPost)
         }
-        .dialog(.communityDeleteConfirm, isPresented: $showDeleteConfirm) {
-            Button(
-                "Delete",
-                role: .destructive,
-                action: deletePost)
-        }
+        .dialog(
+            .communityDeleteConfirm,
+            isPresented: $showDeleteConfirm,
+            buttons: communityDeleteConfirmDialogView)
         .dialog(
             .communityReportConfirmTitle,
-            isPresented: $showReportConfirm) {
-            Button(.communityReportReasonSpam, action: reportSpam)
-            Button(.communityReportReasonInappropriate, action: reportInappropriate)
-            Button(.communityReportReasonOther, action: openOtherReasonInput)
-        }
+            isPresented: $showReportConfirm,
+            buttons: communityReportConfirmDialogView)
         .alert(.communityReportReasonOtherTitle, isPresented: $showOtherReasonInput) {
             TextField(.communityReportReasonOtherPlaceholder, text: $otherReasonText)
                 .keenOnChange(of: otherReasonText, perform: onOtherReasonTextChange)
@@ -235,13 +236,30 @@ struct CommunityPostDetailView: View {
         .dialog(
             .communityBlockConfirmTitle,
             message: .communityBlockConfirmMessage,
-            isPresented: $showBlockConfirm) {
-            Button(
-                .communityBlockConfirmAction,
-                role: .destructive,
-                action: blockUser)
-        }
+            isPresented: $showBlockConfirm,
+            buttons: communityBlockConfirmDialogView)
         .onAppear(perform: onAppear)
+    }
+
+    private var communityDeleteConfirmDialogView: some View {
+        Button(
+            "Delete",
+            role: .destructive,
+            action: deletePost)
+    }
+
+    @ViewBuilder
+    private var communityReportConfirmDialogView: some View {
+        Button(.communityReportReasonSpam, action: reportSpam)
+        Button(.communityReportReasonInappropriate, action: reportInappropriate)
+        Button(.communityReportReasonOther, action: openOtherReasonInput)
+    }
+
+    private var communityBlockConfirmDialogView: some View {
+        Button(
+            .communityBlockConfirmAction,
+            role: .destructive,
+            action: blockUser)
     }
 
     private func onAppear() {

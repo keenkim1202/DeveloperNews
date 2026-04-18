@@ -5,7 +5,9 @@ struct HomeTopStoryCard: View {
     let appState: AppState
     let item: ContentItem
 
-    private var translator: ContentTranslator { appState.translator }
+    private var translator: ContentTranslator {
+        appState.translator
+    }
 
     @State private var translationTrigger = 0
     @State private var showingTranslation = false

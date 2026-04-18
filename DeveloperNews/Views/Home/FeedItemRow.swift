@@ -6,7 +6,9 @@ struct FeedItemRow: View {
     let item: ContentItem
     var selectedAuthor: Binding<AuthorInfo?>
 
-    private var translator: ContentTranslator { appState.translator }
+    private var translator: ContentTranslator {
+        appState.translator
+    }
 
     @State private var translationTrigger = 0
     @State private var showingTranslation = false
