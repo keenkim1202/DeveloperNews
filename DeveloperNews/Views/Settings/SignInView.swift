@@ -250,7 +250,9 @@ struct PasswordResetView: View {
     let appState: AppState
     @Environment(\.dismiss) private var dismiss
 
-    private var authService: AuthService { appState.authService }
+    private var authService: AuthService {
+        appState.authService
+    }
 
     @State private var email = ""
     @State private var successMessage: String?

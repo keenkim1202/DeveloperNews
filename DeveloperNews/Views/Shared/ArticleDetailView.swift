@@ -6,7 +6,9 @@ struct ArticleDetailView: View {
     let appState: AppState
     let item: ContentItem
 
-    private var translator: ContentTranslator { appState.translator }
+    private var translator: ContentTranslator {
+        appState.translator
+    }
 
     @State private var isLoading = true
     @State private var loadError: String?

@@ -12,17 +12,35 @@ final class HomeViewModel {
         self.appState = appState
     }
 
-    var isLoading: Bool { appState.isLoading }
-    var hasLoadedContent: Bool { appState.hasLoadedContent }
-    var errorMessage: String? { appState.errorMessage }
-    var personalizedItems: [ContentItem] { appState.personalizedItems }
-    var selectedTopics: Set<Topic> { appState.selectedTopics }
-    var hasMorePages: Bool { appState.hasMorePages }
-    var scrollToTopTrigger: Int { appState.homeScrollToTopTrigger }
+    var isLoading: Bool {
+        appState.isLoading
+    }
+    var hasLoadedContent: Bool {
+        appState.hasLoadedContent
+    }
+    var errorMessage: String? {
+        appState.errorMessage
+    }
+    var personalizedItems: [ContentItem] {
+        appState.personalizedItems
+    }
+    var selectedTopics: Set<Topic> {
+        appState.selectedTopics
+    }
+    var hasMorePages: Bool {
+        appState.hasMorePages
+    }
+    var scrollToTopTrigger: Int {
+        appState.homeScrollToTopTrigger
+    }
 
     var focusedTopic: Topic? {
-        get { appState.focusedTopic }
-        set { appState.focusedTopic = newValue }
+        get {
+            appState.focusedTopic
+        }
+        set {
+            appState.focusedTopic = newValue
+        }
     }
 
     var shouldShowTopStory: Bool {

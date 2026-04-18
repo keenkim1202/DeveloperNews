@@ -5,7 +5,9 @@ import Observation
 @MainActor
 final class SignInViewModel {
     private let appState: AppState
-    private var authService: AuthService { appState.authService }
+    private var authService: AuthService {
+        appState.authService
+    }
 
     var email = ""
     var password = ""
@@ -19,9 +21,15 @@ final class SignInViewModel {
         self.appState = appState
     }
 
-    var isSignedIn: Bool { authService.isSignedIn }
-    var isLoading: Bool { authService.isLoading }
-    var errorMessage: String? { authService.errorMessage }
+    var isSignedIn: Bool {
+        authService.isSignedIn
+    }
+    var isLoading: Bool {
+        authService.isLoading
+    }
+    var errorMessage: String? {
+        authService.errorMessage
+    }
 
     var isEmailFormatValid: Bool {
         let pattern = #"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#

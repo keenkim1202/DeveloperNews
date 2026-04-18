@@ -89,7 +89,9 @@ struct CommunityPostRow: View {
     var authorEmoji: String?
     var onAuthorTap: (() -> Void)?
 
-    private var currentUserId: String? { appState.authService.userId }
+    private var currentUserId: String? {
+        appState.authService.userId
+    }
     private var isLiked: Bool {
         guard let uid = currentUserId else { return false }
         return post.likedBy.contains(uid)

@@ -18,17 +18,37 @@ final class SettingsViewModel {
         self.appState = appState
     }
 
-    var isSignedIn: Bool { appState.authService.isSignedIn }
-    var userId: String? { appState.authService.userId }
-    var email: String? { appState.authService.email }
-    var displayName: String { appState.profileService.displayName }
-    var profileEmoji: String? { appState.profileService.profileEmoji }
-    var selectedTopics: Set<Topic> { appState.selectedTopics }
-    var notificationsEnabled: Bool { appState.notificationsEnabled }
-    var blockedUserIds: Set<String> { appState.blockedUserIds }
-    var scrollToTopTrigger: Int { appState.settingsScrollToTopTrigger }
+    var isSignedIn: Bool {
+        appState.authService.isSignedIn
+    }
+    var userId: String? {
+        appState.authService.userId
+    }
+    var email: String? {
+        appState.authService.email
+    }
+    var displayName: String {
+        appState.profileService.displayName
+    }
+    var profileEmoji: String? {
+        appState.profileService.profileEmoji
+    }
+    var selectedTopics: Set<Topic> {
+        appState.selectedTopics
+    }
+    var notificationsEnabled: Bool {
+        appState.notificationsEnabled
+    }
+    var blockedUserIds: Set<String> {
+        appState.blockedUserIds
+    }
+    var scrollToTopTrigger: Int {
+        appState.settingsScrollToTopTrigger
+    }
 
-    var translationLanguageCode: String? { appState.translator.targetLanguageCode }
+    var translationLanguageCode: String? {
+        appState.translator.targetLanguageCode
+    }
 
     func toggleTopic(_ topic: Topic) {
         appState.toggleTopic(topic)

@@ -20,7 +20,9 @@ struct CommunityPostEditorView: View {
         _selectedTopics = State(initialValue: Set(existingPost?.topics ?? []))
     }
 
-    private var isEditing: Bool { existingPost != nil }
+    private var isEditing: Bool {
+        existingPost != nil
+    }
 
     var body: some View {
         DraftEditorScreen(

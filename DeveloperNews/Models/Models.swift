@@ -9,7 +9,9 @@ enum Topic: String, CaseIterable, Identifiable, Hashable, Codable {
     case security
     case product
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var symbolName: String {
         switch self {
@@ -40,7 +42,9 @@ enum SavedSortOrder: String, CaseIterable, Identifiable, Hashable {
     case recentlySaved
     case trending
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 }
 
 enum SourceCategory: String, CaseIterable, Identifiable, Hashable, Codable {
@@ -50,7 +54,9 @@ enum SourceCategory: String, CaseIterable, Identifiable, Hashable, Codable {
     case github
     case following
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var symbolName: String {
         switch self {
