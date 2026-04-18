@@ -190,21 +190,27 @@ struct SignInView: View {
     private func signInWithApple() {
         Task {
             await viewModel.signInWithApple()
-            if viewModel.isSignedIn { dismiss() }
+            if viewModel.isSignedIn {
+                dismiss()
+            }
         }
     }
 
     private func signInWithGoogle() {
         Task {
             await viewModel.signInWithGoogle()
-            if viewModel.isSignedIn { dismiss() }
+            if viewModel.isSignedIn {
+                dismiss()
+            }
         }
     }
 
     private func submitEmailForm() {
         Task {
             await viewModel.submitEmailForm()
-            if viewModel.isSignedIn { dismiss() }
+            if viewModel.isSignedIn {
+                dismiss()
+            }
         }
     }
 

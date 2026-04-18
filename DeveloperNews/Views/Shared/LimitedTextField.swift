@@ -16,7 +16,9 @@ struct LimitedTextField: View {
     }
 
     private func onTextChange(_ new: String) {
-        if new.count > limit { text.wrappedValue = String(new.prefix(limit)) }
+        if new.count > limit {
+            text.wrappedValue = String(new.prefix(limit))
+        }
     }
 }
 

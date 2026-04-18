@@ -80,7 +80,9 @@ final class ProfileService {
 
         do {
             let snapshot = try await ref.getDocument()
-            if snapshot.exists { return }
+            if snapshot.exists {
+                return
+            }
 
             let now = FieldValue.serverTimestamp()
             try await ref.setData([
