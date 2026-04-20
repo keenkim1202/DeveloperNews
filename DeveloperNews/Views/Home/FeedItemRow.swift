@@ -101,7 +101,9 @@ struct FeedItemRow: View {
                                     .foregroundStyle(Color.accentColor)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(Color.accentColor.opacity(0.15))
+                                    .background {
+                                        Color.accentColor.opacity(0.15)
+                                    }
                                     .clipShape(Capsule())
                             }
                         }

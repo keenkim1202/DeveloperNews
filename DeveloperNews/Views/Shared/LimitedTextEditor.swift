@@ -4,7 +4,10 @@ struct LimitedTextEditor: View {
     private var text: Binding<String>
     private let limit: Int
 
-    init(text: Binding<String>, limit: Int) {
+    init(
+        text: Binding<String>,
+        limit: Int,
+    ) {
         self.text = text
         self.limit = limit
     }

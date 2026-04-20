@@ -76,7 +76,9 @@ struct SignInView: View {
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
                             .padding(12)
-                            .background(Color(.secondarySystemBackground))
+                            .background {
+                                Color(.secondarySystemBackground)
+                            }
                             .clipShape(RoundedRectangle(cornerRadius: 8))
 
                         if viewModel.showEmailFormatError {
@@ -89,7 +91,9 @@ struct SignInView: View {
                         SecureField(.authPassword, text: $viewModel.password)
                             .textContentType(viewModel.isSignUp ? .newPassword : .password)
                             .padding(12)
-                            .background(Color(.secondarySystemBackground))
+                            .background {
+                                Color(.secondarySystemBackground)
+                            }
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                         Button(action: submitEmailForm) {
                             Text(viewModel.isSignUp ? .authCreateAccount : .authSignInWithEmail)
@@ -97,7 +101,9 @@ struct SignInView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 50)
                                 .foregroundStyle(.white)
-                                .background(Color.accentColor)
+                                .background {
+                                    Color.accentColor
+                                }
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                         .disabled(!viewModel.canSubmitEmailForm)
@@ -126,11 +132,11 @@ struct SignInView: View {
                 }
                 .padding(20)
             }
-            .navigationTitle(.authSignIn)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: cancel)
+            .overlay {
+                if viewModel.isLoading {
+                    Color.black.opacity(0.2)
+                        .ignoresSafeArea()
+                    ProgressView()
                 }
             }
             .onTapGesture {
@@ -140,11 +146,11 @@ struct SignInView: View {
                     from: nil,
                     for: nil)
             }
-            .overlay {
-                if viewModel.isLoading {
-                    Color.black.opacity(0.2)
-                        .ignoresSafeArea()
-                    ProgressView()
+            .navigationTitle(.authSignIn)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: cancel)
                 }
             }
             .sheet(isPresented: $viewModel.showPasswordReset) {
@@ -287,7 +293,9 @@ struct PasswordResetView: View {
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                     .padding(12)
-                    .background(Color(.secondarySystemBackground))
+                    .background {
+                        Color(.secondarySystemBackground)
+                    }
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 Button(action: sendPasswordReset) {
@@ -296,7 +304,9 @@ struct PasswordResetView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .foregroundStyle(.white)
-                        .background(Color.accentColor)
+                        .background {
+                            Color.accentColor
+                        }
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
                 .disabled(!isEmailFormatValid || authService.isLoading)

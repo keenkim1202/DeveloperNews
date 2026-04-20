@@ -31,9 +31,7 @@ struct HomeView: View {
                 text: $viewModel.searchQuery,
                 placement: .navigationBarDrawer(displayMode: .automatic),
                 prompt: "Search stories")
-            .refreshable {
-                await viewModel.reload()
-            }
+            .refreshable(action: reload)
         }
     }
 
@@ -105,6 +103,10 @@ struct HomeView: View {
         Task {
             await viewModel.reload()
         }
+    }
+
+    private func reload() async {
+        await viewModel.reload()
     }
 }
 

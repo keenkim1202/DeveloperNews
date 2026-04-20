@@ -84,13 +84,19 @@ struct CommunityView: View {
                 }
             }
             .listStyle(.plain)
+            .refreshable(action: refresh)
             .navigationDestination(item: $viewModel.selectedAuthor) { author in
-                UserProfileView(appState: appState, authorId: author.id, authorName: author.name, authorEmoji: author.emoji)
-            }
-            .refreshable {
-                await viewModel.refresh()
+                UserProfileView(
+                    appState: appState,
+                    authorId: author.id,
+                    authorName: author.name,
+                    authorEmoji: author.emoji)
             }
         }
+    }
+
+    private func refresh() async {
+        await viewModel.refresh()
     }
 }
 
@@ -180,7 +186,9 @@ struct CommunityPostRow: View {
                             .font(.caption2)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color(.secondarySystemBackground))
+                            .background {
+                                Color(.secondarySystemBackground)
+                            }
                             .clipShape(Capsule())
                     }
                 }

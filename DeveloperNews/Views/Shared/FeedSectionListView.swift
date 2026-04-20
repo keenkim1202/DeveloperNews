@@ -21,7 +21,7 @@ struct FeedSectionListView: View {
         hasMore: Bool = false,
         onLoadMore: (() -> Void)? = nil,
         scrollToTopTrigger: Int = 0,
-        topContent: AnyView? = nil
+        topContent: AnyView? = nil,
     ) {
         self.appState = appState
         self.articleItems = articleItems
@@ -86,7 +86,10 @@ struct FeedSectionListView: View {
             if !articleItems.isEmpty {
                 Section {
                     ForEach(articleItems) { item in
-                        FeedItemRow(appState: appState, item: item, selectedAuthor: $selectedAuthor)
+                        FeedItemRow(
+                            appState: appState,
+                            item: item,
+                            selectedAuthor: $selectedAuthor)
                     }
                 }
             }
@@ -94,12 +97,16 @@ struct FeedSectionListView: View {
             if !discussionItems.isEmpty {
                 Section(.discussions) {
                     ForEach(discussionItems) { item in
-                        FeedItemRow(appState: appState, item: item, selectedAuthor: $selectedAuthor)
+                        FeedItemRow(
+                            appState: appState,
+                            item: item,
+                            selectedAuthor: $selectedAuthor)
                     }
                 }
             }
 
-            if hasMore, let onLoadMore {
+            if hasMore,
+               let onLoadMore {
                 Section {
                     HStack {
                         Spacer()

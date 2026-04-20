@@ -16,7 +16,10 @@ struct ArticleDetailView: View {
     @State private var isPageTranslated = false
     @State private var showEditNote = false
 
-    init(appState: AppState, item: ContentItem) {
+    init(
+        appState: AppState,
+        item: ContentItem,
+    ) {
         self.appState = appState
         self.item = item
     }
@@ -61,7 +64,9 @@ struct ArticleDetailView: View {
                         Text(.openElsewhere)
                     }
                 }
-                .background(Color(.systemBackground))
+                .background {
+                    Color(.systemBackground)
+                }
             }
         }
         .animation(.easeInOut(duration: 0.2), value: isLoading)
@@ -75,26 +80,12 @@ struct ArticleDetailView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack(spacing: 0) {
-                    Text(translator.title(for: item))
-                        .font(.subheadline.weight(.semibold))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                    Text(item.sourceName)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            }
-
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: toggleSaved) {
                     Image(systemName: appState.isSaved(item) ? "bookmark.fill" : "bookmark")
                 }
                 .accessibilityLabel(appState.isSaved(item) ? .removeFromSaved : .saveStory)
             }
-
             if appState.isSaved(item) {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: openNoteEditor) {
@@ -103,7 +94,6 @@ struct ArticleDetailView: View {
                     }
                 }
             }
-
             if translator.canTranslate {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: togglePageTranslation) {
@@ -120,7 +110,6 @@ struct ArticleDetailView: View {
                     .accessibilityLabel(.translatePage)
                 }
             }
-
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: reload) {
                     Image(systemName: "arrow.clockwise")
@@ -128,7 +117,6 @@ struct ArticleDetailView: View {
                 .disabled(isLoading)
                 .accessibilityLabel(.reloadArticle)
             }
-
             ToolbarItem(placement: .topBarTrailing) {
                 ShareLink(item: item.url, subject: Text(item.title)) {
                     Image(systemName: "square.and.arrow.up")
@@ -198,9 +186,7 @@ struct ArticleDetailView: View {
         return JSON.stringify(r);
         """
 
-        guard let jsonString = try? await webView.callAsyncJavaScript(
-            extractJS, contentWorld: .page
-        ) as? String,
+        guard let jsonString = try? await webView.callAsyncJavaScript(extractJS, contentWorld: .page) as? String,
               let data = jsonString.data(using: .utf8),
               let entries = try? JSONDecoder().decode([PageTextEntry].self, from: data),
               !entries.isEmpty
@@ -214,7 +200,9 @@ struct ArticleDetailView: View {
             let chunkEnd = min(chunkStart + chunkSize, entries.count)
             let chunk = Array(entries[chunkStart..<chunkEnd])
             let requests = chunk.map {
-                TranslationSession.Request(sourceText: $0.text, clientIdentifier: String($0.id))
+                TranslationSession.Request(
+                    sourceText: $0.text,
+                    clientIdentifier: String($0.id))
             }
 
             var translations: [String: String] = [:]

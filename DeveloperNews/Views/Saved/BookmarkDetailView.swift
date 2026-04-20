@@ -42,7 +42,9 @@ struct BookmarkDetailView: View {
                             .font(.caption2.weight(.medium))
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(Color(.secondarySystemBackground))
+                            .background {
+                                Color(.secondarySystemBackground)
+                            }
                             .clipShape(Capsule())
                         }
                     }
@@ -57,7 +59,6 @@ struct BookmarkDetailView: View {
 
                 if currentItem.hasExternalLink {
                     Divider()
-
                     NavigationLink {
                         ArticleDetailView(appState: appState, item: currentItem)
                     } label: {
@@ -69,7 +70,9 @@ struct BookmarkDetailView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .padding(12)
-                        .background(Color(.secondarySystemBackground))
+                        .background {
+                            Color(.secondarySystemBackground)
+                        }
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
@@ -101,11 +104,6 @@ struct BookmarkDetailView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
-        .onAppear(perform: onAppear)
-        .dialog(
-            .bookmarkDeleteConfirm,
-            isPresented: $showDeleteConfirm,
-            buttons: bookmarkDeleteConfirmDialogView)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: openEdit) {
@@ -113,6 +111,11 @@ struct BookmarkDetailView: View {
                 }
             }
         }
+        .onAppear(perform: onAppear)
+        .dialog(
+            .bookmarkDeleteConfirm,
+            isPresented: $showDeleteConfirm,
+            buttons: bookmarkDeleteConfirmDialogView)
         .sheet(isPresented: $showEdit) {
             EditBookmarkView(appState: appState, item: currentItem)
         }

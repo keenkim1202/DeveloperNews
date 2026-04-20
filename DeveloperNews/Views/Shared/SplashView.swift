@@ -26,7 +26,9 @@ struct SplashView: View {
                 .foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground).ignoresSafeArea())
+        .background {
+            Color(.systemBackground).ignoresSafeArea()
+        }
         .onAppear(perform: onAppear)
     }
 

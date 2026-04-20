@@ -141,10 +141,12 @@ struct UserProfileView: View {
         .navigationTitle(authorName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
-        .task {
-            followerCount = await appState.profileService.fetchFollowerCount(for: authorId)
-            followingCount = await appState.profileService.fetchFollowingCount(for: authorId)
-        }
+        .task(loadFollowCounts)
+    }
+
+    private func loadFollowCounts() async {
+        followerCount = await appState.profileService.fetchFollowerCount(for: authorId)
+        followingCount = await appState.profileService.fetchFollowingCount(for: authorId)
     }
 
     private func toggleFollow() {

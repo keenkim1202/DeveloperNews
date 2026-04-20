@@ -91,7 +91,10 @@ struct EditCommunityPostView: View {
     private let appState: AppState
     private let post: CommunityPost
 
-    init(appState: AppState, post: CommunityPost) {
+    init(
+        appState: AppState,
+        post: CommunityPost,
+    ) {
         self.appState = appState
         self.post = post
     }

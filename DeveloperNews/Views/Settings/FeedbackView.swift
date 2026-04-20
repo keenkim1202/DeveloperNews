@@ -39,7 +39,9 @@ struct FeedbackView: View {
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
-                        .background(Color.accentColor)
+                        .background {
+                            Color.accentColor
+                        }
                         .foregroundStyle(.white)
                         .clipShape(Capsule())
                     }

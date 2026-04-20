@@ -21,9 +21,7 @@ struct ContentView: View {
             }
             else if appState.isOnboardingComplete {
                 MainTabView(appState: appState)
-                    .task {
-                        await appState.loadIfNeeded()
-                    }
+                    .task(loadContent)
             }
             else {
                 TopicSelectionView(appState: appState)
@@ -49,6 +47,10 @@ struct ContentView: View {
         }
         appState.communityService.startListening()
         appState.processPendingSharedItems()
+    }
+
+    private func loadContent() async {
+        await appState.loadIfNeeded()
     }
 
     private func onToastTriggerChange() {

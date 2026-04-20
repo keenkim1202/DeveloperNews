@@ -25,9 +25,6 @@ struct SettingsView: View {
                         }
                     }
             }
-            .sheet(isPresented: $viewModel.showSignIn) {
-                SignInView(appState: appState, viewModel: signInViewModel)
-            }
             .alert(.profileEditName, isPresented: $viewModel.showEditName) {
                 TextField(.profileNamePlaceholder, text: $viewModel.editingName)
                 Button(
@@ -47,15 +44,18 @@ struct SettingsView: View {
             } message: {
                 Text(.profileEditEmojiMessage)
             }
-            .sheet(isPresented: $viewModel.showFeedback) {
-                FeedbackView()
-                    .presentationDetents([.large])
-            }
             .dialog(
                 "auth.deleteAccount.confirmTitle",
                 message: "auth.deleteAccount.confirmMessage",
                 isPresented: $viewModel.showDeleteAccountConfirm,
                 buttons: deleteAccountConfirmDialogView)
+            .sheet(isPresented: $viewModel.showSignIn) {
+                SignInView(appState: appState, viewModel: signInViewModel)
+            }
+            .sheet(isPresented: $viewModel.showFeedback) {
+                FeedbackView()
+                    .presentationDetents([.large])
+            }
         }
     }
 
