@@ -70,7 +70,8 @@ struct CommunityPostDetailView: View {
                     }
                     .buttonStyle(.plain)
 
-                    if !isAuthor, currentUserId != nil {
+                    if !isAuthor,
+                       currentUserId != nil {
                         Button(action: toggleFollow) {
                             Text(isFollowingAuthor ? .communityFollowing : .communityFollow)
                                 .font(.caption2.weight(.semibold))
@@ -106,7 +107,9 @@ struct CommunityPostDetailView: View {
                             .font(.caption2.weight(.medium))
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(Color(.secondarySystemBackground))
+                            .background {
+                                Color(.secondarySystemBackground)
+                            }
                             .clipShape(Capsule())
                         }
                     }
@@ -133,7 +136,6 @@ struct CommunityPostDetailView: View {
                         publishedAt: currentPost.createdAt,
                         topics: currentPost.topics,
                         trendScore: 0)
-
                     NavigationLink {
                         ArticleDetailView(appState: appState, item: linkItem)
                     } label: {
@@ -145,13 +147,13 @@ struct CommunityPostDetailView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .padding(12)
-                        .background(Color(.secondarySystemBackground))
+                        .background {
+                            Color(.secondarySystemBackground)
+                        }
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
-
                 Divider()
-
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 4) {
                         Text(.communityCreatedAt)
@@ -168,7 +170,6 @@ struct CommunityPostDetailView: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.tertiary)
-
                 HStack {
                     Button(action: toggleLike) {
                         HStack(spacing: 4) {
@@ -221,17 +222,7 @@ struct CommunityPostDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showEditPost) {
-            EditCommunityPostView(appState: appState, post: currentPost)
-        }
-        .dialog(
-            .communityDeleteConfirm,
-            isPresented: $showDeleteConfirm,
-            buttons: communityDeleteConfirmDialogView)
-        .dialog(
-            .communityReportConfirmTitle,
-            isPresented: $showReportConfirm,
-            buttons: communityReportConfirmDialogView)
+        .onAppear(perform: onAppear)
         .alert(.communityReportReasonOtherTitle, isPresented: $showOtherReasonInput) {
             TextField(.communityReportReasonOtherPlaceholder, text: $otherReasonText)
                 .keenOnChange(of: otherReasonText, perform: onOtherReasonTextChange)
@@ -243,11 +234,23 @@ struct CommunityPostDetailView: View {
             Text(.communityReportReasonOtherMessage)
         }
         .dialog(
+            .communityDeleteConfirm,
+            isPresented: $showDeleteConfirm,
+            buttons: communityDeleteConfirmDialogView)
+        .dialog(
+            .communityReportConfirmTitle,
+            isPresented: $showReportConfirm,
+            buttons: communityReportConfirmDialogView)
+        .dialog(
             .communityBlockConfirmTitle,
             message: .communityBlockConfirmMessage,
             isPresented: $showBlockConfirm,
             buttons: communityBlockConfirmDialogView)
-        .onAppear(perform: onAppear)
+        .sheet(isPresented: $showEditPost) {
+            EditCommunityPostView(
+                appState: appState,
+                post: currentPost)
+        }
     }
 
     private var communityDeleteConfirmDialogView: some View {

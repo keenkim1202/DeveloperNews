@@ -15,7 +15,7 @@ struct ArticleWebView: UIViewRepresentable {
         loadError: Binding<String?>,
         progress: Binding<Double>,
         webViewRef: Binding<WKWebView?>,
-        reloadTrigger: Int
+        reloadTrigger: Int,
     ) {
         self.url = url
         self.isLoading = isLoading
@@ -44,7 +44,10 @@ struct ArticleWebView: UIViewRepresentable {
         return webView
     }
 
-    func updateUIView(_ webView: WKWebView, context: Context) {
+    func updateUIView(
+        _ webView: WKWebView,
+        context: Context,
+    ) {
         if context.coordinator.loadedURL != url {
             context.coordinator.loadedURL = url
             context.coordinator.lastReloadTrigger = reloadTrigger
@@ -56,7 +59,10 @@ struct ArticleWebView: UIViewRepresentable {
         }
     }
 
-    static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
+    static func dismantleUIView(
+        _ webView: WKWebView,
+        coordinator: Coordinator,
+    ) {
         if let observed = coordinator.observedWebView {
             observed.removeObserver(
                 coordinator,

@@ -40,7 +40,9 @@ struct HomeTopStoryCard: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color(.tertiarySystemFill))
+                    .background {
+                        Color(.tertiarySystemFill)
+                    }
                     .clipShape(Capsule())
                     .contentShape(Capsule())
                 }
@@ -99,7 +101,9 @@ struct HomeTopStoryCard: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.accentColor.opacity(0.08))
+        .background {
+            Color.accentColor.opacity(0.08)
+        }
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay {
             if let config = translator.makeConfiguration(), translationTrigger > 0 {

@@ -23,7 +23,7 @@ struct DraftEditorScreen: View {
         selectedTopics: Binding<Set<Topic>>,
         titleLimit: Int = 100,
         descriptionLimit: Int = 1000,
-        onSave: @escaping (_ title: String, _ description: String, _ link: String, _ topics: Set<Topic>) -> Void
+        onSave: @escaping (_ title: String, _ description: String, _ link: String, _ topics: Set<Topic>) -> Void,
     ) {
         self.navigationTitle = navigationTitle
         self.saveTitle = saveTitle
@@ -89,6 +89,7 @@ struct DraftEditorScreen: View {
                     Text(.saveTopic)
                 }
             }
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -100,7 +101,6 @@ struct DraftEditorScreen: View {
                         .disabled(!isValid)
                 }
             }
-            .scrollDismissesKeyboard(.interactively)
         }
     }
 

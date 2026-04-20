@@ -38,7 +38,9 @@ struct SavedItemNoteComposerView: View {
                             .textSelection(.enabled)
                             .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.secondarySystemBackground))
+                            .background {
+                                Color(.secondarySystemBackground)
+                            }
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                         Button(action: copyLink) {
                             Label("Copy link", systemImage: "doc.on.doc")
