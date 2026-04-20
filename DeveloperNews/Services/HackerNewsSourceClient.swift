@@ -4,7 +4,10 @@ struct HackerNewsSourceClient: ContentSourceClient {
     let session: URLSession
     let maxStories: Int
 
-    init(session: URLSession = .shared, maxStories: Int = 12) {
+    init(
+        session: URLSession = .shared,
+        maxStories: Int = 12,
+    ) {
         self.session = session
         self.maxStories = maxStories
     }
@@ -85,7 +88,9 @@ struct HackerNewsSourceClient: ContentSourceClient {
             publishedAt: publishedAt,
             topics: topics,
             trendScore: score,
-            engagement: EngagementMetrics(reactionCount: story.score, commentCount: story.descendants ?? 0))
+            engagement: EngagementMetrics(
+                reactionCount: story.score,
+                commentCount: story.descendants ?? 0))
     }
 
     private func inferredTopics(for text: String) -> [Topic] {

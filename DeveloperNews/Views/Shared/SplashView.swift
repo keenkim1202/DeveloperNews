@@ -1,8 +1,16 @@
 import SwiftUI
 
 struct SplashView: View {
-    let appState: AppState
-    let onComplete: () -> Void
+    private let appState: AppState
+    private let onComplete: () -> Void
+
+    init(
+        appState: AppState,
+        onComplete: @escaping () -> Void,
+    ) {
+        self.appState = appState
+        self.onComplete = onComplete
+    }
 
     var body: some View {
         VStack(spacing: 20) {

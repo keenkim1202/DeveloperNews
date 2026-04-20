@@ -8,7 +8,6 @@ struct SourcesAttributionView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-
             Section(.blogsArticles) {
                 Text(.curatedRssFeedsFromIndependentAndCompanyEngineeringBlogs)
                     .font(.footnote)
@@ -26,25 +25,21 @@ struct SourcesAttributionView: View {
                 attributionRow("Hacking with Swift", url: "https://www.hackingwithswift.com")
                 attributionRow("Donny Wals", url: "https://www.donnywals.com")
             }
-
             Section(.hackerNews) {
                 Text(.headlinesFromThePublicHackerNewsApiOperatedByYCombinator)
                     .font(.footnote)
                 attributionRow(.hackerNews, url: "https://news.ycombinator.com")
             }
-
             Section(.gitHubTrending) {
                 Text(.trendingRepositoriesFromThePublicGitHubSearchApi)
                     .font(.footnote)
                 attributionRow("GitHub", url: "https://github.com")
             }
-
             Section(.reddit) {
                 Text(.linkPostsFromACuratedSetOfDeveloperSubredditsViaRedditsPublicListingJson)
                     .font(.footnote)
                 attributionRow(.reddit, url: "https://www.reddit.com")
             }
-
             Section {
                 Text(.allTrademarksAndLogosBelongToTheirRespectiveOwnersDeveloperNewsIsNotAffiliatedWithOrEndorsedByAnyOfTheListedSources)
                     .font(.footnote)
@@ -57,7 +52,10 @@ struct SourcesAttributionView: View {
     }
 
     @ViewBuilder
-    private func attributionRow(_ name: LocalizedStringResource, url: String) -> some View {
+    private func attributionRow(
+        _ name: LocalizedStringResource,
+        url: String,
+    ) -> some View {
         if let resolved = URL(string: url) {
             Link(destination: resolved) {
                 HStack {

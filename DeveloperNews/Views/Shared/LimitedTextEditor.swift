@@ -1,8 +1,13 @@
 import SwiftUI
 
 struct LimitedTextEditor: View {
-    var text: Binding<String>
-    let limit: Int
+    private var text: Binding<String>
+    private let limit: Int
+
+    init(text: Binding<String>, limit: Int) {
+        self.text = text
+        self.limit = limit
+    }
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 4) {

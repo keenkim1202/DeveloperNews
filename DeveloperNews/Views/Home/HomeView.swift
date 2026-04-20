@@ -1,12 +1,16 @@
 import SwiftUI
 
 struct HomeView: View {
-    let appState: AppState
-    @State private var viewModel: HomeViewModel
+    private let appState: AppState
 
-    init(appState: AppState) {
+    @Bindable private var viewModel: HomeViewModel
+
+    init(
+        appState: AppState,
+        viewModel: HomeViewModel,
+    ) {
         self.appState = appState
-        _viewModel = State(initialValue: HomeViewModel(appState: appState))
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -19,12 +23,14 @@ struct HomeView: View {
                         onClearFocus: { viewModel.focusedTopic = nil },
                         onToggleFocus: { viewModel.toggleFocusedTopic($0) })
                 }
-
                 feedContent
             }
             .navigationTitle(.trending)
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $viewModel.searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search stories")
+            .searchable(
+                text: $viewModel.searchQuery,
+                placement: .navigationBarDrawer(displayMode: .automatic),
+                prompt: "Search stories")
             .refreshable {
                 await viewModel.reload()
             }
@@ -38,12 +44,10 @@ struct HomeView: View {
                 ProgressView()
                     .controlSize(.large)
                     .tint(.accentColor)
-
                 VStack(spacing: 4) {
                     Text(.loadingStories)
                         .font(.headline)
                         .foregroundStyle(.secondary)
-
                     Text(.fetchingTheLatestDeveloperStoriesForYourSelectedTopics)
                         .font(.footnote)
                         .foregroundStyle(.tertiary)
@@ -53,7 +57,8 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        else if let errorMessage = viewModel.errorMessage, !viewModel.hasLoadedContent {
+        else if let errorMessage = viewModel.errorMessage,
+                !viewModel.hasLoadedContent {
             ContentUnavailableView {
                 Label(.couldNotLoadStories, systemImage: "wifi.exclamationmark")
             } description: {
@@ -97,18 +102,34 @@ struct HomeView: View {
     }
 
     private func reloadContent() {
-        Task { await viewModel.reload() }
+        Task {
+            await viewModel.reload()
+        }
     }
 }
 
 struct HomeTopicFocusBar: View {
-    let selectedTopics: Set<Topic>
-    let focusedTopic: Topic?
-    let onClearFocus: () -> Void
-    let onToggleFocus: (Topic) -> Void
+    private let selectedTopics: Set<Topic>
+    private let focusedTopic: Topic?
+    private let onClearFocus: () -> Void
+    private let onToggleFocus: (Topic) -> Void
+
+    init(
+        selectedTopics: Set<Topic>,
+        focusedTopic: Topic?,
+        onClearFocus: @escaping () -> Void,
+        onToggleFocus: @escaping (Topic) -> Void
+    ) {
+        self.selectedTopics = selectedTopics
+        self.focusedTopic = focusedTopic
+        self.onClearFocus = onClearFocus
+        self.onToggleFocus = onToggleFocus
+    }
 
     private var orderedTopics: [Topic] {
-        Topic.allCases.filter { selectedTopics.contains($0) }
+        Topic.allCases.filter {
+            selectedTopics.contains($0)
+        }
     }
 
     var body: some View {
@@ -120,7 +141,6 @@ struct HomeTopicFocusBar: View {
                     isSelected: focusedTopic == nil) {
                     onClearFocus()
                 }
-
                 ForEach(orderedTopics) { topic in
                     FocusChip(
                         title: topic.title,

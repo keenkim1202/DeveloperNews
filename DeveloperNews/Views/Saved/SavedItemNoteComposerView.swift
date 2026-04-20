@@ -1,13 +1,17 @@
 import SwiftUI
 
 struct SavedItemNoteComposerView: View {
-    let appState: AppState
-    let item: ContentItem
-    @Environment(\.dismiss) private var dismiss
+    private let appState: AppState
+    private let item: ContentItem
 
     @State private var description: String
 
-    init(appState: AppState, item: ContentItem) {
+    @Environment(\.dismiss) private var dismiss
+
+    init(
+        appState: AppState,
+        item: ContentItem,
+    ) {
         self.appState = appState
         self.item = item
         _description = State(initialValue: item.summary)
@@ -24,7 +28,6 @@ struct SavedItemNoteComposerView: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
-
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Link")
                             .font(.caption.weight(.semibold))
@@ -37,14 +40,12 @@ struct SavedItemNoteComposerView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color(.secondarySystemBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
-
                         Button(action: copyLink) {
                             Label("Copy link", systemImage: "doc.on.doc")
                                 .font(.subheadline.weight(.semibold))
                         }
                         .buttonStyle(.bordered)
                     }
-
                     VStack(alignment: .leading, spacing: 12) {
                         Text(.saveDescription)
                             .font(.caption.weight(.semibold))

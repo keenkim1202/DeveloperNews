@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct CommunityPostEditorView: View {
-    let appState: AppState
-    let existingPost: CommunityPost?
+    private let appState: AppState
+    private let existingPost: CommunityPost?
 
     @Environment(\.dismiss) private var dismiss
 
@@ -11,7 +11,10 @@ struct CommunityPostEditorView: View {
     @State private var link: String
     @State private var selectedTopics: Set<Topic>
 
-    init(appState: AppState, existingPost: CommunityPost? = nil) {
+    init(
+        appState: AppState,
+        existingPost: CommunityPost? = nil,
+    ) {
         self.appState = appState
         self.existingPost = existingPost
         _title = State(initialValue: existingPost?.title ?? "")
@@ -72,7 +75,12 @@ struct CommunityPostEditorView: View {
 
 
 struct CreatePostView: View {
-    let appState: AppState
+    private let appState: AppState
+
+    init(appState: AppState) {
+        self.appState = appState
+    }
+
     var body: some View {
         CommunityPostEditorView(appState: appState)
     }
@@ -80,11 +88,18 @@ struct CreatePostView: View {
 
 
 struct EditCommunityPostView: View {
-    let appState: AppState
-    let post: CommunityPost
+    private let appState: AppState
+    private let post: CommunityPost
+
+    init(appState: AppState, post: CommunityPost) {
+        self.appState = appState
+        self.post = post
+    }
 
     var body: some View {
-        CommunityPostEditorView(appState: appState, existingPost: post)
+        CommunityPostEditorView(
+            appState: appState,
+            existingPost: post)
     }
 }
 

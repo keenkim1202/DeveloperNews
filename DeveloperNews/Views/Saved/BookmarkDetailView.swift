@@ -1,12 +1,20 @@
 import SwiftUI
 
 struct BookmarkDetailView: View {
-    let appState: AppState
-    let item: ContentItem
+    private let appState: AppState
+    private let item: ContentItem
     @Environment(\.dismiss) private var dismiss
 
     @State private var showEdit = false
     @State private var showDeleteConfirm = false
+
+    init(
+        appState: AppState,
+        item: ContentItem,
+    ) {
+        self.appState = appState
+        self.item = item
+    }
 
     private var currentItem: ContentItem {
         appState.savedItemSnapshots[item.url] ?? item
@@ -17,7 +25,6 @@ struct BookmarkDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text(currentItem.title)
                     .font(.title2.bold())
-
                 HStack(spacing: 8) {
                     Text(currentItem.sourceName)
                         .font(.caption)
@@ -43,7 +50,6 @@ struct BookmarkDetailView: View {
 
                 if !currentItem.summary.isEmpty {
                     Divider()
-
                     Text(currentItem.summary)
                         .font(.body)
                         .foregroundStyle(.primary)
@@ -67,9 +73,7 @@ struct BookmarkDetailView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
                 }
-
                 Divider()
-
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 4) {
                         Text(.bookmarkCreatedAt)
@@ -86,7 +90,6 @@ struct BookmarkDetailView: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.tertiary)
-
                 Button(
                     .bookmarkDelete,
                     role: .destructive,
@@ -142,15 +145,18 @@ struct BookmarkDetailView: View {
 
 
 struct EditBookmarkView: View {
-    let appState: AppState
-    let item: ContentItem
+    private let appState: AppState
+    private let item: ContentItem
 
     @State private var title: String
     @State private var description: String
     @State private var link: String
     @State private var selectedTopics: Set<Topic>
 
-    init(appState: AppState, item: ContentItem) {
+    init(
+        appState: AppState,
+        item: ContentItem,
+    ) {
         self.appState = appState
         self.item = item
         _title = State(initialValue: item.title)

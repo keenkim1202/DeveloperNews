@@ -13,7 +13,7 @@ struct RedditSourceClient: ContentSourceClient {
     init(
         feeds: [RedditFeedDefinition] = Self.defaultFeeds,
         session: URLSession = .shared,
-        maxItemsPerFeed: Int = 8
+        maxItemsPerFeed: Int = 8,
     ) {
         self.feeds = feeds
         self.session = session
@@ -136,7 +136,11 @@ struct RedditSourceClient: ContentSourceClient {
         return Array(topics)
     }
 
-    private func trendScore(score: Int, commentCount: Int, publishedAt: Date) -> Int {
+    private func trendScore(
+        score: Int,
+        commentCount: Int,
+        publishedAt: Date,
+    ) -> Int {
         let hoursAgo = max(1, Int(Date().timeIntervalSince(publishedAt) / 3600))
         let engagementBoost = min(25, (score / 20) + (commentCount / 10))
         return max(58, min(98, 88 - hoursAgo + engagementBoost))

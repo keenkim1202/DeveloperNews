@@ -1,12 +1,18 @@
 import SwiftUI
 
 struct SettingsView: View {
-    let appState: AppState
-    @State private var viewModel: SettingsViewModel
+    private let appState: AppState
 
-    init(appState: AppState) {
+    @Bindable private var viewModel: SettingsViewModel
+    @State private var signInViewModel: SignInViewModel
+
+    init(
+        appState: AppState,
+        viewModel: SettingsViewModel,
+    ) {
         self.appState = appState
-        _viewModel = State(initialValue: SettingsViewModel(appState: appState))
+        self.viewModel = viewModel
+        _signInViewModel = State(initialValue: SignInViewModel(appState: appState))
     }
 
     var body: some View {
@@ -20,7 +26,7 @@ struct SettingsView: View {
                     }
             }
             .sheet(isPresented: $viewModel.showSignIn) {
-                SignInView(appState: appState)
+                SignInView(appState: appState, viewModel: signInViewModel)
             }
             .alert(.profileEditName, isPresented: $viewModel.showEditName) {
                 TextField(.profileNamePlaceholder, text: $viewModel.editingName)
@@ -73,10 +79,7 @@ struct SettingsView: View {
                 ForEach(Topic.allCases) { topic in
                     let isSelected = viewModel.selectedTopics.contains(topic)
                     let isDisabled = !isSelected && !viewModel.canSelectMoreTopics()
-
-                    Button {
-                        toggleTopic(topic)
-                    } label: {
+                    Button(action: { toggleTopic(topic) }) {
                         HStack {
                             Label {
                                 Text(topic.title)
@@ -122,7 +125,6 @@ struct SettingsView: View {
                     get: { viewModel.notificationsEnabled },
                     set: { viewModel.setNotificationsEnabled($0) }
                 ))
-
                 Text(.pushDeliveryIsComingSoonYourChoiceIsSavedOnThisDeviceForNow)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -140,7 +142,6 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-
                 Picker(selection: Binding(
                     get: { viewModel.translationLanguageCode ?? "" },
                     set: { viewModel.setTranslationLanguage($0.isEmpty ? nil : $0) }
@@ -152,7 +153,6 @@ struct SettingsView: View {
                 } label: {
                     Label(.settingsTranslation, systemImage: "translate")
                 }
-
                 Button(
                     .resetTopicSelection,
                     role: .destructive,
@@ -181,23 +181,19 @@ struct SettingsView: View {
                 } label: {
                     Label(.contentSources, systemImage: "doc.text")
                 }
-
                 NavigationLink {
                     PrivacyPolicyView()
                 } label: {
                     Label(.privacyPolicy, systemImage: "hand.raised")
                 }
-
                 NavigationLink {
                     TermsOfUseView()
                 } label: {
                     Label(.termsOfUse, systemImage: "doc.plaintext")
                 }
-
                 Button(action: openFeedback) {
                     Label(.sendFeedback, systemImage: "envelope")
                 }
-
                 LabeledContent(.version, value: appVersionString)
             } header: {
                 Text(.about)
@@ -228,7 +224,6 @@ struct SettingsView: View {
                                 .font(.system(size: 30))
                                 .foregroundStyle(.secondary)
                         }
-
                         VStack(alignment: .leading, spacing: 2) {
                             Text(viewModel.displayName.isEmpty ? String(localized: .authAnonymousUser) : viewModel.displayName)
                                 .font(.headline)
@@ -246,16 +241,13 @@ struct SettingsView: View {
                 Button(action: openEmojiPicker) {
                     Label(.profileChangeEmoji, systemImage: "face.smiling")
                 }
-
                 Button(action: openNameEditor) {
                     Label(.profileChangeName, systemImage: "pencil")
                 }
-
                 Button(
                     .authSignOut,
                     role: .destructive,
                     action: signOut)
-
                 Button(
                     .authDeleteAccount,
                     role: .destructive,

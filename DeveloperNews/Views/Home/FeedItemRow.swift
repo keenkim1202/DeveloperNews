@@ -2,16 +2,26 @@ import SwiftUI
 import Translation
 
 struct FeedItemRow: View {
-    let appState: AppState
-    let item: ContentItem
-    var selectedAuthor: Binding<AuthorInfo?>
+    private let appState: AppState
+    private let item: ContentItem
+    private var selectedAuthor: Binding<AuthorInfo?>
+
+    @State private var translationTrigger = 0
+    @State private var showingTranslation = false
+
+    init(
+        appState: AppState,
+        item: ContentItem,
+        selectedAuthor: Binding<AuthorInfo?>,
+    ) {
+        self.appState = appState
+        self.item = item
+        self.selectedAuthor = selectedAuthor
+    }
 
     private var translator: ContentTranslator {
         appState.translator
     }
-
-    @State private var translationTrigger = 0
-    @State private var showingTranslation = false
 
     private var displayTitle: String {
         showingTranslation ? translator.title(for: item) : item.title
@@ -31,17 +41,28 @@ struct FeedItemRow: View {
     var body: some View {
         NavigationLink {
             if let post = followingPost {
-                CommunityPostDetailView(appState: appState, post: post)
+                CommunityPostDetailView(
+                    appState: appState,
+                    post: post)
             }
             else if item.isUserCreated {
-                BookmarkDetailView(appState: appState, item: item)
+                BookmarkDetailView(
+                    appState: appState,
+                    item: item)
             }
             else {
-                ArticleDetailView(appState: appState, item: item)
+                ArticleDetailView(
+                    appState: appState,
+                    item: item)
             }
         } label: {
             VStack(alignment: .leading, spacing: 8) {
-                FeedItemMetaView(appState: appState, item: item, authorEmoji: followingPost.flatMap { appState.communityService.authorEmoji(for: $0.authorId) }) {
+                FeedItemMetaView(
+                    appState: appState,
+                    item: item,
+                    authorEmoji: followingPost.flatMap {
+                        appState.communityService.authorEmoji(for: $0.authorId)
+                    }) {
                     guard let post = followingPost else { return }
                     selectedAuthor.wrappedValue = AuthorInfo(
                         id: post.authorId,
@@ -131,7 +152,11 @@ struct FeedItemRow: View {
 
 
 struct FeedItemThumbnailView: View {
-    let url: URL
+    private let url: URL
+
+    init(url: URL) {
+        self.url = url
+    }
 
     var body: some View {
         AsyncImage(url: url) { phase in
@@ -160,10 +185,22 @@ struct FeedItemThumbnailView: View {
 
 
 struct FeedItemMetaView: View {
-    let appState: AppState
-    let item: ContentItem
-    var authorEmoji: String?
-    var onAuthorTap: (() -> Void)?
+    private let appState: AppState
+    private let item: ContentItem
+    private var authorEmoji: String?
+    private var onAuthorTap: (() -> Void)?
+
+    init(
+        appState: AppState,
+        item: ContentItem,
+        authorEmoji: String? = nil,
+        onAuthorTap: (() -> Void)? = nil,
+    ) {
+        self.appState = appState
+        self.item = item
+        self.authorEmoji = authorEmoji
+        self.onAuthorTap = onAuthorTap
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -174,7 +211,8 @@ struct FeedItemMetaView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                if item.sourceCategory == .following, let onAuthorTap {
+                if item.sourceCategory == .following,
+                   let onAuthorTap {
                     Button(action: onAuthorTap) {
                         HStack(spacing: 4) {
                             if let emoji = authorEmoji {
@@ -207,7 +245,6 @@ struct FeedItemMetaView: View {
                 Text("·")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
-
                 Text(relativeDateFormatter.localizedString(for: item.publishedAt, relativeTo: .now))
                     .font(.caption)
                     .foregroundStyle(.secondary)

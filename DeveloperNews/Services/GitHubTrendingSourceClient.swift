@@ -17,8 +17,13 @@ private actor GitHubRepositorySearchCache {
         return entry.repositories
     }
 
-    func setRepositories(_ repositories: [GitHubRepo], for key: String) {
-        storage[key] = Entry(repositories: repositories, expiresAt: Date().addingTimeInterval(ttl))
+    func setRepositories(
+        _ repositories: [GitHubRepo],
+        for key: String,
+    ) {
+        storage[key] = Entry(
+            repositories: repositories,
+            expiresAt: Date().addingTimeInterval(ttl))
     }
 }
 
@@ -28,7 +33,10 @@ struct GitHubTrendingSourceClient: ContentSourceClient {
     let session: URLSession
     let maxResults: Int
 
-    init(session: URLSession = .shared, maxResults: Int = 15) {
+    init(
+        session: URLSession = .shared,
+        maxResults: Int = 15,
+    ) {
         self.session = session
         self.maxResults = maxResults
     }
@@ -74,10 +82,14 @@ struct GitHubTrendingSourceClient: ContentSourceClient {
                 authorName: repo.owner.login,
                 url: link,
                 publishedAt: repo.pushedAt,
-                topics: inferredTopics(language: repo.language, topics: repo.topics),
+                topics: inferredTopics(
+                    language: repo.language,
+                    topics: repo.topics),
                 trendScore: score,
                 thumbnailURL: nil,
-                engagement: EngagementMetrics(reactionCount: repo.stargazersCount, commentCount: repo.forksCount))
+                engagement: EngagementMetrics(
+                    reactionCount: repo.stargazersCount,
+                    commentCount: repo.forksCount))
         }
     }
 
@@ -95,7 +107,10 @@ struct GitHubTrendingSourceClient: ContentSourceClient {
         selectedTopics.count == 1 ? max(30, maxResults) : maxResults
     }
 
-    private func fetchRepositories(query: String, limit: Int) async throws -> [GitHubRepo] {
+    private func fetchRepositories(
+        query: String,
+        limit: Int,
+    ) async throws -> [GitHubRepo] {
         let cacheKey = "\(query)|\(limit)"
         if let cached = await Self.cache.repositories(for: cacheKey) {
             return cached
@@ -137,43 +152,43 @@ struct GitHubTrendingSourceClient: ContentSourceClient {
             return [
                 "language:Swift stars:>20 \(recency)",
                 "topic:ios stars:>20 \(recency)",
-                "swiftui stars:>20 \(recency)"
+                "swiftui stars:>20 \(recency)",
             ]
         case .android:
             return [
                 "language:Kotlin stars:>20 \(recency)",
                 "topic:android stars:>20 \(recency)",
-                "\"jetpack compose\" stars:>20 \(recency)"
+                "\"jetpack compose\" stars:>20 \(recency)",
             ]
         case .web:
             return [
                 "language:TypeScript stars:>20 \(recency)",
                 "language:JavaScript stars:>20 \(recency)",
-                "topic:frontend stars:>20 \(recency)"
+                "topic:frontend stars:>20 \(recency)",
             ]
         case .backend:
             return [
                 "language:Go stars:>20 \(recency)",
                 "language:Rust stars:>20 \(recency)",
-                "topic:backend stars:>20 \(recency)"
+                "topic:backend stars:>20 \(recency)",
             ]
         case .ai:
             return [
                 "topic:ai stars:>20 \(recency)",
                 "topic:llm stars:>20 \(recency)",
-                "topic:machine-learning stars:>20 \(recency)"
+                "topic:machine-learning stars:>20 \(recency)",
             ]
         case .security:
             return [
                 "topic:security stars:>20 \(recency)",
                 "topic:auth stars:>20 \(recency)",
-                "topic:cryptography stars:>20 \(recency)"
+                "topic:cryptography stars:>20 \(recency)",
             ]
         case .product:
             return [
                 "topic:productivity stars:>20 \(recency)",
                 "topic:\"developer-tools\" stars:>20 \(recency)",
-                "topic:cli stars:>20 \(recency)"
+                "topic:cli stars:>20 \(recency)",
             ]
         }
     }

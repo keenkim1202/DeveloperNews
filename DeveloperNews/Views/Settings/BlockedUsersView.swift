@@ -1,12 +1,18 @@
 import SwiftUI
 
 struct BlockedUsersView: View {
-    let appState: AppState
+    private let appState: AppState
+
+    init(appState: AppState) {
+        self.appState = appState
+    }
 
     var body: some View {
         Group {
             if appState.blockedUserIds.isEmpty {
-                ContentUnavailableView(.settingsNoBlockedUsers, systemImage: "person.slash")
+                ContentUnavailableView(
+                    .settingsNoBlockedUsers,
+                    systemImage: "person.slash")
             }
             else {
                 List {

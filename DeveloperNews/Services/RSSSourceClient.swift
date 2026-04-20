@@ -101,152 +101,123 @@ extension RSSSourceClient {
         RSSFeedDefinition(
             sourceName: "Swift with Majid",
             feedURL: URL(string: "https://swiftwithmajid.com/feed.xml")!,
-            defaultTopics: [.ios, .product]
-        ),
+            defaultTopics: [.ios, .product]),
         RSSFeedDefinition(
             sourceName: "InfoQ",
             feedURL: URL(string: "https://feed.infoq.com")!,
-            defaultTopics: [.backend, .ai, .product]
-        ),
+            defaultTopics: [.backend, .ai, .product]),
         RSSFeedDefinition(
             sourceName: "GitHub Blog",
             feedURL: URL(string: "https://github.blog/feed/")!,
-            defaultTopics: [.backend, .product]
-        ),
+            defaultTopics: [.backend, .product]),
         RSSFeedDefinition(
             sourceName: "Mozilla Hacks",
             feedURL: URL(string: "https://hacks.mozilla.org/feed/")!,
-            defaultTopics: [.web, .security]
-        ),
+            defaultTopics: [.web, .security]),
         RSSFeedDefinition(
             sourceName: "Cloudflare Blog",
             feedURL: URL(string: "https://blog.cloudflare.com/rss/")!,
-            defaultTopics: [.backend, .security]
-        ),
+            defaultTopics: [.backend, .security]),
         RSSFeedDefinition(
             sourceName: "Lobsters",
             feedURL: URL(string: "https://lobste.rs/rss")!,
-            defaultTopics: [.web, .backend, .product]
-        ),
+            defaultTopics: [.web, .backend, .product]),
         RSSFeedDefinition(
             sourceName: "Stripe Engineering",
             feedURL: URL(string: "https://stripe.com/blog/feed.rss")!,
-            defaultTopics: [.backend, .product]
-        ),
+            defaultTopics: [.backend, .product]),
         RSSFeedDefinition(
             sourceName: "Netflix Tech Blog",
             feedURL: URL(string: "https://netflixtechblog.com/feed")!,
-            defaultTopics: [.backend, .ai]
-        ),
+            defaultTopics: [.backend, .ai]),
         RSSFeedDefinition(
             sourceName: "High Scalability",
             feedURL: URL(string: "https://www.highscalability.com/feed")!,
-            defaultTopics: [.backend]
-        ),
+            defaultTopics: [.backend]),
         RSSFeedDefinition(
             sourceName: "Stack Overflow Blog",
             feedURL: URL(string: "https://stackoverflow.blog/feed/")!,
-            defaultTopics: [.product, .backend]
-        ),
+            defaultTopics: [.product, .backend]),
         RSSFeedDefinition(
             sourceName: "CSS-Tricks",
             feedURL: URL(string: "https://css-tricks.com/feed/")!,
-            defaultTopics: [.web]
-        ),
+            defaultTopics: [.web]),
         RSSFeedDefinition(
             sourceName: "Hacking with Swift",
             feedURL: URL(string: "https://www.hackingwithswift.com/articles/rss")!,
-            defaultTopics: [.ios]
-        ),
+            defaultTopics: [.ios]),
         RSSFeedDefinition(
             sourceName: "Donny Wals",
             feedURL: URL(string: "https://www.donnywals.com/feed/")!,
-            defaultTopics: [.ios]
-        ),
+            defaultTopics: [.ios]),
         RSSFeedDefinition(
             sourceName: "Android Developers Blog",
             feedURL: URL(string: "https://android-developers.googleblog.com/feeds/posts/default")!,
-            defaultTopics: [.android]
-        ),
+            defaultTopics: [.android]),
         RSSFeedDefinition(
             sourceName: "ProAndroidDev",
             feedURL: URL(string: "https://proandroiddev.com/feed")!,
-            defaultTopics: [.android]
-        ),
+            defaultTopics: [.android]),
         RSSFeedDefinition(
             sourceName: "JetBrains Kotlin Blog",
             feedURL: URL(string: "https://blog.jetbrains.com/kotlin/feed/")!,
-            defaultTopics: [.android]
-        ),
+            defaultTopics: [.android]),
         RSSFeedDefinition(
             sourceName: "Apple Developer News",
             feedURL: URL(string: "https://developer.apple.com/news/rss/news.rss")!,
-            defaultTopics: [.ios]
-        ),
+            defaultTopics: [.ios]),
         RSSFeedDefinition(
             sourceName: "NSHipster",
             feedURL: URL(string: "https://nshipster.com/feed.xml")!,
-            defaultTopics: [.ios]
-        ),
+            defaultTopics: [.ios]),
         RSSFeedDefinition(
             sourceName: "SwiftLee",
             feedURL: URL(string: "https://www.avanderlee.com/feed/")!,
-            defaultTopics: [.ios]
-        ),
+            defaultTopics: [.ios]),
         RSSFeedDefinition(
             sourceName: "Hugging Face",
             feedURL: URL(string: "https://huggingface.co/blog/feed.xml")!,
-            defaultTopics: [.ai]
-        ),
+            defaultTopics: [.ai]),
         RSSFeedDefinition(
             sourceName: "Simon Willison",
             feedURL: URL(string: "https://simonwillison.net/atom/everything/")!,
-            defaultTopics: [.ai, .backend]
-        ),
+            defaultTopics: [.ai, .backend]),
         RSSFeedDefinition(
             sourceName: "Dropbox Tech",
             feedURL: URL(string: "https://dropbox.tech/feed")!,
-            defaultTopics: [.backend]
-        ),
+            defaultTopics: [.backend]),
         RSSFeedDefinition(
             sourceName: "Spotify Engineering",
             feedURL: URL(string: "https://engineering.atspotify.com/feed")!,
-            defaultTopics: [.backend, .ai]
-        ),
+            defaultTopics: [.backend, .ai]),
         RSSFeedDefinition(
             sourceName: "Vercel",
             feedURL: URL(string: "https://vercel.com/atom")!,
-            defaultTopics: [.web, .product]
-        ),
+            defaultTopics: [.web, .product]),
         RSSFeedDefinition(
             sourceName: "Julia Evans",
             feedURL: URL(string: "https://jvns.ca/atom.xml")!,
-            defaultTopics: [.backend, .security]
-        ),
+            defaultTopics: [.backend, .security]),
         RSSFeedDefinition(
             sourceName: "Martin Fowler",
             feedURL: URL(string: "https://martinfowler.com/feed.atom")!,
-            defaultTopics: [.backend, .product]
-        ),
+            defaultTopics: [.backend, .product]),
         RSSFeedDefinition(
             sourceName: "web.dev",
             feedURL: URL(string: "https://web.dev/feed.xml")!,
-            defaultTopics: [.web]
-        ),
+            defaultTopics: [.web]),
         RSSFeedDefinition(
             sourceName: "Smashing Magazine",
             feedURL: URL(string: "https://www.smashingmagazine.com/feed/")!,
-            defaultTopics: [.web, .product]
-        ),
+            defaultTopics: [.web, .product]),
         RSSFeedDefinition(
             sourceName: "Krebs on Security",
             feedURL: URL(string: "https://krebsonsecurity.com/feed/")!,
-            defaultTopics: [.security]
-        ),
+            defaultTopics: [.security]),
         RSSFeedDefinition(
             sourceName: "The Pragmatic Engineer",
             feedURL: URL(string: "https://newsletter.pragmaticengineer.com/feed")!,
-            defaultTopics: [.backend, .product])
+            defaultTopics: [.backend, .product]),
     ]
 }
 
@@ -316,14 +287,22 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
         return parsedItems
     }
 
-    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?, attributes attributeDict: [String : String] = [:]) {
+    func parser(
+        _ parser: XMLParser,
+        didStartElement elementName: String,
+        namespaceURI: String?,
+        qualifiedName: String?,
+        attributes attributeDict: [String : String] = [:],
+    ) {
         currentText = ""
 
         if Self.itemElementNames.contains(elementName) {
             currentItem = PartialItem()
         }
 
-        if Self.imageElementNames.contains(elementName), var item = currentItem, item.imageURL == nil {
+        if Self.imageElementNames.contains(elementName),
+           var item = currentItem,
+           item.imageURL == nil {
             if let candidate = imageURL(from: elementName, attributes: attributeDict) {
                 item.imageURL = candidate
                 currentItem = item
@@ -344,7 +323,10 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
         currentElement = Element(rawValue: elementName)
     }
 
-    private func imageURL(from elementName: String, attributes: [String: String]) -> URL? {
+    private func imageURL(
+        from elementName: String,
+        attributes: [String: String],
+    ) -> URL? {
         if elementName == "enclosure" {
             guard let type = attributes["type"], type.hasPrefix("image/") else {
                 return nil
@@ -363,11 +345,19 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
         return url
     }
 
-    func parser(_ parser: XMLParser, foundCharacters string: String) {
+    func parser(
+        _ parser: XMLParser,
+        foundCharacters string: String,
+    ) {
         currentText += string
     }
 
-    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName: String?) {
+    func parser(
+        _ parser: XMLParser,
+        didEndElement elementName: String,
+        namespaceURI: String?,
+        qualifiedName: String?,
+    ) {
         let trimmedText = currentText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard var item = currentItem else {
@@ -601,7 +591,11 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
         return result
     }
 
-    private func decodingNumericEntities(_ string: String, prefix: String, radix: Int) -> String {
+    private func decodingNumericEntities(
+        _ string: String,
+        prefix: String,
+        radix: Int,
+    ) -> String {
         let pattern: String
         switch radix {
         case 10: pattern = #"&#(\d+);"#

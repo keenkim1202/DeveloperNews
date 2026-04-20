@@ -1,13 +1,25 @@
 import SwiftUI
 
 struct UserProfileView: View {
-    let appState: AppState
-    let authorId: String
-    let authorName: String
-    let authorEmoji: String?
+    private let appState: AppState
+    private let authorId: String
+    private let authorName: String
+    private let authorEmoji: String?
 
     @State private var followerCount = 0
     @State private var followingCount = 0
+
+    init(
+        appState: AppState,
+        authorId: String,
+        authorName: String,
+        authorEmoji: String?,
+    ) {
+        self.appState = appState
+        self.authorId = authorId
+        self.authorName = authorName
+        self.authorEmoji = authorEmoji
+    }
 
     private var currentUserId: String? {
         appState.authService.userId
@@ -39,7 +51,6 @@ struct UserProfileView: View {
 
                     Text(authorName)
                         .font(.title3.bold())
-
                     HStack(spacing: 20) {
                         VStack {
                             Text("\(authorPosts.count)")
@@ -48,7 +59,6 @@ struct UserProfileView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-
                         VStack {
                             Text("\(followerCount)")
                                 .font(.headline)
@@ -56,7 +66,6 @@ struct UserProfileView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-
                         VStack {
                             Text("\(followingCount)")
                                 .font(.headline)
@@ -64,7 +73,6 @@ struct UserProfileView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-
                         VStack {
                             let totalLikes = authorPosts.reduce(0) { $0 + $1.likeCount }
                             Text("\(totalLikes)")
@@ -108,17 +116,21 @@ struct UserProfileView: View {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(authorPosts) { post in
                             NavigationLink {
-                                CommunityPostDetailView(appState: appState, post: post)
+                                CommunityPostDetailView(
+                                    appState: appState,
+                                    post: post)
                             } label: {
-                                CommunityPostRow(appState: appState, post: post, authorEmoji: authorEmoji)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.horizontal, 20)
-                                    .padding(.vertical, 10)
-                                    .contentShape(Rectangle())
+                                CommunityPostRow(
+                                    appState: appState,
+                                    post: post,
+                                    authorEmoji: authorEmoji)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .frame(maxWidth: .infinity, alignment: .leading)
-
                             Divider()
                                 .padding(.horizontal, 20)
                         }

@@ -10,14 +10,14 @@ extension View {
 
     func keenOnChange<V: Equatable>(
         of value: V,
-        perform action: @escaping (V) -> Void
+        perform action: @escaping (_ new: V) -> Void
     ) -> some View {
         onChange(of: value) { _, new in action(new) }
     }
 
     func keenOnChange<V: Equatable>(
         of value: V,
-        perform action: @escaping (V, V) -> Void
+        perform action: @escaping (_ old: V, _ new: V) -> Void
     ) -> some View {
         onChange(of: value) { old, new in action(old, new) }
     }

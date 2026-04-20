@@ -90,7 +90,14 @@ final class CommunityService {
         listenerRegistration = nil
     }
 
-    func createPost(title: String, description: String, link: String?, topics: [Topic], author: FirebaseAuth.User, authorDisplayName: String) async {
+    func createPost(
+        title: String,
+        description: String,
+        link: String?,
+        topics: [Topic],
+        author: FirebaseAuth.User,
+        authorDisplayName: String,
+    ) async {
         errorMessage = nil
 
         let data: [String: Any] = [
@@ -113,7 +120,14 @@ final class CommunityService {
         }
     }
 
-    func updatePost(_ post: CommunityPost, title: String, description: String, link: String?, topics: [Topic], editorId: String) async {
+    func updatePost(
+        _ post: CommunityPost,
+        title: String,
+        description: String,
+        link: String?,
+        topics: [Topic],
+        editorId: String,
+    ) async {
         errorMessage = nil
 
         guard post.authorId == editorId else {
@@ -144,7 +158,11 @@ final class CommunityService {
         }
     }
 
-    func reportPost(_ post: CommunityPost, reporterId: String, reason: String) async {
+    func reportPost(
+        _ post: CommunityPost,
+        reporterId: String,
+        reason: String,
+    ) async {
         let docId = "\(reporterId)_\(post.id)"
         do {
             try await db.collection("reports").document(docId).setData([
@@ -161,7 +179,10 @@ final class CommunityService {
         }
     }
 
-    func hasReportedPost(_ postId: String, reporterId: String) async -> Bool {
+    func hasReportedPost(
+        _ postId: String,
+        reporterId: String,
+    ) async -> Bool {
         let docId = "\(reporterId)_\(postId)"
         do {
             let snapshot = try await db.collection("reports").document(docId).getDocument()
