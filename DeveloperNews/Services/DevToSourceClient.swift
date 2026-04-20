@@ -4,7 +4,10 @@ struct DevToSourceClient: ContentSourceClient {
     let session: URLSession
     let maxItems: Int
 
-    init(session: URLSession = .shared, maxItems: Int = 30) {
+    init(
+        session: URLSession = .shared,
+        maxItems: Int = 30,
+    ) {
         self.session = session
         self.maxItems = maxItems
     }
@@ -65,7 +68,10 @@ struct DevToSourceClient: ContentSourceClient {
         }
     }
 
-    private func trendScore(reactions: Int, comments: Int) -> Int {
+    private func trendScore(
+        reactions: Int,
+        comments: Int,
+    ) -> Int {
         let raw = 60 + reactions / 5 + comments / 2
         return min(95, max(60, raw))
     }

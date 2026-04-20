@@ -1,13 +1,18 @@
 import SwiftUI
 
 struct SignInView: View {
-    let appState: AppState
-    @Environment(\.dismiss) private var dismiss
-    @State private var viewModel: SignInViewModel
+    private let appState: AppState
 
-    init(appState: AppState) {
+    @Bindable private var viewModel: SignInViewModel
+
+    @Environment(\.dismiss) private var dismiss
+
+    init(
+        appState: AppState,
+        viewModel: SignInViewModel,
+    ) {
         self.appState = appState
-        _viewModel = State(initialValue: SignInViewModel(appState: appState))
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -86,7 +91,6 @@ struct SignInView: View {
                             .padding(12)
                             .background(Color(.secondarySystemBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 8))
-
                         Button(action: submitEmailForm) {
                             Text(viewModel.isSignUp ? .authCreateAccount : .authSignInWithEmail)
                                 .font(.body.weight(.medium))
@@ -130,7 +134,11 @@ struct SignInView: View {
                 }
             }
             .onTapGesture {
-                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder),
+                    to: nil,
+                    from: nil,
+                    for: nil)
             }
             .overlay {
                 if viewModel.isLoading {
@@ -159,7 +167,6 @@ struct SignInView: View {
                     .foregroundStyle(viewModel.hasAgreedToTerms ? Color.accentColor : .secondary)
             }
             .buttonStyle(.plain)
-
             Text(termsAgreementAttributed)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -247,15 +254,20 @@ struct SignInView: View {
 
 
 struct PasswordResetView: View {
-    let appState: AppState
+    private let appState: AppState
+
+    @State private var email = ""
+    @State private var successMessage: String?
+
     @Environment(\.dismiss) private var dismiss
+
+    init(appState: AppState) {
+        self.appState = appState
+    }
 
     private var authService: AuthService {
         appState.authService
     }
-
-    @State private var email = ""
-    @State private var successMessage: String?
 
     private var isEmailFormatValid: Bool {
         let pattern = #"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
@@ -314,7 +326,11 @@ struct PasswordResetView: View {
                 }
             }
             .onTapGesture {
-                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder),
+                    to: nil,
+                    from: nil,
+                    for: nil)
             }
             .overlay {
                 if authService.isLoading {

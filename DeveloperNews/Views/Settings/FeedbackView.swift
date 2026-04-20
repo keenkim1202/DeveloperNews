@@ -2,9 +2,9 @@ import SwiftUI
 import CoreImage.CIFilterBuiltins
 
 struct FeedbackView: View {
-    @Environment(\.dismiss) private var dismiss
-
     private static let instagramURLString = "https://www.instagram.com/developernews.zizic?igsh=dnRzMTBnNms0ZjRw&utm_source=qr"
+
+    @Environment(\.dismiss) private var dismiss
 
     private var instagramURL: URL {
         URL(string: Self.instagramURLString)!
@@ -23,7 +23,10 @@ struct FeedbackView: View {
                             .padding(.top, 24)
                     }
 
-                    Text(try! AttributedString(markdown: String(localized: .feedbackInstagramMessage), options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+                    Text(try! AttributedString(
+                        markdown: String(localized: .feedbackInstagramMessage),
+                        options: AttributedString.MarkdownParsingOptions(
+                            interpretedSyntax: .inlineOnlyPreservingWhitespace)))
                         .font(.body)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)

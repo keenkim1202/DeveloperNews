@@ -19,10 +19,16 @@ extension ContentSourceClient {
     func fetchItemsWithStatus(selectedTopics: Set<Topic>) async -> SourceFetchResult {
         do {
             let items = try await fetchItems(selectedTopics: selectedTopics)
-            return SourceFetchResult(items: items, failedSourceNames: [], totalSourceCount: 1)
+            return SourceFetchResult(
+                items: items,
+                failedSourceNames: [],
+                totalSourceCount: 1)
         }
         catch {
-            return SourceFetchResult(items: [], failedSourceNames: [], totalSourceCount: 1)
+            return SourceFetchResult(
+                items: [],
+                failedSourceNames: [],
+                totalSourceCount: 1)
         }
     }
 }

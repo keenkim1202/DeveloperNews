@@ -1,10 +1,22 @@
 import SwiftUI
 
 struct FocusChip: View {
-    let title: LocalizedStringResource
-    let systemImage: String
-    let isSelected: Bool
-    let action: () -> Void
+    private let title: LocalizedStringResource
+    private let systemImage: String
+    private let isSelected: Bool
+    private let action: () -> Void
+
+    init(
+        title: LocalizedStringResource,
+        systemImage: String,
+        isSelected: Bool,
+        action: @escaping () -> Void,
+    ) {
+        self.title = title
+        self.systemImage = systemImage
+        self.isSelected = isSelected
+        self.action = action
+    }
 
     var body: some View {
         Button(action: action) {

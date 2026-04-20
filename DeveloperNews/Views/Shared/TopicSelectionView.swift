@@ -1,7 +1,11 @@
 import SwiftUI
 
 struct TopicSelectionView: View {
-    let appState: AppState
+    private let appState: AppState
+
+    init(appState: AppState) {
+        self.appState = appState
+    }
 
     var body: some View {
         NavigationStack {
@@ -18,9 +22,7 @@ struct TopicSelectionView: View {
                         Text(.selected)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.secondary)
-
                         Spacer()
-
                         Text("\(appState.selectedTopics.count) / \(AppState.maxSelectedTopics)")
                             .font(.subheadline.monospacedDigit().weight(.semibold))
                             .foregroundStyle(appState.selectedTopics.isEmpty ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.accentColor))
@@ -35,9 +37,7 @@ struct TopicSelectionView: View {
                             let isSelected = appState.selectedTopics.contains(topic)
                             let isDisabled = !isSelected && !appState.canSelectMoreTopics
 
-                            Button {
-                                toggleTopic(topic)
-                            } label: {
+                            Button(action: { toggleTopic(topic) }) {
                                 HStack {
                                     Image(systemName: topic.symbolName)
                                     Text(topic.title)

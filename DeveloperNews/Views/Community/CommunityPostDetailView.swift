@@ -1,8 +1,9 @@
 import SwiftUI
 
 struct CommunityPostDetailView: View {
-    let appState: AppState
-    let post: CommunityPost
+    private let appState: AppState
+    private let post: CommunityPost
+
     @State private var showEditPost = false
     @State private var showDeleteConfirm = false
     @State private var showReportConfirm = false
@@ -10,7 +11,16 @@ struct CommunityPostDetailView: View {
     @State private var showOtherReasonInput = false
     @State private var otherReasonText = ""
     @State private var alreadyReported = false
+
     @Environment(\.dismiss) private var dismiss
+
+    init(
+        appState: AppState,
+        post: CommunityPost,
+    ) {
+        self.appState = appState
+        self.post = post
+    }
 
     private var community: CommunityService {
         appState.communityService
@@ -41,10 +51,13 @@ struct CommunityPostDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text(currentPost.title)
                     .font(.title2.bold())
-
                 HStack(spacing: 8) {
                     NavigationLink {
-                        UserProfileView(appState: appState, authorId: currentPost.authorId, authorName: currentPost.authorName, authorEmoji: authorEmoji)
+                        UserProfileView(
+                            appState: appState,
+                            authorId: currentPost.authorId,
+                            authorName: currentPost.authorName,
+                            authorEmoji: authorEmoji)
                     } label: {
                         HStack(spacing: 4) {
                             if let authorEmoji {
@@ -75,7 +88,6 @@ struct CommunityPostDetailView: View {
                         }
                         .buttonStyle(.plain)
                     }
-
                     Text("·")
                         .foregroundStyle(.tertiary)
                     Text(currentPost.createdAt, style: .date)
@@ -102,14 +114,13 @@ struct CommunityPostDetailView: View {
 
                 if !currentPost.description.isEmpty {
                     Divider()
-
                     Text(currentPost.description)
                         .font(.body)
                 }
 
-                if currentPost.hasLink, let url = currentPost.linkURL {
+                if currentPost.hasLink,
+                   let url = currentPost.linkURL {
                     Divider()
-
                     let linkItem = ContentItem(
                         id: UUID(),
                         kind: .article,
@@ -169,7 +180,6 @@ struct CommunityPostDetailView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(currentUserId == nil)
-
                     Spacer()
                 }
 
@@ -185,7 +195,6 @@ struct CommunityPostDetailView: View {
                         Button(.communityReport, action: confirmReport)
                             .disabled(alreadyReported)
                             .foregroundStyle(alreadyReported ? Color.secondary : Color.red)
-
                         Button(.communityBlockUser, action: confirmBlockUser)
                             .foregroundStyle(.red)
                     }

@@ -2,15 +2,23 @@ import SwiftUI
 import Translation
 
 struct HomeTopStoryCard: View {
-    let appState: AppState
-    let item: ContentItem
+    private let appState: AppState
+    private let item: ContentItem
+
+    @State private var translationTrigger = 0
+    @State private var showingTranslation = false
+
+    init(
+        appState: AppState,
+        item: ContentItem,
+    ) {
+        self.appState = appState
+        self.item = item
+    }
 
     private var translator: ContentTranslator {
         appState.translator
     }
-
-    @State private var translationTrigger = 0
-    @State private var showingTranslation = false
 
     private var displayTitle: String {
         showingTranslation ? translator.title(for: item) : item.title
@@ -22,9 +30,7 @@ struct HomeTopStoryCard: View {
                 Label(.topStory, systemImage: "sparkles")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tint)
-
                 Spacer()
-
                 Button(action: hideTopStory) {
                     HStack(spacing: 4) {
                         Text(.hideForADay)
@@ -44,15 +50,18 @@ struct HomeTopStoryCard: View {
 
             NavigationLink {
                 if item.isUserCreated {
-                    BookmarkDetailView(appState: appState, item: item)
+                    BookmarkDetailView(
+                        appState: appState,
+                        item: item)
                 }
                 else {
-                    ArticleDetailView(appState: appState, item: item)
+                    ArticleDetailView(
+                        appState: appState,
+                        item: item)
                 }
             } label: {
                 HStack(alignment: .top, spacing: 10) {
                     HomeTopStoryThumbnail(url: item.thumbnailURL)
-
                     VStack(alignment: .leading, spacing: 4) {
                         Text(displayTitle)
                             .font(.subheadline.weight(.semibold))
@@ -60,7 +69,6 @@ struct HomeTopStoryCard: View {
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
                             .fixedSize(horizontal: false, vertical: true)
-
                         HStack(spacing: 6) {
                             Text(item.sourceName)
                                 .lineLimit(1)
@@ -123,7 +131,11 @@ struct HomeTopStoryCard: View {
 
 
 struct HomeTopStoryThumbnail: View {
-    let url: URL?
+    private let url: URL?
+
+    init(url: URL?) {
+        self.url = url
+    }
 
     var body: some View {
         Group {

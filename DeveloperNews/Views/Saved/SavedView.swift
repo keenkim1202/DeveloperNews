@@ -1,12 +1,16 @@
 import SwiftUI
 
 struct SavedView: View {
-    let appState: AppState
-    @State private var viewModel: SavedViewModel
+    private let appState: AppState
 
-    init(appState: AppState) {
+    @Bindable private var viewModel: SavedViewModel
+
+    init(
+        appState: AppState,
+        viewModel: SavedViewModel,
+    ) {
         self.appState = appState
-        _viewModel = State(initialValue: SavedViewModel(appState: appState))
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -100,8 +104,16 @@ struct SavedView: View {
 
 
 struct SavedTopicFilterBar: View {
-    let availableTopics: [Topic]
-    let selectedFilters: Binding<Set<Topic>>
+    private let availableTopics: [Topic]
+    private let selectedFilters: Binding<Set<Topic>>
+
+    init(
+        availableTopics: [Topic],
+        selectedFilters: Binding<Set<Topic>>
+    ) {
+        self.availableTopics = availableTopics
+        self.selectedFilters = selectedFilters
+    }
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {

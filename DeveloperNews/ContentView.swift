@@ -96,7 +96,20 @@ struct ContentView: View {
 
 
 struct MainTabView: View {
-    let appState: AppState
+    private let appState: AppState
+
+    @State private var homeViewModel: HomeViewModel
+    @State private var communityViewModel: CommunityViewModel
+    @State private var savedViewModel: SavedViewModel
+    @State private var settingsViewModel: SettingsViewModel
+
+    init(appState: AppState) {
+        self.appState = appState
+        _homeViewModel = State(initialValue: HomeViewModel(appState: appState))
+        _communityViewModel = State(initialValue: CommunityViewModel(appState: appState))
+        _savedViewModel = State(initialValue: SavedViewModel(appState: appState))
+        _settingsViewModel = State(initialValue: SettingsViewModel(appState: appState))
+    }
 
     private var tabSelection: Binding<AppTab> {
         Binding(
@@ -108,25 +121,25 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: tabSelection) {
-            HomeView(appState: appState)
+            HomeView(appState: appState, viewModel: homeViewModel)
                 .tabItem {
                     Label(.home, systemImage: "newspaper")
                 }
                 .tag(AppTab.home)
 
-            CommunityView(appState: appState)
+            CommunityView(appState: appState, viewModel: communityViewModel)
                 .tabItem {
                     Label(.community, systemImage: "person.2")
                 }
                 .tag(AppTab.community)
 
-            SavedView(appState: appState)
+            SavedView(appState: appState, viewModel: savedViewModel)
                 .tabItem {
                     Label(.bookmarks, systemImage: "bookmark")
                 }
                 .tag(AppTab.saved)
 
-            SettingsView(appState: appState)
+            SettingsView(appState: appState, viewModel: settingsViewModel)
                 .tabItem {
                     Label(.settings, systemImage: "gearshape")
                 }

@@ -1,9 +1,19 @@
 import SwiftUI
 
 struct LimitedTextField: View {
-    var text: Binding<String>
-    let limit: Int
-    let prompt: LocalizedStringResource
+    private var text: Binding<String>
+    private let limit: Int
+    private let prompt: LocalizedStringResource
+
+    init(
+        text: Binding<String>,
+        limit: Int,
+        prompt: LocalizedStringResource,
+    ) {
+        self.text = text
+        self.limit = limit
+        self.prompt = prompt
+    }
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 4) {

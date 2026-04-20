@@ -1,16 +1,37 @@
 import SwiftUI
 
 struct FeedSectionListView: View {
-    let appState: AppState
-    let articleItems: [ContentItem]
-    let discussionItems: [ContentItem]
-    var showsSummary = true
-    var hasMore: Bool = false
-    var onLoadMore: (() -> Void)? = nil
-    var scrollToTopTrigger: Int = 0
-    var topContent: AnyView? = nil
+    private let appState: AppState
+    private let articleItems: [ContentItem]
+    private let discussionItems: [ContentItem]
+
+    private var showsSummary: Bool
+    private var hasMore: Bool
+    private var onLoadMore: (() -> Void)?
+    private var scrollToTopTrigger: Int
+    private var topContent: AnyView?
 
     @State private var selectedAuthor: AuthorInfo?
+
+    init(
+        appState: AppState,
+        articleItems: [ContentItem],
+        discussionItems: [ContentItem],
+        showsSummary: Bool = true,
+        hasMore: Bool = false,
+        onLoadMore: (() -> Void)? = nil,
+        scrollToTopTrigger: Int = 0,
+        topContent: AnyView? = nil
+    ) {
+        self.appState = appState
+        self.articleItems = articleItems
+        self.discussionItems = discussionItems
+        self.showsSummary = showsSummary
+        self.hasMore = hasMore
+        self.onLoadMore = onLoadMore
+        self.scrollToTopTrigger = scrollToTopTrigger
+        self.topContent = topContent
+    }
 
     private var firstAnchorID: ContentItem.ID? {
         articleItems.first?.id ?? discussionItems.first?.id

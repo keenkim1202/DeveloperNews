@@ -38,14 +38,22 @@ final class ContentTranslator {
         translatedSummaries[item.url] ?? item.summary
     }
 
-    func translateSingle(_ item: ContentItem, using session: TranslationSession) async {
+    func translateSingle(
+        _ item: ContentItem,
+        using session: TranslationSession,
+    ) async {
         guard !isTranslated(item) else { return }
 
         var requests: [TranslationSession.Request] = [
-            .init(sourceText: item.title, clientIdentifier: "t")
+            .init(
+                sourceText: item.title,
+                clientIdentifier: "t")
         ]
         if !item.summary.isEmpty {
-            requests.append(.init(sourceText: item.summary, clientIdentifier: "s"))
+            requests.append(
+                .init(
+                    sourceText: item.summary,
+                    clientIdentifier: "s"))
         }
 
         do {

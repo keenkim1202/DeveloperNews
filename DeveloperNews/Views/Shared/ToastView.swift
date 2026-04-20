@@ -1,7 +1,11 @@
 import SwiftUI
 
 struct ToastView: View {
-    let message: String
+    private let message: String
+
+    init(message: String) {
+        self.message = message
+    }
 
     var body: some View {
         Text(message)

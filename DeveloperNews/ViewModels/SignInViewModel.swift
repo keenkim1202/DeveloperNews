@@ -59,7 +59,8 @@ final class SignInViewModel {
     func submitEmailForm() async {
         if isSignUp {
             _ = await authService.signUpWithEmail(email, password: password)
-        } else {
+        }
+        else {
             _ = await authService.signInWithEmail(email, password: password)
         }
     }

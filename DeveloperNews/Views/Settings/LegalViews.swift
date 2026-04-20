@@ -15,7 +15,11 @@ struct PrivacyPolicyView: View {
 
 
 struct SimpleWebView: UIViewRepresentable {
-    let url: URL
+    private let url: URL
+
+    init(url: URL) {
+        self.url = url
+    }
 
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView()

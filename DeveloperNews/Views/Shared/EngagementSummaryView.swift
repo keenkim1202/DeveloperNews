@@ -1,7 +1,11 @@
 import SwiftUI
 
 struct EngagementSummaryView: View {
-    let engagement: EngagementMetrics
+    private let engagement: EngagementMetrics
+
+    init(engagement: EngagementMetrics) {
+        self.engagement = engagement
+    }
 
     var body: some View {
         HStack(spacing: 12) {

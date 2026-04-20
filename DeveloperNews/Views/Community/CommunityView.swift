@@ -1,12 +1,16 @@
 import SwiftUI
 
 struct CommunityView: View {
-    let appState: AppState
-    @State private var viewModel: CommunityViewModel
+    private let appState: AppState
 
-    init(appState: AppState) {
+    @Bindable private var viewModel: CommunityViewModel
+
+    init(
+        appState: AppState,
+        viewModel: CommunityViewModel,
+    ) {
         self.appState = appState
-        _viewModel = State(initialValue: CommunityViewModel(appState: appState))
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -22,7 +26,10 @@ struct CommunityView: View {
             }
             .navigationTitle(.community)
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $viewModel.searchQuery, placement: .navigationBarDrawer(displayMode: .automatic), prompt: .communitySearchPrompt)
+            .searchable(
+                text: $viewModel.searchQuery,
+                placement: .navigationBarDrawer(displayMode: .automatic),
+                prompt: .communitySearchPrompt)
             .toolbar {
                 if viewModel.isSignedIn {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -60,9 +67,14 @@ struct CommunityView: View {
                 ForEach(viewModel.filteredPosts) { post in
                     let emoji = appState.communityService.authorEmoji(for: post.authorId)
                     NavigationLink {
-                        CommunityPostDetailView(appState: appState, post: post)
+                        CommunityPostDetailView(
+                            appState: appState,
+                            post: post)
                     } label: {
-                        CommunityPostRow(appState: appState, post: post, authorEmoji: emoji) {
+                        CommunityPostRow(
+                            appState: appState,
+                            post: post,
+                            authorEmoji: emoji) {
                             viewModel.selectedAuthor = AuthorInfo(
                                 id: post.authorId,
                                 name: post.authorName,
@@ -84,10 +96,22 @@ struct CommunityView: View {
 
 
 struct CommunityPostRow: View {
-    let appState: AppState
-    let post: CommunityPost
-    var authorEmoji: String?
-    var onAuthorTap: (() -> Void)?
+    private let appState: AppState
+    private let post: CommunityPost
+    private var authorEmoji: String?
+    private var onAuthorTap: (() -> Void)?
+
+    init(
+        appState: AppState,
+        post: CommunityPost,
+        authorEmoji: String? = nil,
+        onAuthorTap: (() -> Void)? = nil,
+    ) {
+        self.appState = appState
+        self.post = post
+        self.authorEmoji = authorEmoji
+        self.onAuthorTap = onAuthorTap
+    }
 
     private var currentUserId: String? {
         appState.authService.userId

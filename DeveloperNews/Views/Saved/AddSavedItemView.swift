@@ -1,12 +1,16 @@
 import SwiftUI
 
 struct AddSavedItemView: View {
-    let appState: AppState
+    private let appState: AppState
 
     @State private var title = ""
     @State private var description = ""
     @State private var link = ""
     @State private var selectedTopics: Set<Topic> = []
+
+    init(appState: AppState) {
+        self.appState = appState
+    }
 
     var body: some View {
         DraftEditorScreen(
