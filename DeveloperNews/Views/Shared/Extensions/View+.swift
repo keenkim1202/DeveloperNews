@@ -3,21 +3,21 @@ import SwiftUI
 extension View {
     func keenOnChange<V: Equatable>(
         of value: V,
-        perform action: @escaping () -> Void
+        perform action: @escaping () -> Void,
     ) -> some View {
         onChange(of: value) { action() }
     }
 
     func keenOnChange<V: Equatable>(
         of value: V,
-        perform action: @escaping (_ new: V) -> Void
+        perform action: @escaping (_ new: V) -> Void,
     ) -> some View {
         onChange(of: value) { _, new in action(new) }
     }
 
     func keenOnChange<V: Equatable>(
         of value: V,
-        perform action: @escaping (_ old: V, _ new: V) -> Void
+        perform action: @escaping (_ old: V, _ new: V) -> Void,
     ) -> some View {
         onChange(of: value) { old, new in action(old, new) }
     }
@@ -26,7 +26,7 @@ extension View {
         _ title: LocalizedStringResource,
         message: LocalizedStringResource? = nil,
         isPresented: Binding<Bool>,
-        buttons: Buttons
+        buttons: Buttons,
     ) -> some View {
         confirmationDialog(
             title,

@@ -3,6 +3,7 @@ import SwiftUI
 @MainActor
 struct ContentView: View {
     @State private var appState = AppState()
+    @State private var navigation = Navigation()
     @State private var showSplash = true
     @State private var isToastVisible = false
     @State private var toastDismissTask: Task<Void, Never>?
@@ -20,7 +21,7 @@ struct ContentView: View {
                 }
             }
             else if appState.isOnboardingComplete {
-                MainTabView(appState: appState)
+                MainTabView(appState: appState, navigation: navigation)
                     .task(loadContent)
             }
             else {
@@ -99,14 +100,19 @@ struct ContentView: View {
 
 struct MainTabView: View {
     private let appState: AppState
+    private let navigation: Navigation
 
     @State private var homeViewModel: HomeViewModel
     @State private var communityViewModel: CommunityViewModel
     @State private var savedViewModel: SavedViewModel
     @State private var settingsViewModel: SettingsViewModel
 
-    init(appState: AppState) {
+    init(
+        appState: AppState,
+        navigation: Navigation,
+    ) {
         self.appState = appState
+        self.navigation = navigation
         _homeViewModel = State(initialValue: HomeViewModel(appState: appState))
         _communityViewModel = State(initialValue: CommunityViewModel(appState: appState))
         _savedViewModel = State(initialValue: SavedViewModel(appState: appState))
@@ -123,7 +129,10 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: tabSelection) {
-            HomeView(appState: appState, viewModel: homeViewModel)
+            HomeView(
+                appState: appState,
+                viewModel: homeViewModel,
+                navigation: navigation)
                 .tabItem {
                     Label(.home, systemImage: "newspaper")
                 }
@@ -135,7 +144,10 @@ struct MainTabView: View {
                 }
                 .tag(AppTab.community)
 
-            SavedView(appState: appState, viewModel: savedViewModel)
+            SavedView(
+                appState: appState,
+                viewModel: savedViewModel,
+                navigation: navigation)
                 .tabItem {
                     Label(.bookmarks, systemImage: "bookmark")
                 }

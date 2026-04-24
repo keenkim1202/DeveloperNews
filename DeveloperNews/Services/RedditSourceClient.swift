@@ -113,7 +113,10 @@ struct RedditSourceClient: ContentSourceClient {
         return URL(string: decoded)
     }
 
-    private func inferredTopics(for text: String, fallback: [Topic]) -> [Topic] {
+    private func inferredTopics(
+        for text: String,
+        fallback: [Topic],
+    ) -> [Topic] {
         let normalized = text.lowercased()
         var topics = Set(fallback)
 

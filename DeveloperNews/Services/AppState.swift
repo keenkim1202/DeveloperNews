@@ -146,7 +146,10 @@ final class AppState {
         }
     }
 
-    private func personalizedScore(for item: ContentItem, savedSourceCounts: [String: Int]) -> Int {
+    private func personalizedScore(
+        for item: ContentItem,
+        savedSourceCounts: [String: Int],
+    ) -> Int {
         let saveBonus = min(8, (savedSourceCounts[item.sourceName] ?? 0) * 2)
         return min(100, item.trendScore + saveBonus)
     }
@@ -182,7 +185,10 @@ final class AppState {
         !disabledSourceCategories.contains(category)
     }
 
-    func setSourceCategory(_ category: SourceCategory, enabled: Bool) {
+    func setSourceCategory(
+        _ category: SourceCategory,
+        enabled: Bool,
+    ) {
         if enabled {
             disabledSourceCategories.remove(category)
         }

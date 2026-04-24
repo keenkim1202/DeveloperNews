@@ -260,7 +260,10 @@ final class CommunityService {
         }
     }
 
-    func toggleLike(_ post: CommunityPost, userId: String) async {
+    func toggleLike(
+        _ post: CommunityPost,
+        userId: String,
+    ) async {
         let ref = postsRef.document(post.id)
         let isLiked = post.likedBy.contains(userId)
 

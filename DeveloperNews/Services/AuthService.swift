@@ -151,7 +151,10 @@ final class AuthService {
     // MARK: - Email / Password
 
     @discardableResult
-    func signInWithEmail(_ email: String, password: String) async -> Bool {
+    func signInWithEmail(
+        _ email: String,
+        password: String,
+    ) async -> Bool {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -167,7 +170,10 @@ final class AuthService {
     }
 
     @discardableResult
-    func signUpWithEmail(_ email: String, password: String) async -> Bool {
+    func signUpWithEmail(
+        _ email: String,
+        password: String,
+    ) async -> Bool {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -268,7 +274,10 @@ final class AuthService {
     /// the linked sign-in methods via `fetchSignInMethods(forEmail:)` to surface a specific
     /// "use Google/Apple to sign in" message. Requires Firebase email enumeration protection
     /// to be disabled in the console; otherwise the helper falls back to the generic message.
-    private func localizedAuthError(from error: Error, attemptedEmail: String?) async -> String {
+    private func localizedAuthError(
+        from error: Error,
+        attemptedEmail: String?,
+    ) async -> String {
         let nsError = error as NSError
 
         if let authError = error as? AuthError {
@@ -358,11 +367,17 @@ private final class AppleSignInDelegate: NSObject, ASAuthorizationControllerDele
         self.continuation = continuation
     }
 
-    nonisolated func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+    nonisolated func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithAuthorization authorization: ASAuthorization,
+    ) {
         continuation.resume(returning: authorization)
     }
 
-    nonisolated func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+    nonisolated func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithError error: Error,
+    ) {
         continuation.resume(throwing: error)
     }
 }
