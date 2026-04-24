@@ -115,11 +115,7 @@ struct UserProfileView: View {
                 else {
                     LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(authorPosts) { post in
-                            NavigationLink {
-                                CommunityPostDetailView(
-                                    appState: appState,
-                                    post: post)
-                            } label: {
+                            NavigationLink(value: CommunityTabDestination.postDetail(post)) {
                                 CommunityPostRow(
                                     appState: appState,
                                     post: post,

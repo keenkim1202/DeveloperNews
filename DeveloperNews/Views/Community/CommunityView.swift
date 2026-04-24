@@ -4,17 +4,20 @@ struct CommunityView: View {
     private let appState: AppState
 
     @Bindable private var viewModel: CommunityViewModel
+    @Bindable private var navigation: Navigation
 
     init(
         appState: AppState,
         viewModel: CommunityViewModel,
+        navigation: Navigation,
     ) {
         self.appState = appState
         self.viewModel = viewModel
+        self.navigation = navigation
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigation.community) {
             ScrollViewReader { proxy in
                 content
                     .keenOnChange(of: viewModel.scrollToTopTrigger) {
@@ -39,10 +42,31 @@ struct CommunityView: View {
                     }
                 }
             }
+            .navigationDestination(for: CommunityTabDestination.self, destination: destination)
             .sheet(isPresented: $viewModel.showCreatePost) {
                 CreatePostView(appState: appState)
             }
         }
+    }
+
+    @ViewBuilder
+    private func destination(_ dest: CommunityTabDestination) -> some View {
+        switch dest {
+        case let .postDetail(post):
+            CommunityPostDetailView(appState: appState, post: post)
+        case let .userProfile(author):
+            UserProfileView(
+                appState: appState,
+                authorId: author.id,
+                authorName: author.name,
+                authorEmoji: author.emoji)
+        case let .articleDetail(item):
+            ArticleDetailView(appState: appState, item: item)
+        }
+    }
+
+    private func navigateToProfile(_ author: AuthorInfo) {
+        navigation(.community(.userProfile(author)))
     }
 
     private func openCreatePost() {
@@ -66,32 +90,22 @@ struct CommunityView: View {
             List {
                 ForEach(viewModel.filteredPosts) { post in
                     let emoji = appState.communityService.authorEmoji(for: post.authorId)
-                    NavigationLink {
-                        CommunityPostDetailView(
-                            appState: appState,
-                            post: post)
-                    } label: {
+                    NavigationLink(value: CommunityTabDestination.postDetail(post)) {
                         CommunityPostRow(
                             appState: appState,
                             post: post,
                             authorEmoji: emoji) {
-                            viewModel.selectedAuthor = AuthorInfo(
-                                id: post.authorId,
-                                name: post.authorName,
-                                emoji: emoji)
+                            navigateToProfile(
+                                AuthorInfo(
+                                    id: post.authorId,
+                                    name: post.authorName,
+                                    emoji: emoji))
                         }
                     }
                 }
             }
             .listStyle(.plain)
             .refreshable(action: refresh)
-            .navigationDestination(item: $viewModel.selectedAuthor) { author in
-                UserProfileView(
-                    appState: appState,
-                    authorId: author.id,
-                    authorName: author.name,
-                    authorEmoji: author.emoji)
-            }
         }
     }
 

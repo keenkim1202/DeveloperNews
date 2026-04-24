@@ -26,6 +26,7 @@ enum SettingsTabDestination: Hashable {
     case sourcesAttribution
     case privacyPolicy
     case termsOfUse
+    case userProfile(AuthorInfo)
 }
 
 enum AppDestination: Hashable {
