@@ -62,7 +62,10 @@ final class SettingsViewModel {
         appState.isSourceCategoryEnabled(category)
     }
 
-    func setSourceCategory(_ category: SourceCategory, enabled: Bool) {
+    func setSourceCategory(
+        _ category: SourceCategory,
+        enabled: Bool,
+    ) {
         appState.setSourceCategory(category, enabled: enabled)
     }
 

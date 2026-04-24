@@ -4,17 +4,20 @@ struct SavedView: View {
     private let appState: AppState
 
     @Bindable private var viewModel: SavedViewModel
+    @Bindable private var navigation: Navigation
 
     init(
         appState: AppState,
         viewModel: SavedViewModel,
+        navigation: Navigation,
     ) {
         self.appState = appState
         self.viewModel = viewModel
+        self.navigation = navigation
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigation.saved) {
             VStack(spacing: 0) {
                 if !viewModel.savedItems.isEmpty && viewModel.availableTopics.count > 1 {
                     SavedTopicFilterBar(
@@ -51,10 +54,37 @@ struct SavedView: View {
                     }
                 }
             }
+            .navigationDestination(for: SavedTabDestination.self, destination: destination)
             .sheet(isPresented: $viewModel.showAddItem) {
                 AddSavedItemView(appState: appState)
             }
         }
+    }
+
+    @ViewBuilder
+    private func destination(_ dest: SavedTabDestination) -> some View {
+        switch dest {
+        case let .articleDetail(item):
+            ArticleDetailView(appState: appState, item: item)
+        case let .bookmarkDetail(item):
+            BookmarkDetailView(appState: appState, item: item)
+        case let .communityPostDetail(post):
+            CommunityPostDetailView(appState: appState, post: post)
+        case let .userProfile(author):
+            UserProfileView(
+                appState: appState,
+                authorId: author.id,
+                authorName: author.name,
+                authorEmoji: author.emoji)
+        }
+    }
+
+    private func destinationFor(_ item: ContentItem) -> SavedTabDestination {
+        SavedTabDestination.forFeedItem(item, communityService: appState.communityService)
+    }
+
+    private func navigateToProfile(_ author: AuthorInfo) {
+        navigation(.saved(.userProfile(author)))
     }
 
     @ViewBuilder
@@ -88,6 +118,8 @@ struct SavedView: View {
                 appState: appState,
                 articleItems: viewModel.matchingArticleItems,
                 discussionItems: viewModel.matchingDiscussionItems,
+                destinationFor: destinationFor,
+                onAuthorTap: navigateToProfile,
                 showsSummary: false,
                 scrollToTopTrigger: viewModel.scrollToTopTrigger)
         }
@@ -109,7 +141,7 @@ struct SavedTopicFilterBar: View {
 
     init(
         availableTopics: [Topic],
-        selectedFilters: Binding<Set<Topic>>
+        selectedFilters: Binding<Set<Topic>>,
     ) {
         self.availableTopics = availableTopics
         self.selectedFilters = selectedFilters

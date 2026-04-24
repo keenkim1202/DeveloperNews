@@ -12,7 +12,7 @@ struct RSSSourceClient: ContentSourceClient {
 
     init(
         feeds: [RSSFeedDefinition] = Self.defaultFeeds,
-        session: URLSession = .shared
+        session: URLSession = .shared,
     ) {
         self.feeds = feeds
         self.session = session
@@ -67,7 +67,10 @@ struct RSSSourceClient: ContentSourceClient {
         }
     }
 
-    private func inferredTopics(for text: String, fallback: [Topic]) -> [Topic] {
+    private func inferredTopics(
+        for text: String,
+        fallback: [Topic],
+    ) -> [Topic] {
         let normalized = text.lowercased()
         var topics = Set(fallback)
 

@@ -1,9 +1,11 @@
 import SwiftUI
 
-struct FeedSectionListView: View {
+struct FeedSectionListView<Destination: Hashable>: View {
     private let appState: AppState
     private let articleItems: [ContentItem]
     private let discussionItems: [ContentItem]
+    private let destinationFor: (ContentItem) -> Destination
+    private let onAuthorTap: (AuthorInfo) -> Void
 
     private var showsSummary: Bool
     private var hasMore: Bool
@@ -11,12 +13,12 @@ struct FeedSectionListView: View {
     private var scrollToTopTrigger: Int
     private var topContent: AnyView?
 
-    @State private var selectedAuthor: AuthorInfo?
-
     init(
         appState: AppState,
         articleItems: [ContentItem],
         discussionItems: [ContentItem],
+        destinationFor: @escaping (ContentItem) -> Destination,
+        onAuthorTap: @escaping (AuthorInfo) -> Void,
         showsSummary: Bool = true,
         hasMore: Bool = false,
         onLoadMore: (() -> Void)? = nil,
@@ -26,6 +28,8 @@ struct FeedSectionListView: View {
         self.appState = appState
         self.articleItems = articleItems
         self.discussionItems = discussionItems
+        self.destinationFor = destinationFor
+        self.onAuthorTap = onAuthorTap
         self.showsSummary = showsSummary
         self.hasMore = hasMore
         self.onLoadMore = onLoadMore
@@ -46,13 +50,6 @@ struct FeedSectionListView: View {
                         proxy.scrollTo(anchor, anchor: .top)
                     }
                 }
-        }
-        .navigationDestination(item: $selectedAuthor) { author in
-            UserProfileView(
-                appState: appState,
-                authorId: author.id,
-                authorName: author.name,
-                authorEmoji: author.emoji)
         }
     }
 
@@ -89,7 +86,8 @@ struct FeedSectionListView: View {
                         FeedItemRow(
                             appState: appState,
                             item: item,
-                            selectedAuthor: $selectedAuthor)
+                            destination: destinationFor(item),
+                            onAuthorTap: onAuthorTap)
                     }
                 }
             }
@@ -100,7 +98,8 @@ struct FeedSectionListView: View {
                         FeedItemRow(
                             appState: appState,
                             item: item,
-                            selectedAuthor: $selectedAuthor)
+                            destination: destinationFor(item),
+                            onAuthorTap: onAuthorTap)
                     }
                 }
             }

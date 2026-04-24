@@ -225,7 +225,10 @@ struct CompositeContentSourceClient: ContentSourceClient {
         return String(String.UnicodeScalarView(scalars))
     }
 
-    private func sortItemsDescending(lhs: ContentItem, rhs: ContentItem) -> Bool {
+    private func sortItemsDescending(
+        lhs: ContentItem,
+        rhs: ContentItem,
+    ) -> Bool {
         if lhs.trendScore == rhs.trendScore {
             return lhs.publishedAt > rhs.publishedAt
         }

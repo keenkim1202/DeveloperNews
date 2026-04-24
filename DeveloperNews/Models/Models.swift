@@ -113,7 +113,7 @@ struct ContentItem: Identifiable, Hashable, Codable {
         thumbnailURL: URL? = nil,
         engagement: EngagementMetrics? = nil,
         isUserCreated: Bool = false,
-        updatedAt: Date? = nil
+        updatedAt: Date? = nil,
     ) {
         self.id = id
         self.kind = kind

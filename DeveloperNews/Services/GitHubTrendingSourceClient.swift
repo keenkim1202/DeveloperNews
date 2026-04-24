@@ -193,7 +193,10 @@ struct GitHubTrendingSourceClient: ContentSourceClient {
         }
     }
 
-    private func inferredTopics(language: String?, topics: [String]?) -> [Topic] {
+    private func inferredTopics(
+        language: String?,
+        topics: [String]?,
+    ) -> [Topic] {
         let languagePart = language?.lowercased() ?? ""
         let topicsPart = (topics ?? []).map { $0.lowercased() }.joined(separator: " ")
         let normalized = languagePart + " " + topicsPart

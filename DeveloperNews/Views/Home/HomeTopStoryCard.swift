@@ -4,6 +4,7 @@ import Translation
 struct HomeTopStoryCard: View {
     private let appState: AppState
     private let item: ContentItem
+    private let destination: HomeTabDestination
 
     @State private var translationTrigger = 0
     @State private var showingTranslation = false
@@ -11,9 +12,11 @@ struct HomeTopStoryCard: View {
     init(
         appState: AppState,
         item: ContentItem,
+        destination: HomeTabDestination,
     ) {
         self.appState = appState
         self.item = item
+        self.destination = destination
     }
 
     private var translator: ContentTranslator {
@@ -50,18 +53,7 @@ struct HomeTopStoryCard: View {
                 .accessibilityLabel(.hideTopStoryForADay)
             }
 
-            NavigationLink {
-                if item.isUserCreated {
-                    BookmarkDetailView(
-                        appState: appState,
-                        item: item)
-                }
-                else {
-                    ArticleDetailView(
-                        appState: appState,
-                        item: item)
-                }
-            } label: {
+            NavigationLink(value: destination) {
                 HStack(alignment: .top, spacing: 10) {
                     HomeTopStoryThumbnail(url: item.thumbnailURL)
                     VStack(alignment: .leading, spacing: 4) {
@@ -146,7 +138,7 @@ struct HomeTopStoryThumbnail: View {
             if let url {
                 AsyncImage(url: url) { phase in
                     switch phase {
-                    case .success(let image):
+                    case let .success(image):
                         image
                             .resizable()
                             .scaledToFill()

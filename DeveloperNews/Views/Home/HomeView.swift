@@ -4,17 +4,20 @@ struct HomeView: View {
     private let appState: AppState
 
     @Bindable private var viewModel: HomeViewModel
+    @Bindable private var navigation: Navigation
 
     init(
         appState: AppState,
         viewModel: HomeViewModel,
+        navigation: Navigation,
     ) {
         self.appState = appState
         self.viewModel = viewModel
+        self.navigation = navigation
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigation.home) {
             VStack(spacing: 0) {
                 if viewModel.selectedTopics.count > 1 {
                     HomeTopicFocusBar(
@@ -32,7 +35,34 @@ struct HomeView: View {
                 placement: .navigationBarDrawer(displayMode: .automatic),
                 prompt: "Search stories")
             .refreshable(action: reload)
+            .navigationDestination(for: HomeTabDestination.self, destination: destination)
         }
+    }
+
+    @ViewBuilder
+    private func destination(_ dest: HomeTabDestination) -> some View {
+        switch dest {
+        case let .articleDetail(item):
+            ArticleDetailView(appState: appState, item: item)
+        case let .bookmarkDetail(item):
+            BookmarkDetailView(appState: appState, item: item)
+        case let .communityPostDetail(post):
+            CommunityPostDetailView(appState: appState, post: post)
+        case let .userProfile(author):
+            UserProfileView(
+                appState: appState,
+                authorId: author.id,
+                authorName: author.name,
+                authorEmoji: author.emoji)
+        }
+    }
+
+    private func destinationFor(_ item: ContentItem) -> HomeTabDestination {
+        HomeTabDestination.forFeedItem(item, communityService: appState.communityService)
+    }
+
+    private func navigateToProfile(_ author: AuthorInfo) {
+        navigation(.home(.userProfile(author)))
     }
 
     @ViewBuilder
@@ -81,12 +111,17 @@ struct HomeView: View {
                 appState: appState,
                 articleItems: viewModel.articlesExcludingTopStory,
                 discussionItems: viewModel.discussionsExcludingTopStory,
+                destinationFor: destinationFor,
+                onAuthorTap: navigateToProfile,
                 hasMore: viewModel.hasMorePages,
                 onLoadMore: { viewModel.loadMore() },
                 scrollToTopTrigger: viewModel.scrollToTopTrigger,
                 topContent: viewModel.topItem.map { item in
                     AnyView(
-                        HomeTopStoryCard(appState: appState, item: item)
+                        HomeTopStoryCard(
+                            appState: appState,
+                            item: item,
+                            destination: destinationFor(item))
                             .padding(.horizontal, 2)
                             .padding(.vertical, 4))
                 })
@@ -120,7 +155,7 @@ struct HomeTopicFocusBar: View {
         selectedTopics: Set<Topic>,
         focusedTopic: Topic?,
         onClearFocus: @escaping () -> Void,
-        onToggleFocus: @escaping (Topic) -> Void
+        onToggleFocus: @escaping (Topic) -> Void,
     ) {
         self.selectedTopics = selectedTopics
         self.focusedTopic = focusedTopic

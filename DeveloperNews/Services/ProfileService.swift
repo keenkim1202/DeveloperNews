@@ -155,7 +155,11 @@ final class ProfileService {
         }
     }
 
-    private func updateAuthorFieldInPosts(uid: String, field: String, value: String) async {
+    private func updateAuthorFieldInPosts(
+        uid: String,
+        field: String,
+        value: String,
+    ) async {
         do {
             let snapshot = try await db.collection("posts")
                 .whereField("authorId", isEqualTo: uid)

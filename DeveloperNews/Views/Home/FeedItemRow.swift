@@ -1,10 +1,11 @@
 import SwiftUI
 import Translation
 
-struct FeedItemRow: View {
+struct FeedItemRow<Destination: Hashable>: View {
     private let appState: AppState
     private let item: ContentItem
-    private var selectedAuthor: Binding<AuthorInfo?>
+    private let destination: Destination
+    private let onAuthorTap: (AuthorInfo) -> Void
 
     @State private var translationTrigger = 0
     @State private var showingTranslation = false
@@ -12,11 +13,13 @@ struct FeedItemRow: View {
     init(
         appState: AppState,
         item: ContentItem,
-        selectedAuthor: Binding<AuthorInfo?>,
+        destination: Destination,
+        onAuthorTap: @escaping (AuthorInfo) -> Void,
     ) {
         self.appState = appState
         self.item = item
-        self.selectedAuthor = selectedAuthor
+        self.destination = destination
+        self.onAuthorTap = onAuthorTap
     }
 
     private var translator: ContentTranslator {
@@ -39,23 +42,7 @@ struct FeedItemRow: View {
     }
 
     var body: some View {
-        NavigationLink {
-            if let post = followingPost {
-                CommunityPostDetailView(
-                    appState: appState,
-                    post: post)
-            }
-            else if item.isUserCreated {
-                BookmarkDetailView(
-                    appState: appState,
-                    item: item)
-            }
-            else {
-                ArticleDetailView(
-                    appState: appState,
-                    item: item)
-            }
-        } label: {
+        NavigationLink(value: destination) {
             VStack(alignment: .leading, spacing: 8) {
                 FeedItemMetaView(
                     appState: appState,
@@ -64,10 +51,11 @@ struct FeedItemRow: View {
                         appState.communityService.authorEmoji(for: $0.authorId)
                     }) {
                     guard let post = followingPost else { return }
-                    selectedAuthor.wrappedValue = AuthorInfo(
-                        id: post.authorId,
-                        name: post.authorName,
-                        emoji: appState.communityService.authorEmoji(for: post.authorId))
+                    onAuthorTap(
+                        AuthorInfo(
+                            id: post.authorId,
+                            name: post.authorName,
+                            emoji: appState.communityService.authorEmoji(for: post.authorId)))
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -163,7 +151,7 @@ struct FeedItemThumbnailView: View {
     var body: some View {
         AsyncImage(url: url) { phase in
             switch phase {
-            case .success(let image):
+            case let .success(image):
                 image
                     .resizable()
                     .scaledToFill()
