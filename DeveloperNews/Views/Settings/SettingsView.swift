@@ -4,19 +4,22 @@ struct SettingsView: View {
     private let appState: AppState
 
     @Bindable private var viewModel: SettingsViewModel
+    @Bindable private var navigation: Navigation
     @State private var signInViewModel: SignInViewModel
 
     init(
         appState: AppState,
         viewModel: SettingsViewModel,
+        navigation: Navigation,
     ) {
         self.appState = appState
         self.viewModel = viewModel
+        self.navigation = navigation
         _signInViewModel = State(initialValue: SignInViewModel(appState: appState))
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigation.settings) {
             ScrollViewReader { proxy in
                 settingsList
                     .keenOnChange(of: viewModel.scrollToTopTrigger) {
@@ -25,6 +28,7 @@ struct SettingsView: View {
                         }
                     }
             }
+            .navigationDestination(for: SettingsTabDestination.self, destination: destination)
             .alert(.profileEditName, isPresented: $viewModel.showEditName) {
                 TextField(.profileNamePlaceholder, text: $viewModel.editingName)
                 Button(
@@ -64,6 +68,26 @@ struct SettingsView: View {
             "auth.deleteAccount.confirmAction",
             role: .destructive,
             action: deleteAccount)
+    }
+
+    @ViewBuilder
+    private func destination(_ dest: SettingsTabDestination) -> some View {
+        switch dest {
+        case .blockedUsers:
+            BlockedUsersView(appState: appState)
+        case .sourcesAttribution:
+            SourcesAttributionView()
+        case .privacyPolicy:
+            PrivacyPolicyView()
+        case .termsOfUse:
+            TermsOfUseView()
+        case let .userProfile(author):
+            UserProfileView(
+                appState: appState,
+                authorId: author.id,
+                authorName: author.name,
+                authorEmoji: author.emoji)
+        }
     }
 
     private var settingsList: some View {
@@ -158,9 +182,7 @@ struct SettingsView: View {
                     role: .destructive,
                     action: resetTopics)
 
-                NavigationLink {
-                    BlockedUsersView(appState: appState)
-                } label: {
+                NavigationLink(value: SettingsTabDestination.blockedUsers) {
                     HStack {
                         Label(.settingsBlockedUsers, systemImage: "person.slash")
                         Spacer()
@@ -176,19 +198,13 @@ struct SettingsView: View {
             }
 
             Section {
-                NavigationLink {
-                    SourcesAttributionView()
-                } label: {
+                NavigationLink(value: SettingsTabDestination.sourcesAttribution) {
                     Label(.contentSources, systemImage: "doc.text")
                 }
-                NavigationLink {
-                    PrivacyPolicyView()
-                } label: {
+                NavigationLink(value: SettingsTabDestination.privacyPolicy) {
                     Label(.privacyPolicy, systemImage: "hand.raised")
                 }
-                NavigationLink {
-                    TermsOfUseView()
-                } label: {
+                NavigationLink(value: SettingsTabDestination.termsOfUse) {
                     Label(.termsOfUse, systemImage: "doc.plaintext")
                 }
                 Button(action: openFeedback) {
@@ -207,13 +223,13 @@ struct SettingsView: View {
     private var accountSection: some View {
         if viewModel.isSignedIn {
             Section {
-                NavigationLink {
-                    UserProfileView(
-                        appState: appState,
-                        authorId: viewModel.userId ?? "",
-                        authorName: viewModel.displayName,
-                        authorEmoji: viewModel.profileEmoji)
-                } label: {
+                NavigationLink(
+                    value: SettingsTabDestination.userProfile(
+                        AuthorInfo(
+                            id: viewModel.userId ?? "",
+                            name: viewModel.displayName,
+                            emoji: viewModel.profileEmoji))
+                ) {
                     HStack(spacing: 12) {
                         if let emoji = viewModel.profileEmoji {
                             Text(emoji)

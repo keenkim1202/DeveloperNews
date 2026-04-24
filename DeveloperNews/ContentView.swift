@@ -138,7 +138,10 @@ struct MainTabView: View {
                 }
                 .tag(AppTab.home)
 
-            CommunityView(appState: appState, viewModel: communityViewModel)
+            CommunityView(
+                appState: appState,
+                viewModel: communityViewModel,
+                navigation: navigation)
                 .tabItem {
                     Label(.community, systemImage: "person.2")
                 }
@@ -153,7 +156,10 @@ struct MainTabView: View {
                 }
                 .tag(AppTab.saved)
 
-            SettingsView(appState: appState, viewModel: settingsViewModel)
+            SettingsView(
+                appState: appState,
+                viewModel: settingsViewModel,
+                navigation: navigation)
                 .tabItem {
                     Label(.settings, systemImage: "gearshape")
                 }

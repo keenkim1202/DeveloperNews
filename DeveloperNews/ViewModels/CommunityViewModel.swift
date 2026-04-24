@@ -8,7 +8,6 @@ final class CommunityViewModel {
 
     var searchQuery = ""
     var showCreatePost = false
-    var selectedAuthor: AuthorInfo?
 
     init(appState: AppState) {
         self.appState = appState

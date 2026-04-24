@@ -52,13 +52,13 @@ struct CommunityPostDetailView: View {
                 Text(currentPost.title)
                     .font(.title2.bold())
                 HStack(spacing: 8) {
-                    NavigationLink {
-                        UserProfileView(
-                            appState: appState,
-                            authorId: currentPost.authorId,
-                            authorName: currentPost.authorName,
-                            authorEmoji: authorEmoji)
-                    } label: {
+                    NavigationLink(
+                        value: CommunityTabDestination.userProfile(
+                            AuthorInfo(
+                                id: currentPost.authorId,
+                                name: currentPost.authorName,
+                                emoji: authorEmoji))
+                    ) {
                         HStack(spacing: 4) {
                             if let authorEmoji {
                                 Text(authorEmoji)
@@ -136,9 +136,7 @@ struct CommunityPostDetailView: View {
                         publishedAt: currentPost.createdAt,
                         topics: currentPost.topics,
                         trendScore: 0)
-                    NavigationLink {
-                        ArticleDetailView(appState: appState, item: linkItem)
-                    } label: {
+                    NavigationLink(value: CommunityTabDestination.articleDetail(linkItem)) {
                         HStack {
                             Label(.bookmarkOpenLink, systemImage: "safari")
                             Spacer()
