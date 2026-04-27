@@ -9,8 +9,6 @@ struct ContentView: View {
     @State private var toastDismissTask: Task<Void, Never>?
     @Environment(\.scenePhase) private var scenePhase
 
-    private static let staleThreshold: TimeInterval = 15 * 60
-
     var body: some View {
         Group {
             if showSplash {
@@ -75,7 +73,7 @@ struct ContentView: View {
         }
         appState.processPendingSharedItems()
         Task {
-            await appState.refreshIfStale(maxAge: Self.staleThreshold)
+            await appState.refreshIfStale(maxAge: AppState.feedStaleThreshold)
         }
     }
 
