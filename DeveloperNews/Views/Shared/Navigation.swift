@@ -2,22 +2,22 @@ import Foundation
 import Observation
 
 enum HomeTabDestination: Hashable {
-    case articleDetail(ContentItem)
-    case bookmarkDetail(ContentItem)
-    case communityPostDetail(CommunityPost)
+    case articleDetail(URL)
+    case bookmarkDetail(URL)
+    case communityPostDetail(CommunityPost.ID)
     case userProfile(AuthorInfo)
 }
 
 enum CommunityTabDestination: Hashable {
-    case postDetail(CommunityPost)
+    case postDetail(CommunityPost.ID)
     case userProfile(AuthorInfo)
-    case articleDetail(ContentItem)
+    case postLinkDetail(CommunityPost.ID)
 }
 
 enum SavedTabDestination: Hashable {
-    case articleDetail(ContentItem)
-    case bookmarkDetail(ContentItem)
-    case communityPostDetail(CommunityPost)
+    case articleDetail(URL)
+    case bookmarkDetail(URL)
+    case communityPostDetail(CommunityPost.ID)
     case userProfile(AuthorInfo)
 }
 
@@ -67,13 +67,13 @@ extension HomeTabDestination {
     ) -> HomeTabDestination {
         if item.sourceCategory == .following,
            let postId = item.url.pathComponents.last,
-           let post = communityService.posts.first(where: { $0.id == postId }) {
-            return .communityPostDetail(post)
+           communityService.post(id: postId) != nil {
+            return .communityPostDetail(postId)
         }
         if item.isUserCreated {
-            return .bookmarkDetail(item)
+            return .bookmarkDetail(item.url)
         }
-        return .articleDetail(item)
+        return .articleDetail(item.url)
     }
 }
 
@@ -86,12 +86,12 @@ extension SavedTabDestination {
     ) -> SavedTabDestination {
         if item.sourceCategory == .following,
            let postId = item.url.pathComponents.last,
-           let post = communityService.posts.first(where: { $0.id == postId }) {
-            return .communityPostDetail(post)
+           communityService.post(id: postId) != nil {
+            return .communityPostDetail(postId)
         }
         if item.isUserCreated {
-            return .bookmarkDetail(item)
+            return .bookmarkDetail(item.url)
         }
-        return .articleDetail(item)
+        return .articleDetail(item.url)
     }
 }

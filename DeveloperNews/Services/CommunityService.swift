@@ -40,6 +40,12 @@ final class CommunityService {
         db.collection("posts")
     }
 
+    /// Looks up a `CommunityPost` by id in the currently loaded posts.
+    /// Returns nil if the post has been deleted or is not yet loaded.
+    func post(id: CommunityPost.ID) -> CommunityPost? {
+        posts.first { $0.id == id }
+    }
+
     func startListening() {
         stopListening()
         isLoading = true

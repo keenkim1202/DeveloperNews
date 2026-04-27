@@ -52,17 +52,48 @@ struct CommunityView: View {
     @ViewBuilder
     private func destination(_ dest: CommunityTabDestination) -> some View {
         switch dest {
-        case let .postDetail(post):
-            CommunityPostDetailView(appState: appState, post: post)
+        case let .postDetail(postId):
+            if let post = appState.communityService.post(id: postId) {
+                CommunityPostDetailView(appState: appState, post: post)
+            }
+            else {
+                UnavailableDestinationView(reason: .postDeleted)
+            }
         case let .userProfile(author):
             UserProfileView(
                 appState: appState,
                 authorId: author.id,
                 authorName: author.name,
                 authorEmoji: author.emoji)
-        case let .articleDetail(item):
-            ArticleDetailView(appState: appState, item: item)
+        case let .postLinkDetail(postId):
+            if let post = appState.communityService.post(id: postId),
+               let item = postLinkItem(for: post) {
+                ArticleDetailView(appState: appState, item: item)
+            }
+            else {
+                UnavailableDestinationView(reason: .itemNotFound)
+            }
         }
+    }
+
+    private func postLinkItem(for post: CommunityPost) -> ContentItem? {
+        guard post.hasLink,
+              let url = post.linkURL
+        else {
+            return nil
+        }
+        return ContentItem(
+            id: UUID(),
+            kind: .article,
+            title: post.title,
+            summary: "",
+            sourceName: post.authorName,
+            sourceCategory: .article,
+            authorName: post.authorName,
+            url: url,
+            publishedAt: post.createdAt,
+            topics: post.topics,
+            trendScore: 0)
     }
 
     private func navigateToProfile(_ author: AuthorInfo) {
@@ -90,7 +121,7 @@ struct CommunityView: View {
             List {
                 ForEach(viewModel.filteredPosts) { post in
                     let emoji = appState.communityService.authorEmoji(for: post.authorId)
-                    NavigationLink(value: CommunityTabDestination.postDetail(post)) {
+                    NavigationLink(value: CommunityTabDestination.postDetail(post.id)) {
                         CommunityPostRow(
                             appState: appState,
                             post: post,

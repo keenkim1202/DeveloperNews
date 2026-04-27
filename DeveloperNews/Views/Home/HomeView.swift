@@ -42,12 +42,27 @@ struct HomeView: View {
     @ViewBuilder
     private func destination(_ dest: HomeTabDestination) -> some View {
         switch dest {
-        case let .articleDetail(item):
-            ArticleDetailView(appState: appState, item: item)
-        case let .bookmarkDetail(item):
-            BookmarkDetailView(appState: appState, item: item)
-        case let .communityPostDetail(post):
-            CommunityPostDetailView(appState: appState, post: post)
+        case let .articleDetail(url):
+            if let item = appState.resolveItem(url: url) {
+                ArticleDetailView(appState: appState, item: item)
+            }
+            else {
+                UnavailableDestinationView(reason: .itemNotFound)
+            }
+        case let .bookmarkDetail(url):
+            if let item = appState.resolveItem(url: url) {
+                BookmarkDetailView(appState: appState, item: item)
+            }
+            else {
+                UnavailableDestinationView(reason: .itemNotFound)
+            }
+        case let .communityPostDetail(postId):
+            if let post = appState.communityService.post(id: postId) {
+                CommunityPostDetailView(appState: appState, post: post)
+            }
+            else {
+                UnavailableDestinationView(reason: .postDeleted)
+            }
         case let .userProfile(author):
             UserProfileView(
                 appState: appState,
