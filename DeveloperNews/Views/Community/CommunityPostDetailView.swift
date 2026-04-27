@@ -121,22 +121,9 @@ struct CommunityPostDetailView: View {
                         .font(.body)
                 }
 
-                if currentPost.hasLink,
-                   let url = currentPost.linkURL {
+                if currentPost.hasLink {
                     Divider()
-                    let linkItem = ContentItem(
-                        id: UUID(),
-                        kind: .article,
-                        title: currentPost.title,
-                        summary: "",
-                        sourceName: currentPost.authorName,
-                        sourceCategory: .article,
-                        authorName: currentPost.authorName,
-                        url: url,
-                        publishedAt: currentPost.createdAt,
-                        topics: currentPost.topics,
-                        trendScore: 0)
-                    NavigationLink(value: CommunityTabDestination.articleDetail(linkItem)) {
+                    NavigationLink(value: CommunityTabDestination.postLinkDetail(currentPost.id)) {
                         HStack {
                             Label(.bookmarkOpenLink, systemImage: "safari")
                             Spacer()

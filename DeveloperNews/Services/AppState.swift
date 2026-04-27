@@ -240,6 +240,16 @@ final class AppState {
         savedItems.filter { $0.kind == .discussion }
     }
 
+    /// Looks up a `ContentItem` by url across saved items and personalized feed.
+    /// URL is the stable identifier across app restarts (unlike `id`, which is regenerated per fetch).
+    /// Returns nil if the item has been removed from both sources.
+    func resolveItem(url: URL) -> ContentItem? {
+        if let snapshot = savedItemSnapshots[url] {
+            return snapshot
+        }
+        return personalizedItems.first { $0.url == url }
+    }
+
     var hasLoadedContent: Bool {
         !allItems.isEmpty
     }
