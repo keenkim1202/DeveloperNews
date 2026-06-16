@@ -1,5 +1,5 @@
 import AuthenticationServices
-import FirebaseAuth
+@preconcurrency import FirebaseAuth
 import FirebaseCore
 import Foundation
 import GoogleSignIn
@@ -393,9 +393,12 @@ enum AuthError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidCredential: String(localized: .authErrorInvalidCredential)
-        case .missingClientID: String(localized: .authErrorMissingClientID)
-        case .missingRootViewController: String(localized: .authErrorMissingRootViewController)
+        case .invalidCredential:
+            NSLocalizedString("auth.error.invalidCredential", comment: "Invalid sign-in credentials")
+        case .missingClientID:
+            NSLocalizedString("auth.error.missingClientID", comment: "Missing Google client ID")
+        case .missingRootViewController:
+            NSLocalizedString("auth.error.missingRootViewController", comment: "Missing sign-in presenter")
         }
     }
 }

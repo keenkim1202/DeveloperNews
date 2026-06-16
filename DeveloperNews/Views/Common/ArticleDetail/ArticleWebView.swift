@@ -2,6 +2,8 @@ import SwiftUI
 import WebKit
 
 struct ArticleWebView: UIViewRepresentable {
+    nonisolated private static let estimatedProgressKeyPath = "estimatedProgress"
+
     private let url: URL
     private let isLoading: Binding<Bool>
     private let loadError: Binding<String?>
@@ -35,7 +37,7 @@ struct ArticleWebView: UIViewRepresentable {
         webView.allowsBackForwardNavigationGestures = true
         webView.addObserver(
             context.coordinator,
-            forKeyPath: #keyPath(WKWebView.estimatedProgress),
+            forKeyPath: Self.estimatedProgressKeyPath,
             options: .new, context: nil)
         context.coordinator.observedWebView = webView
         DispatchQueue.main.async {
@@ -66,7 +68,7 @@ struct ArticleWebView: UIViewRepresentable {
         if let observed = coordinator.observedWebView {
             observed.removeObserver(
                 coordinator,
-                forKeyPath: #keyPath(WKWebView.estimatedProgress))
+                forKeyPath: Self.estimatedProgressKeyPath)
             coordinator.observedWebView = nil
         }
     }
@@ -82,22 +84,27 @@ struct ArticleWebView: UIViewRepresentable {
             self.lastReloadTrigger = parent.reloadTrigger
         }
 
-        override func observeValue(
+        nonisolated override func observeValue(
             forKeyPath keyPath: String?,
             of object: Any?,
             change: [NSKeyValueChangeKey: Any]?,
             context: UnsafeMutableRawPointer?,
         ) {
             guard
-                keyPath == #keyPath(WKWebView.estimatedProgress),
+                keyPath == ArticleWebView.estimatedProgressKeyPath,
                 let webView = object as? WKWebView
             else {
                 return
             }
-            let value = webView.estimatedProgress
-            DispatchQueue.main.async {
-                self.parent.progress.wrappedValue = value
+            Task { @MainActor [weak self, weak webView] in
+                guard let webView else { return }
+                self?.updateProgress(webView.estimatedProgress)
             }
+        }
+
+        @MainActor
+        private func updateProgress(_ value: Double) {
+            parent.progress.wrappedValue = value
         }
 
         func webView(

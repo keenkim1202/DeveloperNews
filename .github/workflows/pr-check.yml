@@ -1,0 +1,45 @@
+name: Pull Request
+
+on:
+  pull_request:
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select latest Xcode
+        run: |
+          latest=$(ls -d /Applications/Xcode_2*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$latest" ]; then
+            sudo xcode-select -s "$latest/Contents/Developer"
+          fi
+          xcodebuild -version
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            fastlane/DerivedData/SourcePackages
+          key: ${{ runner.os }}-spm-${{ hashFiles('DeveloperNews.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -project DeveloperNews.xcodeproj \
+            -scheme DeveloperNews \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath fastlane/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            build

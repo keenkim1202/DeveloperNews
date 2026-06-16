@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 let relativeDateFormatter: RelativeDateTimeFormatter = {
     let formatter = RelativeDateTimeFormatter()
     formatter.unitsStyle = .short
