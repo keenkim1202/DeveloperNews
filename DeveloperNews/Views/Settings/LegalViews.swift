@@ -2,7 +2,7 @@ import SwiftUI
 import WebKit
 
 struct PrivacyPolicyView: View {
-    private static let notionURL = URL(string: "https://profuse-scaffold-962.notion.site/PrivacyInfo-34138d63664180fc9fb0d2604090aad5")!
+    private static let notionURL = URL(static: "https://profuse-scaffold-962.notion.site/PrivacyInfo-34138d63664180fc9fb0d2604090aad5")
 
     var body: some View {
         SimpleWebView(url: Self.notionURL)

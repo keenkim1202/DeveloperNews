@@ -103,123 +103,123 @@ extension RSSSourceClient {
     static let defaultFeeds: [RSSFeedDefinition] = [
         RSSFeedDefinition(
             sourceName: "Swift with Majid",
-            feedURL: URL(string: "https://swiftwithmajid.com/feed.xml")!,
+            feedURL: URL(static: "https://swiftwithmajid.com/feed.xml"),
             defaultTopics: [.ios, .product]),
         RSSFeedDefinition(
             sourceName: "InfoQ",
-            feedURL: URL(string: "https://feed.infoq.com")!,
+            feedURL: URL(static: "https://feed.infoq.com"),
             defaultTopics: [.backend, .ai, .product]),
         RSSFeedDefinition(
             sourceName: "GitHub Blog",
-            feedURL: URL(string: "https://github.blog/feed/")!,
+            feedURL: URL(static: "https://github.blog/feed/"),
             defaultTopics: [.backend, .product]),
         RSSFeedDefinition(
             sourceName: "Mozilla Hacks",
-            feedURL: URL(string: "https://hacks.mozilla.org/feed/")!,
+            feedURL: URL(static: "https://hacks.mozilla.org/feed/"),
             defaultTopics: [.web, .security]),
         RSSFeedDefinition(
             sourceName: "Cloudflare Blog",
-            feedURL: URL(string: "https://blog.cloudflare.com/rss/")!,
+            feedURL: URL(static: "https://blog.cloudflare.com/rss/"),
             defaultTopics: [.backend, .security]),
         RSSFeedDefinition(
             sourceName: "Lobsters",
-            feedURL: URL(string: "https://lobste.rs/rss")!,
+            feedURL: URL(static: "https://lobste.rs/rss"),
             defaultTopics: [.web, .backend, .product]),
         RSSFeedDefinition(
             sourceName: "Stripe Engineering",
-            feedURL: URL(string: "https://stripe.com/blog/feed.rss")!,
+            feedURL: URL(static: "https://stripe.com/blog/feed.rss"),
             defaultTopics: [.backend, .product]),
         RSSFeedDefinition(
             sourceName: "Netflix Tech Blog",
-            feedURL: URL(string: "https://netflixtechblog.com/feed")!,
+            feedURL: URL(static: "https://netflixtechblog.com/feed"),
             defaultTopics: [.backend, .ai]),
         RSSFeedDefinition(
             sourceName: "High Scalability",
-            feedURL: URL(string: "https://www.highscalability.com/feed")!,
+            feedURL: URL(static: "https://www.highscalability.com/feed"),
             defaultTopics: [.backend]),
         RSSFeedDefinition(
             sourceName: "Stack Overflow Blog",
-            feedURL: URL(string: "https://stackoverflow.blog/feed/")!,
+            feedURL: URL(static: "https://stackoverflow.blog/feed/"),
             defaultTopics: [.product, .backend]),
         RSSFeedDefinition(
             sourceName: "CSS-Tricks",
-            feedURL: URL(string: "https://css-tricks.com/feed/")!,
+            feedURL: URL(static: "https://css-tricks.com/feed/"),
             defaultTopics: [.web]),
         RSSFeedDefinition(
             sourceName: "Hacking with Swift",
-            feedURL: URL(string: "https://www.hackingwithswift.com/articles/rss")!,
+            feedURL: URL(static: "https://www.hackingwithswift.com/articles/rss"),
             defaultTopics: [.ios]),
         RSSFeedDefinition(
             sourceName: "Donny Wals",
-            feedURL: URL(string: "https://www.donnywals.com/feed/")!,
+            feedURL: URL(static: "https://www.donnywals.com/feed/"),
             defaultTopics: [.ios]),
         RSSFeedDefinition(
             sourceName: "Android Developers Blog",
-            feedURL: URL(string: "https://android-developers.googleblog.com/feeds/posts/default")!,
+            feedURL: URL(static: "https://android-developers.googleblog.com/feeds/posts/default"),
             defaultTopics: [.android]),
         RSSFeedDefinition(
             sourceName: "ProAndroidDev",
-            feedURL: URL(string: "https://proandroiddev.com/feed")!,
+            feedURL: URL(static: "https://proandroiddev.com/feed"),
             defaultTopics: [.android]),
         RSSFeedDefinition(
             sourceName: "JetBrains Kotlin Blog",
-            feedURL: URL(string: "https://blog.jetbrains.com/kotlin/feed/")!,
+            feedURL: URL(static: "https://blog.jetbrains.com/kotlin/feed/"),
             defaultTopics: [.android]),
         RSSFeedDefinition(
             sourceName: "Apple Developer News",
-            feedURL: URL(string: "https://developer.apple.com/news/rss/news.rss")!,
+            feedURL: URL(static: "https://developer.apple.com/news/rss/news.rss"),
             defaultTopics: [.ios]),
         RSSFeedDefinition(
             sourceName: "NSHipster",
-            feedURL: URL(string: "https://nshipster.com/feed.xml")!,
+            feedURL: URL(static: "https://nshipster.com/feed.xml"),
             defaultTopics: [.ios]),
         RSSFeedDefinition(
             sourceName: "SwiftLee",
-            feedURL: URL(string: "https://www.avanderlee.com/feed/")!,
+            feedURL: URL(static: "https://www.avanderlee.com/feed/"),
             defaultTopics: [.ios]),
         RSSFeedDefinition(
             sourceName: "Hugging Face",
-            feedURL: URL(string: "https://huggingface.co/blog/feed.xml")!,
+            feedURL: URL(static: "https://huggingface.co/blog/feed.xml"),
             defaultTopics: [.ai]),
         RSSFeedDefinition(
             sourceName: "Simon Willison",
-            feedURL: URL(string: "https://simonwillison.net/atom/everything/")!,
+            feedURL: URL(static: "https://simonwillison.net/atom/everything/"),
             defaultTopics: [.ai, .backend]),
         RSSFeedDefinition(
             sourceName: "Dropbox Tech",
-            feedURL: URL(string: "https://dropbox.tech/feed")!,
+            feedURL: URL(static: "https://dropbox.tech/feed"),
             defaultTopics: [.backend]),
         RSSFeedDefinition(
             sourceName: "Spotify Engineering",
-            feedURL: URL(string: "https://engineering.atspotify.com/feed")!,
+            feedURL: URL(static: "https://engineering.atspotify.com/feed"),
             defaultTopics: [.backend, .ai]),
         RSSFeedDefinition(
             sourceName: "Vercel",
-            feedURL: URL(string: "https://vercel.com/atom")!,
+            feedURL: URL(static: "https://vercel.com/atom"),
             defaultTopics: [.web, .product]),
         RSSFeedDefinition(
             sourceName: "Julia Evans",
-            feedURL: URL(string: "https://jvns.ca/atom.xml")!,
+            feedURL: URL(static: "https://jvns.ca/atom.xml"),
             defaultTopics: [.backend, .security]),
         RSSFeedDefinition(
             sourceName: "Martin Fowler",
-            feedURL: URL(string: "https://martinfowler.com/feed.atom")!,
+            feedURL: URL(static: "https://martinfowler.com/feed.atom"),
             defaultTopics: [.backend, .product]),
         RSSFeedDefinition(
             sourceName: "web.dev",
-            feedURL: URL(string: "https://web.dev/feed.xml")!,
+            feedURL: URL(static: "https://web.dev/feed.xml"),
             defaultTopics: [.web]),
         RSSFeedDefinition(
             sourceName: "Smashing Magazine",
-            feedURL: URL(string: "https://www.smashingmagazine.com/feed/")!,
+            feedURL: URL(static: "https://www.smashingmagazine.com/feed/"),
             defaultTopics: [.web, .product]),
         RSSFeedDefinition(
             sourceName: "Krebs on Security",
-            feedURL: URL(string: "https://krebsonsecurity.com/feed/")!,
+            feedURL: URL(static: "https://krebsonsecurity.com/feed/"),
             defaultTopics: [.security]),
         RSSFeedDefinition(
             sourceName: "The Pragmatic Engineer",
-            feedURL: URL(string: "https://newsletter.pragmaticengineer.com/feed")!,
+            feedURL: URL(static: "https://newsletter.pragmaticengineer.com/feed"),
             defaultTopics: [.backend, .product]),
     ]
 }
