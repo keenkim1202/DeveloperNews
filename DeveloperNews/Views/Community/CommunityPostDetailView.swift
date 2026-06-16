@@ -328,6 +328,14 @@ struct CommunityPostDetailView: View {
     private var commentInputBar: some View {
         VStack(spacing: 0) {
             Divider()
+            if let error = commentService.errorMessage {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+            }
             HStack(alignment: .bottom, spacing: 8) {
                 TextField(
                     .communityCommentPlaceholder,
