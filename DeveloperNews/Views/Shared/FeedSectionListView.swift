@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct FeedSectionListView<Destination: Hashable>: View {
-    private let translator: ContentTranslator
+    private let translator: any Translating
     private let lastUpdatedAt: Date?
     private let isRead: (ContentItem) -> Bool
     private let followingPost: (ContentItem) -> CommunityPost?
@@ -18,7 +18,7 @@ struct FeedSectionListView<Destination: Hashable>: View {
     private var topContent: AnyView?
 
     init(
-        translator: ContentTranslator,
+        translator: any Translating,
         lastUpdatedAt: Date?,
         isRead: @escaping (ContentItem) -> Bool,
         followingPost: @escaping (ContentItem) -> CommunityPost?,

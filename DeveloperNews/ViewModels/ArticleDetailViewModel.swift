@@ -19,7 +19,7 @@ final class ArticleDetailViewModel {
         self.item = item
     }
 
-    private var translator: ContentTranslator {
+    private var translator: any Translating {
         appState.translator
     }
 

@@ -2,12 +2,17 @@ import SwiftUI
 
 @MainActor
 struct ContentView: View {
-    @State private var appState = AppState()
+    private let appState: AppState
+
     @State private var navigation = Navigation()
     @State private var showSplash = true
     @State private var isToastVisible = false
     @State private var toastDismissTask: Task<Void, Never>?
     @Environment(\.scenePhase) private var scenePhase
+
+    init(appState: AppState) {
+        self.appState = appState
+    }
 
     var body: some View {
         Group {
@@ -92,7 +97,12 @@ struct ContentView: View {
 
 
 #Preview {
-    ContentView()
+    ContentView(
+        appState: AppState(
+            translator: ContentTranslator(),
+            authService: AuthService(),
+            profileService: ProfileService(),
+            communityService: CommunityService()))
 }
 
 

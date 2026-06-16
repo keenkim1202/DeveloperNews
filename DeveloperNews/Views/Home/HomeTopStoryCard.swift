@@ -2,7 +2,7 @@ import SwiftUI
 import Translation
 
 struct HomeTopStoryCard: View {
-    private let translator: ContentTranslator
+    private let translator: any Translating
     private let item: ContentItem
     private let destination: HomeTabDestination
     private let onHide: () -> Void
@@ -11,7 +11,7 @@ struct HomeTopStoryCard: View {
     @State private var showingTranslation = false
 
     init(
-        translator: ContentTranslator,
+        translator: any Translating,
         item: ContentItem,
         destination: HomeTabDestination,
         onHide: @escaping () -> Void,

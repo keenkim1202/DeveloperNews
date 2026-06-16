@@ -2,7 +2,7 @@ import Foundation
 import Translation
 
 @MainActor
-protocol Translating {
+protocol Translating: AnyObject {
     var translatedTitles: [URL: String] { get }
     var translatedSummaries: [URL: String] { get }
     var targetLanguageCode: String? { get set }

@@ -16,7 +16,7 @@ final class CommunityPostDetailViewModel {
         self.post = post
     }
 
-    private var community: CommunityService {
+    private var community: any CommunityServicing {
         appState.communityService
     }
     var currentUserId: String? {

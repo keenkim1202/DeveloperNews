@@ -2,7 +2,7 @@ import SwiftUI
 import Translation
 
 struct FeedItemRow<Destination: Hashable>: View {
-    private let translator: ContentTranslator
+    private let translator: any Translating
     private let item: ContentItem
     private let destination: Destination
     private let isRead: Bool
@@ -14,7 +14,7 @@ struct FeedItemRow<Destination: Hashable>: View {
     @State private var showingTranslation = false
 
     init(
-        translator: ContentTranslator,
+        translator: any Translating,
         item: ContentItem,
         destination: Destination,
         isRead: Bool,
