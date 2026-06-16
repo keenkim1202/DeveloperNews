@@ -3,6 +3,7 @@ import WebKit
 import Translation
 
 struct ArticleDetailView: View {
+    @State private var viewModel: ArticleDetailViewModel
     private let appState: AppState
     private let item: ContentItem
 
@@ -12,20 +13,17 @@ struct ArticleDetailView: View {
     @State private var reloadTrigger = 0
     @State private var webViewRef: WKWebView?
     @State private var pageTranslationTrigger = 0
-    @State private var isTranslatingPage = false
-    @State private var isPageTranslated = false
     @State private var showEditNote = false
 
     init(
         appState: AppState,
         item: ContentItem,
     ) {
+        _viewModel = State(initialValue: ArticleDetailViewModel(
+            appState: appState,
+            item: item))
         self.appState = appState
         self.item = item
-    }
-
-    private var translator: ContentTranslator {
-        appState.translator
     }
 
     var body: some View {
@@ -71,7 +69,7 @@ struct ArticleDetailView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: isLoading)
         .overlay {
-            if let config = translator.makeConfiguration(), pageTranslationTrigger > 0 {
+            if let config = viewModel.makeTranslationConfiguration(), pageTranslationTrigger > 0 {
                 Color.clear
                     .id(pageTranslationTrigger)
                     .translationTask(config) { session in
@@ -82,31 +80,31 @@ struct ArticleDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: toggleSaved) {
-                    Image(systemName: appState.isSaved(item) ? "bookmark.fill" : "bookmark")
+                    Image(systemName: viewModel.isSaved ? "bookmark.fill" : "bookmark")
                 }
-                .accessibilityLabel(appState.isSaved(item) ? .removeFromSaved : .saveStory)
+                .accessibilityLabel(viewModel.isSaved ? .removeFromSaved : .saveStory)
             }
-            if appState.isSaved(item) {
+            if viewModel.isSaved {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: openNoteEditor) {
-                        Image(systemName: currentNote.isEmpty ? "note.text.badge.plus" : "note.text")
-                            .foregroundStyle(currentNote.isEmpty ? Color.primary : Color.accentColor)
+                        Image(systemName: viewModel.currentNote.isEmpty ? "note.text.badge.plus" : "note.text")
+                            .foregroundStyle(viewModel.currentNote.isEmpty ? Color.primary : Color.accentColor)
                     }
                 }
             }
-            if translator.canTranslate {
+            if viewModel.canTranslate {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: togglePageTranslation) {
-                        if isTranslatingPage {
+                        if viewModel.isTranslatingPage {
                             ProgressView()
                                 .controlSize(.small)
                         }
                         else {
                             Image(systemName: "translate")
-                                .foregroundStyle(isPageTranslated ? Color.accentColor : Color.primary)
+                                .foregroundStyle(viewModel.isPageTranslated ? Color.accentColor : Color.primary)
                         }
                     }
-                    .disabled(isLoading || isTranslatingPage)
+                    .disabled(isLoading || viewModel.isTranslatingPage)
                     .accessibilityLabel(.translatePage)
                 }
             }
@@ -130,7 +128,7 @@ struct ArticleDetailView: View {
     }
 
     private func onAppear() {
-        appState.markAsRead(item)
+        viewModel.markAsRead()
     }
 
     private func retryLoad() {
@@ -139,7 +137,7 @@ struct ArticleDetailView: View {
     }
 
     private func toggleSaved() {
-        appState.toggleSaved(item)
+        viewModel.toggleSaved()
     }
 
     private func openNoteEditor() {
@@ -147,7 +145,7 @@ struct ArticleDetailView: View {
     }
 
     private func togglePageTranslation() {
-        if isPageTranslated {
+        if viewModel.isPageTranslated {
             restoreOriginalPage()
         }
         else {
@@ -159,18 +157,14 @@ struct ArticleDetailView: View {
         reloadTrigger &+= 1
     }
 
-    private var currentNote: String {
-        appState.savedItemSnapshots[item.url]?.summary ?? ""
-    }
-
     @ViewBuilder
     private var noteEditorSheet: some View {
-        SavedItemNoteComposerView(appState: appState, item: appState.savedItemSnapshots[item.url] ?? item)
+        SavedItemNoteComposerView(appState: appState, item: viewModel.noteEditorItem)
     }
 
     private func translateWebPage(using session: TranslationSession) async {
         guard let webView = webViewRef else { return }
-        isTranslatingPage = true
+        viewModel.isTranslatingPage = true
 
         let extractJS = """
         var els=document.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li,td,th,blockquote,figcaption,dt,dd');
@@ -191,7 +185,7 @@ struct ArticleDetailView: View {
               let entries = try? JSONDecoder().decode([PageTextEntry].self, from: data),
               !entries.isEmpty
         else {
-            isTranslatingPage = false
+            viewModel.isTranslatingPage = false
             return
         }
 
@@ -199,23 +193,7 @@ struct ArticleDetailView: View {
         for chunkStart in stride(from: 0, to: entries.count, by: chunkSize) {
             let chunkEnd = min(chunkStart + chunkSize, entries.count)
             let chunk = Array(entries[chunkStart..<chunkEnd])
-            let requests = chunk.map {
-                TranslationSession.Request(
-                    sourceText: $0.text,
-                    clientIdentifier: String($0.id))
-            }
-
-            var translations: [String: String] = [:]
-            do {
-                for try await response in session.translate(batch: requests) {
-                    if let id = response.clientIdentifier {
-                        translations[id] = response.targetText
-                    }
-                }
-            }
-            catch {
-                continue
-            }
+            let translations = await viewModel.translateChunk(chunk, using: session)
 
             guard !translations.isEmpty else { continue }
 
@@ -231,8 +209,8 @@ struct ArticleDetailView: View {
                 contentWorld: .page)
         }
 
-        isTranslatingPage = false
-        isPageTranslated = true
+        viewModel.isTranslatingPage = false
+        viewModel.isPageTranslated = true
     }
 
     private func restoreOriginalPage() {
@@ -245,6 +223,6 @@ struct ArticleDetailView: View {
         }
         """
         webView.evaluateJavaScript(restoreJS)
-        isPageTranslated = false
+        viewModel.isPageTranslated = false
     }
 }
