@@ -8,11 +8,13 @@ final class AppState {
     static let pageSize = 30
 
     private static let topStoryDismissalWindow: TimeInterval = 24 * 60 * 60
-    static let feedStaleThreshold: TimeInterval = 15 * 60
+    static let feedStaleThreshold: TimeInterval = FeedStore.feedStaleThreshold
 
     private let contentSourceClient: any ContentSourceClient
     private let persistenceStore = PersistenceStore()
     private var persistenceChain: Task<Void, Never> = Task {}
+
+    private(set) var feedStore: FeedStore!
 
     let translator = ContentTranslator()
     let authService = AuthService()
@@ -30,19 +32,10 @@ final class AppState {
     var blockedUserIds: Set<String> = []
     var readItemURLs: Set<String> = []
     var readPostIds: Set<String> = []
-    var allItems: [ContentItem] = []
-    var isLoading = false
-    var errorMessage: String?
-    var failedSourceNames: [String] = []
     var toastMessage: String?
     var toastTrigger: Int = 0
-    var lastUpdatedAt: Date?
-
-    @ObservationIgnored
-    private var reloadGeneration: Int = 0
     var hasSeenIntro = false
     var topStoryDismissedAt: Date?
-    var visibleItemLimit: Int = pageSize
     var homeScrollToTopTrigger = 0
     var communityScrollToTopTrigger = 0
     var savedScrollToTopTrigger = 0
@@ -64,13 +57,108 @@ final class AppState {
         return Set(allItems.filter { urls.contains($0.url) }.map(\.id))
     }
 
+    // MARK: - Feed pass-throughs
+
+    var allItems: [ContentItem] {
+        feedStore.allItems
+    }
+
+    var isLoading: Bool {
+        feedStore.isLoading
+    }
+
+    var errorMessage: String? {
+        feedStore.errorMessage
+    }
+
+    var failedSourceNames: [String] {
+        feedStore.failedSourceNames
+    }
+
+    var lastUpdatedAt: Date? {
+        feedStore.lastUpdatedAt
+    }
+
+    var visibleItemLimit: Int {
+        feedStore.visibleItemLimit
+    }
+
+    var personalizedItems: [ContentItem] {
+        feedStore.personalizedItems
+    }
+
+    var articleItems: [ContentItem] {
+        feedStore.articleItems
+    }
+
+    var discussionItems: [ContentItem] {
+        feedStore.discussionItems
+    }
+
+    var pagedPersonalizedItems: [ContentItem] {
+        feedStore.pagedPersonalizedItems
+    }
+
+    var pagedArticleItems: [ContentItem] {
+        feedStore.pagedArticleItems
+    }
+
+    var pagedDiscussionItems: [ContentItem] {
+        feedStore.pagedDiscussionItems
+    }
+
+    var hasMorePages: Bool {
+        feedStore.hasMorePages
+    }
+
+    var hasLoadedContent: Bool {
+        feedStore.hasLoadedContent
+    }
+
+    func loadMore() {
+        feedStore.loadMore()
+    }
+
+    private func resetPagination() {
+        feedStore.resetPagination()
+    }
+
+    func loadIfNeeded() async {
+        await feedStore.loadIfNeeded()
+    }
+
+    func refreshIfStale(maxAge: TimeInterval) async {
+        await feedStore.refreshIfStale(maxAge: maxAge)
+    }
+
+    func reload(notifyOnFailure: Bool = true) async {
+        await feedStore.reload(notifyOnFailure: notifyOnFailure)
+    }
+
     func isSaved(_ item: ContentItem) -> Bool {
         savedItemSnapshots[item.url] != nil
     }
 
     init(contentSourceClient: (any ContentSourceClient)? = nil) {
-        self.contentSourceClient = contentSourceClient ?? Self.defaultContentSourceClient()
+        let client = contentSourceClient ?? Self.defaultContentSourceClient()
+        self.contentSourceClient = client
+        self.feedStore = FeedStore(
+            contentSourceClient: client,
+            inputs: FeedStore.Inputs(
+                selectedTopics: { [unowned self] in selectedTopics },
+                focusedTopic: { [unowned self] in focusedTopic },
+                disabledSourceCategories: { [unowned self] in disabledSourceCategories },
+                savedItemSnapshots: { [unowned self] in savedItemSnapshots },
+                followingItems: { [unowned self] in followingItems },
+                persistAllItems: { [unowned self] items in saveAllItems(items) },
+                persistLastUpdatedAt: { [unowned self] date in saveLastUpdatedAt(date) },
+                showSourcesUnavailableToast: { [unowned self] in showSourcesUnavailableToast() }))
         loadPersistedState()
+    }
+
+    private func showSourcesUnavailableToast() {
+        toastMessage = String(localized: .toastSourcesUnavailable)
+        toastTrigger += 1
     }
 
     var isOnboardingComplete: Bool {
@@ -98,55 +186,6 @@ final class AppState {
                     topics: post.topics,
                     trendScore: post.likeCount)
             }
-    }
-
-    var personalizedItems: [ContentItem] {
-        let enabledByCategory = allItems.filter { !disabledSourceCategories.contains($0.sourceCategory) }
-        let activeTopics: Set<Topic>
-        if let focusedTopic, selectedTopics.contains(focusedTopic) {
-            activeTopics = [focusedTopic]
-        }
-        else {
-            activeTopics = selectedTopics
-        }
-
-        let filteredItems: [ContentItem]
-        if activeTopics.isEmpty {
-            filteredItems = enabledByCategory
-        }
-        else {
-            filteredItems = enabledByCategory.filter { item in
-                !activeTopics.isDisjoint(with: item.topics)
-            }
-        }
-
-        let combined = filteredItems + followingItems
-        let savedSourceCounts = savedSourceNameCounts()
-
-        return combined.sorted { lhs, rhs in
-            let leftScore = personalizedScore(for: lhs, savedSourceCounts: savedSourceCounts)
-            let rightScore = personalizedScore(for: rhs, savedSourceCounts: savedSourceCounts)
-            if leftScore == rightScore {
-                return lhs.publishedAt > rhs.publishedAt
-            }
-            return leftScore > rightScore
-        }
-    }
-
-    private func personalizedScore(
-        for item: ContentItem,
-        savedSourceCounts: [String: Int],
-    ) -> Int {
-        let saveBonus = min(8, (savedSourceCounts[item.sourceName] ?? 0) * 2)
-        return min(100, item.trendScore + saveBonus)
-    }
-
-    private func savedSourceNameCounts() -> [String: Int] {
-        var counts: [String: Int] = [:]
-        for item in savedItemSnapshots.values {
-            counts[item.sourceName, default: 0] += 1
-        }
-        return counts
     }
 
     var savedItems: [ContentItem] {
@@ -186,39 +225,6 @@ final class AppState {
         saveDisabledSourceCategories()
     }
 
-    var articleItems: [ContentItem] {
-        personalizedItems.filter { $0.kind == .article }
-    }
-
-    var discussionItems: [ContentItem] {
-        personalizedItems.filter { $0.kind == .discussion }
-    }
-
-    var pagedPersonalizedItems: [ContentItem] {
-        Array(personalizedItems.prefix(visibleItemLimit))
-    }
-
-    var pagedArticleItems: [ContentItem] {
-        pagedPersonalizedItems.filter { $0.kind == .article }
-    }
-
-    var pagedDiscussionItems: [ContentItem] {
-        pagedPersonalizedItems.filter { $0.kind == .discussion }
-    }
-
-    var hasMorePages: Bool {
-        personalizedItems.count > visibleItemLimit
-    }
-
-    func loadMore() {
-        guard hasMorePages else { return }
-        visibleItemLimit += Self.pageSize
-    }
-
-    private func resetPagination() {
-        visibleItemLimit = Self.pageSize
-    }
-
     var savedArticleItems: [ContentItem] {
         savedItems.filter { $0.kind == .article }
     }
@@ -235,10 +241,6 @@ final class AppState {
             return snapshot
         }
         return personalizedItems.first { $0.url == url }
-    }
-
-    var hasLoadedContent: Bool {
-        !allItems.isEmpty
     }
 
     var canSelectMoreTopics: Bool {
@@ -473,77 +475,6 @@ final class AppState {
         defaults.removeObject(forKey: "pendingSharedItems")
     }
 
-    func loadIfNeeded() async {
-        guard !isLoading else {
-            return
-        }
-
-        guard hasLoadedContent else {
-            await reload()
-            return
-        }
-
-        await refreshIfStale(maxAge: Self.feedStaleThreshold)
-    }
-
-    func refreshIfStale(maxAge: TimeInterval) async {
-        guard !isLoading else {
-            return
-        }
-
-        if let lastUpdatedAt, Date().timeIntervalSince(lastUpdatedAt) < maxAge, hasLoadedContent {
-            return
-        }
-
-        await reload(notifyOnFailure: false)
-    }
-
-    func reload(notifyOnFailure: Bool = true) async {
-        let hadLoadedContent = hasLoadedContent
-        reloadGeneration += 1
-        let generation = reloadGeneration
-        isLoading = true
-        errorMessage = nil
-
-        let result = await contentSourceClient.fetchItemsWithStatus(selectedTopics: selectedTopics)
-
-        guard generation == reloadGeneration else {
-            return
-        }
-
-        let isFullFailure = result.totalSourceCount > 0 &&
-            result.failedSourceNames.count == result.totalSourceCount &&
-            result.items.isEmpty
-
-        failedSourceNames = result.failedSourceNames
-
-        if isFullFailure, hadLoadedContent {
-            if notifyOnFailure {
-                toastMessage = String(localized: .toastSourcesUnavailable)
-                toastTrigger += 1
-            }
-            isLoading = false
-            return
-        }
-
-        allItems = result.items
-        lastUpdatedAt = .now
-        resetPagination()
-        saveLastUpdatedAt()
-        saveAllItems()
-
-        if isFullFailure {
-            errorMessage = String(localized: .errorUnableToLoad)
-        }
-
-        if notifyOnFailure, !result.failedSourceNames.isEmpty {
-            toastMessage = String(localized: .toastSourcesUnavailable)
-            toastTrigger += 1
-        }
-
-        isLoading = false
-    }
-
     private func loadPersistedState() {
         let state = persistenceStore.load()
         selectedTopics = state.selectedTopics
@@ -556,10 +487,10 @@ final class AppState {
         readItemURLs = state.readItemURLs
         readPostIds = state.readPostIds
         translator.targetLanguageCode = state.translationLanguage
-        lastUpdatedAt = state.lastUpdatedAt
         hasSeenIntro = state.hasSeenIntro
         topStoryDismissedAt = state.topStoryDismissedAt
-        allItems = state.allItems
+        feedStore.lastUpdatedAt = state.lastUpdatedAt
+        feedStore.setInitialItems(state.allItems)
     }
 
     // MARK: - Persistence delegates
@@ -639,8 +570,7 @@ final class AppState {
         }
     }
 
-    private func saveLastUpdatedAt() {
-        let date = lastUpdatedAt
+    private func saveLastUpdatedAt(_ date: Date?) {
         enqueuePersistence { store in
             await store.saveLastUpdatedAt(date)
         }
@@ -660,8 +590,7 @@ final class AppState {
         }
     }
 
-    private func saveAllItems() {
-        let items = allItems
+    private func saveAllItems(_ items: [ContentItem]) {
         enqueuePersistence { store in
             await store.saveAllItems(items)
         }
