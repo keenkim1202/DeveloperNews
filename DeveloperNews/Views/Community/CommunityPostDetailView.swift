@@ -4,6 +4,8 @@ struct CommunityPostDetailView: View {
     private let appState: AppState
     private let post: CommunityPost
 
+    @State private var viewModel: CommunityPostDetailViewModel
+
     @State private var showEditPost = false
     @State private var showDeleteConfirm = false
     @State private var showReportConfirm = false
@@ -11,7 +13,6 @@ struct CommunityPostDetailView: View {
     @State private var showOtherReasonInput = false
     @State private var otherReasonText = ""
     @State private var alreadyReported = false
-    @State private var commentService = CommentService()
     @State private var commentText = ""
     @State private var shouldScrollToLatestComment = false
     @State private var commentPendingDeletion: CommunityComment?
@@ -26,38 +27,37 @@ struct CommunityPostDetailView: View {
     ) {
         self.appState = appState
         self.post = post
+        _viewModel = State(initialValue: CommunityPostDetailViewModel(
+            appState: appState,
+            post: post))
     }
 
-    private var community: CommunityService {
-        appState.communityService
-    }
     private var currentUserId: String? {
-        appState.authService.userId
+        viewModel.currentUserId
     }
     private var isAuthor: Bool {
-        currentUserId == post.authorId
+        viewModel.isAuthor
     }
     private var isLiked: Bool {
-        guard let uid = currentUserId else { return false }
-        return post.likedBy.contains(uid)
+        viewModel.isLiked
     }
     private var isFollowingAuthor: Bool {
-        appState.profileService.isFollowing(currentPost.authorId)
+        viewModel.isFollowingAuthor
     }
     private var authorEmoji: String? {
-        community.authorEmoji(for: currentPost.authorId)
+        viewModel.authorEmoji
     }
 
     private var currentPost: CommunityPost {
-        community.posts.first { $0.id == post.id } ?? post
+        viewModel.currentPost
     }
 
     private var visibleComments: [CommunityComment] {
-        commentService.comments.filter { !appState.blockedUserIds.contains($0.authorId) }
+        viewModel.visibleComments
     }
 
     private var canSubmitComment: Bool {
-        currentUserId != nil && !commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        viewModel.canSubmitComment(commentText: commentText)
     }
 
     var body: some View {
@@ -328,7 +328,7 @@ struct CommunityPostDetailView: View {
     private var commentInputBar: some View {
         VStack(spacing: 0) {
             Divider()
-            if let error = commentService.errorMessage {
+            if let error = viewModel.commentErrorMessage {
                 Text(error)
                     .font(.caption)
                     .foregroundStyle(.red)
@@ -400,17 +400,15 @@ struct CommunityPostDetailView: View {
     }
 
     private func onAppear() {
-        appState.markPostAsRead(post.id)
-        appState.markURLAsRead("devnews://community/\(post.id)")
-        commentService.startListening(postId: post.id)
+        viewModel.markAsRead()
+        viewModel.startListening()
         Task {
-            guard let uid = currentUserId else { return }
-            alreadyReported = await community.hasReportedPost(post.id, reporterId: uid)
+            alreadyReported = await viewModel.refreshAlreadyReported()
         }
     }
 
     private func onDisappear() {
-        commentService.stopListening()
+        viewModel.stopListening()
     }
 
     private func dismissKeyboard() {
@@ -428,23 +426,18 @@ struct CommunityPostDetailView: View {
     }
 
     private func refresh() async {
-        await community.refresh()
+        await viewModel.refresh()
     }
 
     private func submitComment() {
         let trimmed = commentText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,
-              let user = appState.authService.user
+              viewModel.hasAuthenticatedUser
         else { return }
         commentText = ""
         shouldScrollToLatestComment = true
         Task {
-            await commentService.addComment(
-                postId: post.id,
-                text: trimmed,
-                author: user,
-                authorDisplayName: appState.profileService.displayName,
-                authorEmoji: appState.profileService.profileEmoji)
+            await viewModel.addComment(text: trimmed)
         }
     }
 
@@ -457,7 +450,7 @@ struct CommunityPostDetailView: View {
         guard let comment = commentPendingDeletion else { return }
         commentPendingDeletion = nil
         Task {
-            await commentService.deleteComment(comment)
+            await viewModel.deleteComment(comment)
         }
     }
 
@@ -469,14 +462,13 @@ struct CommunityPostDetailView: View {
 
     private func toggleFollow() {
         Task {
-            await appState.profileService.toggleFollow(currentPost.authorId)
+            await viewModel.toggleFollow()
         }
     }
 
     private func toggleLike() {
-        guard let uid = currentUserId else { return }
         Task {
-            await community.toggleLike(currentPost, userId: uid)
+            await viewModel.toggleLike()
         }
     }
 
@@ -498,7 +490,7 @@ struct CommunityPostDetailView: View {
 
     private func deletePost() {
         Task {
-            await community.deletePost(currentPost)
+            await viewModel.deletePost()
             dismiss()
         }
     }
@@ -523,14 +515,14 @@ struct CommunityPostDetailView: View {
     }
 
     private func blockUser() {
-        appState.blockUser(currentPost.authorId)
+        viewModel.blockAuthor()
         dismiss()
     }
 
     private func submitReport(_ reason: String) {
-        guard let uid = currentUserId else { return }
+        guard currentUserId != nil else { return }
         Task {
-            await community.reportPost(currentPost, reporterId: uid, reason: reason)
+            await viewModel.submitReport(reason)
             alreadyReported = true
         }
     }

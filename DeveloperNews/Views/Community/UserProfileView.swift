@@ -2,12 +2,10 @@ import SwiftUI
 
 struct UserProfileView: View {
     private let appState: AppState
-    private let authorId: String
     private let authorName: String
     private let authorEmoji: String?
 
-    @State private var followerCount = 0
-    @State private var followingCount = 0
+    @State private var viewModel: UserProfileViewModel
 
     init(
         appState: AppState,
@@ -16,23 +14,11 @@ struct UserProfileView: View {
         authorEmoji: String?,
     ) {
         self.appState = appState
-        self.authorId = authorId
         self.authorName = authorName
         self.authorEmoji = authorEmoji
-    }
-
-    private var currentUserId: String? {
-        appState.authService.userId
-    }
-    private var isOwnProfile: Bool {
-        currentUserId == authorId
-    }
-    private var isFollowingAuthor: Bool {
-        appState.profileService.isFollowing(authorId)
-    }
-
-    private var authorPosts: [CommunityPost] {
-        appState.communityService.posts.filter { $0.authorId == authorId }
+        _viewModel = State(initialValue: UserProfileViewModel(
+            appState: appState,
+            authorId: authorId))
     }
 
     var body: some View {
@@ -53,28 +39,28 @@ struct UserProfileView: View {
                         .font(.title3.bold())
                     HStack(spacing: 20) {
                         VStack {
-                            Text("\(authorPosts.count)")
+                            Text("\(viewModel.authorPosts.count)")
                                 .font(.headline)
                             Text(.profilePosts)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                         VStack {
-                            Text("\(followerCount)")
+                            Text("\(viewModel.followerCount)")
                                 .font(.headline)
                             Text(.profileFollowers)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                         VStack {
-                            Text("\(followingCount)")
+                            Text("\(viewModel.followingCount)")
                                 .font(.headline)
                             Text(.communityFollowing)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                         VStack {
-                            let totalLikes = authorPosts.reduce(0) { $0 + $1.likeCount }
+                            let totalLikes = viewModel.authorPosts.reduce(0) { $0 + $1.likeCount }
                             Text("\(totalLikes)")
                                 .font(.headline)
                             Text(.profileLikes)
@@ -83,17 +69,17 @@ struct UserProfileView: View {
                         }
                     }
 
-                    if !isOwnProfile, currentUserId != nil {
+                    if !viewModel.isOwnProfile, viewModel.currentUserId != nil {
                         Button(action: toggleFollow) {
-                            Text(isFollowingAuthor ? .communityFollowing : .communityFollow)
+                            Text(viewModel.isFollowingAuthor ? .communityFollowing : .communityFollow)
                                 .font(.subheadline.weight(.semibold))
                                 .frame(width: 120, height: 34)
                                 .background(
-                                    isFollowingAuthor
+                                    viewModel.isFollowingAuthor
                                         ? Color.accentColor
                                         : Color(.secondarySystemBackground))
                                 .foregroundStyle(
-                                    isFollowingAuthor
+                                    viewModel.isFollowingAuthor
                                         ? Color.white
                                         : Color.primary)
                                 .clipShape(Capsule())
@@ -106,7 +92,7 @@ struct UserProfileView: View {
                 Divider()
                     .padding(.horizontal, 20)
 
-                if authorPosts.isEmpty {
+                if viewModel.authorPosts.isEmpty {
                     Text(.profileNoPosts)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -114,7 +100,7 @@ struct UserProfileView: View {
                 }
                 else {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(authorPosts) { post in
+                        ForEach(viewModel.authorPosts) { post in
                             NavigationLink(value: CommunityTabDestination.postDetail(post.id)) {
                                 CommunityPostRow(
                                     appState: appState,
@@ -141,14 +127,12 @@ struct UserProfileView: View {
     }
 
     private func loadFollowCounts() async {
-        followerCount = await appState.profileService.fetchFollowerCount(for: authorId)
-        followingCount = await appState.profileService.fetchFollowingCount(for: authorId)
+        await viewModel.loadFollowCounts()
     }
 
     private func toggleFollow() {
         Task {
-            await appState.profileService.toggleFollow(authorId)
-            followerCount = await appState.profileService.fetchFollowerCount(for: authorId)
+            await viewModel.toggleFollow()
         }
     }
 }
