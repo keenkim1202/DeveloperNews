@@ -7,28 +7,11 @@ final class AppState {
     static let maxSelectedTopics = 5
     static let pageSize = 30
 
-    private enum StorageKey {
-        static let selectedTopics = "selectedTopics"
-        static let savedItemIDs = "savedItemIDs"
-        static let savedItemTimestamps = "savedItemTimestamps"
-        static let savedItemSnapshots = "savedItemSnapshots"
-        static let savedSortOrder = "savedSortOrder"
-        static let notificationsEnabled = "notificationsEnabled"
-        static let disabledSourceCategories = "disabledSourceCategories"
-        static let lastUpdatedAt = "lastUpdatedAt"
-        static let hasSeenIntro = "hasSeenIntro"
-        static let topStoryDismissedAt = "topStoryDismissedAt"
-        static let blockedUserIds = "blockedUserIds"
-        static let readItemURLs = "readItemURLs"
-        static let readPostIds = "readPostIds"
-        static let translationLanguage = "translationLanguage"
-        static let allItems = "allItems"
-    }
-
     private static let topStoryDismissalWindow: TimeInterval = 24 * 60 * 60
     static let feedStaleThreshold: TimeInterval = 15 * 60
 
     private let contentSourceClient: any ContentSourceClient
+    private let persistenceStore = PersistenceStore()
 
     let translator = ContentTranslator()
     let authService = AuthService()
@@ -199,7 +182,7 @@ final class AppState {
             disabledSourceCategories.insert(category)
         }
         resetPagination()
-        persistState()
+        saveDisabledSourceCategories()
     }
 
     var articleItems: [ContentItem] {
@@ -276,7 +259,7 @@ final class AppState {
         }
 
         resetPagination()
-        persistState()
+        saveTopics()
     }
 
     func toggleFocusedTopic(_ topic: Topic) {
@@ -297,19 +280,19 @@ final class AppState {
     func addSavedItem(_ item: ContentItem) {
         savedItemSnapshots[item.url] = item
         savedItemTimestampsByURL[item.url] = .now
-        persistState()
+        saveSavedItems()
     }
 
     func updateSavedItem(_ item: ContentItem) {
         guard savedItemSnapshots[item.url] != nil else { return }
         savedItemSnapshots[item.url] = item
-        persistState()
+        saveSavedItems()
     }
 
     func removeSavedItem(at url: URL) {
         savedItemSnapshots[url] = nil
         savedItemTimestampsByURL[url] = nil
-        persistState()
+        saveSavedItems()
     }
 
 
@@ -317,19 +300,19 @@ final class AppState {
 
     func setTranslationLanguage(_ code: String?) {
         translator.targetLanguageCode = code
-        persistState()
+        saveTranslationLanguage()
     }
 
     func markURLAsRead(_ urlString: String) {
         readItemURLs.insert(HashUtil.shortHash(urlString))
         trimReadItems()
-        persistState()
+        saveReadItems()
     }
 
     func markAsRead(_ item: ContentItem) {
         readItemURLs.insert(HashUtil.shortHash(item.url.absoluteString))
         trimReadItems()
-        persistState()
+        saveReadItems()
     }
 
     func isRead(_ item: ContentItem) -> Bool {
@@ -339,7 +322,7 @@ final class AppState {
     func markPostAsRead(_ postId: String) {
         readPostIds.insert(HashUtil.shortHash(postId))
         trimReadItems()
-        persistState()
+        saveReadItems()
     }
 
     func isPostRead(_ postId: String) -> Bool {
@@ -359,12 +342,12 @@ final class AppState {
 
     func blockUser(_ userId: String) {
         blockedUserIds.insert(userId)
-        persistState()
+        saveBlockedUsers()
     }
 
     func unblockUser(_ userId: String) {
         blockedUserIds.remove(userId)
-        persistState()
+        saveBlockedUsers()
     }
 
     @discardableResult
@@ -408,7 +391,7 @@ final class AppState {
             savedItemTimestampsByURL[item.url] = .now
         }
 
-        persistState()
+        saveSavedItems()
     }
 
     func setSavedSortOrder(_ order: SavedSortOrder) {
@@ -416,24 +399,24 @@ final class AppState {
             return
         }
         savedSortOrder = order
-        persistState()
+        saveSortOrder()
     }
 
     func markIntroSeen() {
         hasSeenIntro = true
-        persistState()
+        saveHasSeenIntro()
     }
 
     func dismissTopStory() {
         topStoryDismissedAt = .now
-        persistState()
+        saveTopStoryDismissedAt()
     }
 
     func resetTopics() {
         selectedTopics.removeAll()
         focusedTopic = nil
         resetPagination()
-        persistState()
+        saveTopics()
     }
 
     func notifyTabSelected(_ tab: AppTab) {
@@ -455,7 +438,7 @@ final class AppState {
             return
         }
         notificationsEnabled = isEnabled
-        persistState()
+        saveNotificationsEnabled()
     }
 
     func processPendingSharedItems() {
@@ -545,8 +528,8 @@ final class AppState {
         allItems = result.items
         lastUpdatedAt = .now
         resetPagination()
-        persistState()
-        persistAllItems()
+        saveLastUpdatedAt()
+        saveAllItems()
 
         if isFullFailure {
             errorMessage = String(localized: .errorUnableToLoad)
@@ -561,101 +544,113 @@ final class AppState {
     }
 
     private func loadPersistedState() {
-        let defaults = UserDefaults(suiteName: "group.keen-onit.DeveloperNews") ?? .standard
+        let state = persistenceStore.load()
+        selectedTopics = state.selectedTopics
+        savedItemSnapshots = state.savedItemSnapshots
+        savedItemTimestampsByURL = state.savedItemTimestampsByURL
+        savedSortOrder = state.savedSortOrder
+        notificationsEnabled = state.notificationsEnabled
+        disabledSourceCategories = state.disabledSourceCategories
+        blockedUserIds = state.blockedUserIds
+        readItemURLs = state.readItemURLs
+        readPostIds = state.readPostIds
+        translator.targetLanguageCode = state.translationLanguage
+        lastUpdatedAt = state.lastUpdatedAt
+        hasSeenIntro = state.hasSeenIntro
+        topStoryDismissedAt = state.topStoryDismissedAt
+        allItems = state.allItems
+    }
 
-        if let storedTopicValues = defaults.stringArray(forKey: StorageKey.selectedTopics) {
-            selectedTopics = Set(storedTopicValues.compactMap(Topic.init(rawValue:)))
-        }
+    // MARK: - Persistence delegates
 
-        if let snapshotData = defaults.data(forKey: StorageKey.savedItemSnapshots),
-           let decoded = try? JSONDecoder().decode([SavedRecord].self, from: snapshotData) {
-            for record in decoded {
-                savedItemSnapshots[record.item.url] = record.item
-                savedItemTimestampsByURL[record.item.url] = record.savedAt
-            }
-        }
-
-        if let storedSortOrder = defaults.string(forKey: StorageKey.savedSortOrder),
-           let order = SavedSortOrder(rawValue: storedSortOrder) {
-            savedSortOrder = order
-        }
-
-        if defaults.object(forKey: StorageKey.notificationsEnabled) != nil {
-            notificationsEnabled = defaults.bool(forKey: StorageKey.notificationsEnabled)
-        }
-
-        if let storedDisabled = defaults.stringArray(forKey: StorageKey.disabledSourceCategories) {
-            disabledSourceCategories = Set(storedDisabled.compactMap(SourceCategory.init(rawValue:)))
-        }
-
-        if let storedBlocked = defaults.stringArray(forKey: StorageKey.blockedUserIds) {
-            blockedUserIds = Set(storedBlocked)
-        }
-
-        if let storedReadURLs = defaults.stringArray(forKey: StorageKey.readItemURLs) {
-            readItemURLs = Set(storedReadURLs)
-        }
-
-        if let storedReadPosts = defaults.stringArray(forKey: StorageKey.readPostIds) {
-            readPostIds = Set(storedReadPosts)
-        }
-
-        if let storedLang = defaults.string(forKey: StorageKey.translationLanguage) {
-            translator.targetLanguageCode = storedLang
-        }
-
-        if let storedTimestamp = defaults.object(forKey: StorageKey.lastUpdatedAt) as? Date {
-            lastUpdatedAt = storedTimestamp
-        }
-
-        if defaults.object(forKey: StorageKey.hasSeenIntro) != nil {
-            hasSeenIntro = defaults.bool(forKey: StorageKey.hasSeenIntro)
-        }
-
-        if let storedDismissedAt = defaults.object(forKey: StorageKey.topStoryDismissedAt) as? Date {
-            topStoryDismissedAt = storedDismissedAt
-        }
-
-        if let storedItemsData = defaults.data(forKey: StorageKey.allItems),
-           let decoded = try? JSONDecoder().decode([ContentItem].self, from: storedItemsData) {
-            allItems = decoded
+    private func saveTopics() {
+        let topics = selectedTopics
+        Task {
+            await persistenceStore.saveTopics(topics)
         }
     }
 
-    private func persistAllItems() {
-        let defaults = UserDefaults(suiteName: "group.keen-onit.DeveloperNews") ?? .standard
-        if let encoded = try? JSONEncoder().encode(allItems) {
-            defaults.set(encoded, forKey: StorageKey.allItems)
+    private func saveSavedItems() {
+        let snapshots = savedItemSnapshots
+        let timestamps = savedItemTimestampsByURL
+        Task {
+            await persistenceStore.saveSavedItems(
+                snapshots: snapshots,
+                timestamps: timestamps)
         }
     }
 
-    private func persistState() {
-        let defaults = UserDefaults(suiteName: "group.keen-onit.DeveloperNews") ?? .standard
-        let topicValues = selectedTopics.map(\.rawValue).sorted()
-        let disabledCategoryValues = disabledSourceCategories.map(\.rawValue).sorted()
-        let records = savedItemSnapshots.values.map { item in
-            SavedRecord(item: item, savedAt: savedItemTimestampsByURL[item.url] ?? .now)
+    private func saveSortOrder() {
+        let order = savedSortOrder
+        Task {
+            await persistenceStore.saveSortOrder(order)
         }
-
-        defaults.set(topicValues, forKey: StorageKey.selectedTopics)
-        if let encoded = try? JSONEncoder().encode(records) {
-            defaults.set(encoded, forKey: StorageKey.savedItemSnapshots)
-        }
-        defaults.set(savedSortOrder.rawValue, forKey: StorageKey.savedSortOrder)
-        defaults.set(notificationsEnabled, forKey: StorageKey.notificationsEnabled)
-        defaults.set(disabledCategoryValues, forKey: StorageKey.disabledSourceCategories)
-        defaults.set(Array(blockedUserIds), forKey: StorageKey.blockedUserIds)
-        defaults.set(Array(readItemURLs), forKey: StorageKey.readItemURLs)
-        defaults.set(Array(readPostIds), forKey: StorageKey.readPostIds)
-        defaults.set(translator.targetLanguageCode, forKey: StorageKey.translationLanguage)
-        defaults.set(lastUpdatedAt, forKey: StorageKey.lastUpdatedAt)
-        defaults.set(hasSeenIntro, forKey: StorageKey.hasSeenIntro)
-        defaults.set(topStoryDismissedAt, forKey: StorageKey.topStoryDismissedAt)
     }
 
-    private struct SavedRecord: Codable {
-        let item: ContentItem
-        let savedAt: Date
+    private func saveNotificationsEnabled() {
+        let isEnabled = notificationsEnabled
+        Task {
+            await persistenceStore.saveNotificationsEnabled(isEnabled)
+        }
+    }
+
+    private func saveDisabledSourceCategories() {
+        let categories = disabledSourceCategories
+        Task {
+            await persistenceStore.saveDisabledSourceCategories(categories)
+        }
+    }
+
+    private func saveBlockedUsers() {
+        let userIds = blockedUserIds
+        Task {
+            await persistenceStore.saveBlockedUsers(userIds)
+        }
+    }
+
+    private func saveReadItems() {
+        let urls = readItemURLs
+        let postIds = readPostIds
+        Task {
+            await persistenceStore.saveReadItems(
+                readItemURLs: urls,
+                readPostIds: postIds)
+        }
+    }
+
+    private func saveTranslationLanguage() {
+        let code = translator.targetLanguageCode
+        Task {
+            await persistenceStore.saveTranslationLanguage(code)
+        }
+    }
+
+    private func saveLastUpdatedAt() {
+        let date = lastUpdatedAt
+        Task {
+            await persistenceStore.saveLastUpdatedAt(date)
+        }
+    }
+
+    private func saveHasSeenIntro() {
+        let value = hasSeenIntro
+        Task {
+            await persistenceStore.saveHasSeenIntro(value)
+        }
+    }
+
+    private func saveTopStoryDismissedAt() {
+        let date = topStoryDismissedAt
+        Task {
+            await persistenceStore.saveTopStoryDismissedAt(date)
+        }
+    }
+
+    private func saveAllItems() {
+        let items = allItems
+        Task {
+            await persistenceStore.saveAllItems(items)
+        }
     }
 
     private static func defaultContentSourceClient() -> any ContentSourceClient {
