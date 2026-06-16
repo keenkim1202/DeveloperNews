@@ -67,33 +67,13 @@ struct CommunityView: View {
                 authorEmoji: author.emoji)
         case let .postLinkDetail(postId):
             if let post = appState.communityService.post(id: postId),
-               let item = postLinkItem(for: post) {
+               let item = post.linkContentItem {
                 ArticleDetailView(appState: appState, item: item)
             }
             else {
                 UnavailableDestinationView(reason: .itemNotFound)
             }
         }
-    }
-
-    private func postLinkItem(for post: CommunityPost) -> ContentItem? {
-        guard post.hasLink,
-              let url = post.linkURL
-        else {
-            return nil
-        }
-        return ContentItem(
-            id: UUID(),
-            kind: .article,
-            title: post.title,
-            summary: "",
-            sourceName: post.authorName,
-            sourceCategory: .article,
-            authorName: post.authorName,
-            url: url,
-            publishedAt: post.createdAt,
-            topics: post.topics,
-            trendScore: 0)
     }
 
     private func navigateToProfile(_ author: AuthorInfo) {

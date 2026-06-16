@@ -498,11 +498,11 @@ struct CommunityPostDetailView: View {
     }
 
     private func reportSpam() {
-        submitReport("spam")
+        submitReport(.spam)
     }
 
     private func reportInappropriate() {
-        submitReport("inappropriate")
+        submitReport(.inappropriate)
     }
 
     private func openOtherReasonInput() {
@@ -513,7 +513,7 @@ struct CommunityPostDetailView: View {
     private func submitOtherReport() {
         let trimmed = otherReasonText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        submitReport("other: \(trimmed)")
+        submitReport(.other(trimmed))
     }
 
     private func blockUser() {
@@ -521,7 +521,7 @@ struct CommunityPostDetailView: View {
         dismiss()
     }
 
-    private func submitReport(_ reason: String) {
+    private func submitReport(_ reason: ReportReason) {
         guard currentUserId != nil else { return }
         Task {
             await viewModel.submitReport(reason)
