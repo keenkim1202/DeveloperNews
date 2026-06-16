@@ -4,7 +4,7 @@ import Foundation
 
 @Observable
 @MainActor
-final class ProfileService {
+final class ProfileService: ProfileServicing {
     private(set) var profile: UserProfile?
     private(set) var isLoading = false
     private(set) var errorMessage: String?

@@ -4,7 +4,7 @@ import Foundation
 
 @Observable
 @MainActor
-final class CommunityService {
+final class CommunityService: CommunityServicing {
     private(set) var posts: [CommunityPost] = []
     private(set) var isLoading = false
     private(set) var errorMessage: String?

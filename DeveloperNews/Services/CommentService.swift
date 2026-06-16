@@ -4,7 +4,7 @@ import Foundation
 
 @Observable
 @MainActor
-final class CommentService {
+final class CommentService: CommentServicing {
     private(set) var comments: [CommunityComment] = []
     private(set) var errorMessage: String?
 

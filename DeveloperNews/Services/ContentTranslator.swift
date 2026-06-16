@@ -3,7 +3,7 @@ import Translation
 
 @Observable
 @MainActor
-final class ContentTranslator {
+final class ContentTranslator: Translating {
     private(set) var translatedTitles: [URL: String] = [:]
     private(set) var translatedSummaries: [URL: String] = [:]
 
