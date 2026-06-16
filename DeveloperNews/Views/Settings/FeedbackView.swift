@@ -7,7 +7,7 @@ struct FeedbackView: View {
     @Environment(\.dismiss) private var dismiss
 
     private var instagramURL: URL {
-        URL(string: Self.instagramURLString)!
+        URL(static: "https://www.instagram.com/developernews.zizic?igsh=dnRzMTBnNms0ZjRw&utm_source=qr")
     }
 
     var body: some View {

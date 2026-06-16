@@ -116,7 +116,9 @@ struct GitHubTrendingSourceClient: ContentSourceClient {
             return cached
         }
 
-        var components = URLComponents(string: "https://api.github.com/search/repositories")!
+        guard var components = URLComponents(string: "https://api.github.com/search/repositories") else {
+            throw URLError(.badURL)
+        }
         components.queryItems = [
             URLQueryItem(name: "q", value: query),
             URLQueryItem(name: "sort", value: "stars"),

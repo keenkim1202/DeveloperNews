@@ -13,7 +13,9 @@ struct DevToSourceClient: ContentSourceClient {
     }
 
     func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem] {
-        var components = URLComponents(string: "https://dev.to/api/articles")!
+        guard var components = URLComponents(string: "https://dev.to/api/articles") else {
+            throw URLError(.badURL)
+        }
         var queryItems: [URLQueryItem] = [
             URLQueryItem(name: "top", value: "7"),
             URLQueryItem(name: "per_page", value: "\(fetchLimit(for: selectedTopics))")

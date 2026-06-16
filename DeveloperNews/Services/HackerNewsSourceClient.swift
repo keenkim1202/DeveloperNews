@@ -49,7 +49,7 @@ struct HackerNewsSourceClient: ContentSourceClient {
     }
 
     private func fetchTopStoryIDs() async throws -> [Int] {
-        let url = URL(string: "https://hacker-news.firebaseio.com/v0/topstories.json")!
+        let url = URL(static: "https://hacker-news.firebaseio.com/v0/topstories.json")
         var request = URLRequest(url: url)
         request.setValue(AppIdentity.userAgent, forHTTPHeaderField: "User-Agent")
         let (data, _) = try await session.data(for: request)
