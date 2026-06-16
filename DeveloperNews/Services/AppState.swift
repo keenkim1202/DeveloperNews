@@ -12,6 +12,7 @@ final class AppState {
 
     private let contentSourceClient: any ContentSourceClient
     private let persistenceStore = PersistenceStore()
+    private var persistenceChain: Task<Void, Never> = Task {}
 
     let translator = ContentTranslator()
     let authService = AuthService()
@@ -563,18 +564,31 @@ final class AppState {
 
     // MARK: - Persistence delegates
 
+    // Serializes persistence writes through a task chain so they apply in call
+    // order (no reordering), while the actor still encodes off the main actor.
+    private func enqueuePersistence(
+        _ write: @escaping @Sendable (PersistenceStore) async -> Void,
+    ) {
+        let store = persistenceStore
+        let previous = persistenceChain
+        persistenceChain = Task {
+            await previous.value
+            await write(store)
+        }
+    }
+
     private func saveTopics() {
         let topics = selectedTopics
-        Task {
-            await persistenceStore.saveTopics(topics)
+        enqueuePersistence { store in
+            await store.saveTopics(topics)
         }
     }
 
     private func saveSavedItems() {
         let snapshots = savedItemSnapshots
         let timestamps = savedItemTimestampsByURL
-        Task {
-            await persistenceStore.saveSavedItems(
+        enqueuePersistence { store in
+            await store.saveSavedItems(
                 snapshots: snapshots,
                 timestamps: timestamps)
         }
@@ -582,37 +596,37 @@ final class AppState {
 
     private func saveSortOrder() {
         let order = savedSortOrder
-        Task {
-            await persistenceStore.saveSortOrder(order)
+        enqueuePersistence { store in
+            await store.saveSortOrder(order)
         }
     }
 
     private func saveNotificationsEnabled() {
         let isEnabled = notificationsEnabled
-        Task {
-            await persistenceStore.saveNotificationsEnabled(isEnabled)
+        enqueuePersistence { store in
+            await store.saveNotificationsEnabled(isEnabled)
         }
     }
 
     private func saveDisabledSourceCategories() {
         let categories = disabledSourceCategories
-        Task {
-            await persistenceStore.saveDisabledSourceCategories(categories)
+        enqueuePersistence { store in
+            await store.saveDisabledSourceCategories(categories)
         }
     }
 
     private func saveBlockedUsers() {
         let userIds = blockedUserIds
-        Task {
-            await persistenceStore.saveBlockedUsers(userIds)
+        enqueuePersistence { store in
+            await store.saveBlockedUsers(userIds)
         }
     }
 
     private func saveReadItems() {
         let urls = readItemURLs
         let postIds = readPostIds
-        Task {
-            await persistenceStore.saveReadItems(
+        enqueuePersistence { store in
+            await store.saveReadItems(
                 readItemURLs: urls,
                 readPostIds: postIds)
         }
@@ -620,36 +634,36 @@ final class AppState {
 
     private func saveTranslationLanguage() {
         let code = translator.targetLanguageCode
-        Task {
-            await persistenceStore.saveTranslationLanguage(code)
+        enqueuePersistence { store in
+            await store.saveTranslationLanguage(code)
         }
     }
 
     private func saveLastUpdatedAt() {
         let date = lastUpdatedAt
-        Task {
-            await persistenceStore.saveLastUpdatedAt(date)
+        enqueuePersistence { store in
+            await store.saveLastUpdatedAt(date)
         }
     }
 
     private func saveHasSeenIntro() {
         let value = hasSeenIntro
-        Task {
-            await persistenceStore.saveHasSeenIntro(value)
+        enqueuePersistence { store in
+            await store.saveHasSeenIntro(value)
         }
     }
 
     private func saveTopStoryDismissedAt() {
         let date = topStoryDismissedAt
-        Task {
-            await persistenceStore.saveTopStoryDismissedAt(date)
+        enqueuePersistence { store in
+            await store.saveTopStoryDismissedAt(date)
         }
     }
 
     private func saveAllItems() {
         let items = allItems
-        Task {
-            await persistenceStore.saveAllItems(items)
+        enqueuePersistence { store in
+            await store.saveAllItems(items)
         }
     }
 
