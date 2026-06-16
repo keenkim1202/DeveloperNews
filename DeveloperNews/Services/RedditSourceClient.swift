@@ -1,6 +1,6 @@
 import Foundation
 
-struct RedditFeedDefinition {
+struct RedditFeedDefinition: Sendable {
     let subreddit: String
     let defaultTopics: [Topic]
 }

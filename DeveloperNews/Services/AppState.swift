@@ -2,6 +2,7 @@ import Foundation
 import Observation
 
 @Observable
+@MainActor
 final class AppState {
     static let maxSelectedTopics = 5
     static let pageSize = 30
@@ -514,6 +515,7 @@ final class AppState {
     }
 
     func reload(notifyOnFailure: Bool = true) async {
+        let hadLoadedContent = hasLoadedContent
         reloadGeneration += 1
         let generation = reloadGeneration
         isLoading = true
@@ -525,16 +527,28 @@ final class AppState {
             return
         }
 
-        allItems = result.items
+        let isFullFailure = result.totalSourceCount > 0 &&
+            result.failedSourceNames.count == result.totalSourceCount &&
+            result.items.isEmpty
+
         failedSourceNames = result.failedSourceNames
+
+        if isFullFailure, hadLoadedContent {
+            if notifyOnFailure {
+                toastMessage = String(localized: .toastSourcesUnavailable)
+                toastTrigger += 1
+            }
+            isLoading = false
+            return
+        }
+
+        allItems = result.items
         lastUpdatedAt = .now
         resetPagination()
         persistState()
         persistAllItems()
 
-        if result.totalSourceCount > 0,
-           result.failedSourceNames.count == result.totalSourceCount,
-           result.items.isEmpty {
+        if isFullFailure {
             errorMessage = String(localized: .errorUnableToLoad)
         }
 

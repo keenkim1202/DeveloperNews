@@ -2,7 +2,7 @@ import FirebaseAuth
 import FirebaseFirestore
 import Foundation
 
-struct UserProfile: Codable {
+struct UserProfile: Codable, Sendable {
     let uid: String
     var displayName: String
     var photoURL: String?
@@ -13,6 +13,7 @@ struct UserProfile: Codable {
 }
 
 @Observable
+@MainActor
 final class ProfileService {
     private(set) var profile: UserProfile?
     private(set) var isLoading = false
@@ -48,19 +49,21 @@ final class ProfileService {
 
         let ref = db.collection("users").document(user.uid)
         listenerRegistration = ref.addSnapshotListener { [weak self] snapshot, _ in
-            guard let data = snapshot?.data(), snapshot?.exists == true else {
-                self?.profile = nil
-                return
+            Task { @MainActor [weak self] in
+                guard let data = snapshot?.data(), snapshot?.exists == true else {
+                    self?.profile = nil
+                    return
+                }
+                let followedArray = data["followedUserIds"] as? [String] ?? []
+                self?.profile = UserProfile(
+                    uid: user.uid,
+                    displayName: data["displayName"] as? String ?? "",
+                    photoURL: data["photoURL"] as? String,
+                    profileEmoji: data["profileEmoji"] as? String,
+                    followedUserIds: Set(followedArray),
+                    createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
+                    updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date())
             }
-            let followedArray = data["followedUserIds"] as? [String] ?? []
-            self?.profile = UserProfile(
-                uid: user.uid,
-                displayName: data["displayName"] as? String ?? "",
-                photoURL: data["photoURL"] as? String,
-                profileEmoji: data["profileEmoji"] as? String,
-                followedUserIds: Set(followedArray),
-                createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
-                updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date())
         }
     }
 

@@ -1,6 +1,6 @@
 import Foundation
 
-struct RSSFeedDefinition {
+struct RSSFeedDefinition: Sendable {
     let sourceName: String
     let feedURL: URL
     let defaultTopics: [Topic]

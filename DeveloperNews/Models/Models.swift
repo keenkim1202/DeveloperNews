@@ -1,6 +1,6 @@
 import Foundation
 
-enum Topic: String, CaseIterable, Identifiable, Hashable, Codable {
+enum Topic: String, CaseIterable, Identifiable, Hashable, Codable, Sendable {
     case web
     case ios
     case android
@@ -26,19 +26,19 @@ enum Topic: String, CaseIterable, Identifiable, Hashable, Codable {
     }
 }
 
-struct EngagementMetrics: Hashable, Codable {
+struct EngagementMetrics: Hashable, Codable, Sendable {
     let reactionCount: Int
     let commentCount: Int
 }
 
-enum AppTab: String, Hashable {
+enum AppTab: String, Hashable, Sendable {
     case home
     case community
     case saved
     case settings
 }
 
-enum SavedSortOrder: String, CaseIterable, Identifiable, Hashable {
+enum SavedSortOrder: String, CaseIterable, Identifiable, Hashable, Sendable {
     case recentlySaved
     case trending
 
@@ -47,7 +47,7 @@ enum SavedSortOrder: String, CaseIterable, Identifiable, Hashable {
     }
 }
 
-enum SourceCategory: String, CaseIterable, Identifiable, Hashable, Codable {
+enum SourceCategory: String, CaseIterable, Identifiable, Hashable, Codable, Sendable {
     case article
     case hackerNews
     case reddit
@@ -69,8 +69,8 @@ enum SourceCategory: String, CaseIterable, Identifiable, Hashable, Codable {
     }
 }
 
-struct ContentItem: Identifiable, Hashable, Codable {
-    enum Kind: String, Codable {
+struct ContentItem: Identifiable, Hashable, Codable, Sendable {
+    enum Kind: String, Codable, Sendable {
         case article
         case discussion
 
