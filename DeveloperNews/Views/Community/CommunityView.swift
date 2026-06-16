@@ -123,7 +123,8 @@ struct CommunityView: View {
                     let emoji = appState.communityService.authorEmoji(for: post.authorId)
                     NavigationLink(value: CommunityTabDestination.postDetail(post.id)) {
                         CommunityPostRow(
-                            appState: appState,
+                            currentUserId: appState.authService.userId,
+                            isRead: appState.isPostRead(post.id),
                             post: post,
                             authorEmoji: emoji) {
                             navigateToProfile(
@@ -147,26 +148,26 @@ struct CommunityView: View {
 
 
 struct CommunityPostRow: View {
-    private let appState: AppState
+    private let currentUserId: String?
+    private let isRead: Bool
     private let post: CommunityPost
     private var authorEmoji: String?
     private var onAuthorTap: (() -> Void)?
 
     init(
-        appState: AppState,
+        currentUserId: String?,
+        isRead: Bool,
         post: CommunityPost,
         authorEmoji: String? = nil,
         onAuthorTap: (() -> Void)? = nil,
     ) {
-        self.appState = appState
+        self.currentUserId = currentUserId
+        self.isRead = isRead
         self.post = post
         self.authorEmoji = authorEmoji
         self.onAuthorTap = onAuthorTap
     }
 
-    private var currentUserId: String? {
-        appState.authService.userId
-    }
     private var isLiked: Bool {
         guard let uid = currentUserId else { return false }
         return post.likedBy.contains(uid)
@@ -214,7 +215,7 @@ struct CommunityPostRow: View {
 
             Text(post.title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(appState.isPostRead(post.id) ? .secondary : .primary)
+                .foregroundStyle(isRead ? .secondary : .primary)
                 .lineLimit(2)
 
             if !post.description.isEmpty {

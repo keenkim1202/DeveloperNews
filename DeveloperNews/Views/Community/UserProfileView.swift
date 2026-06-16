@@ -104,7 +104,8 @@ struct UserProfileView: View {
                         ForEach(viewModel.authorPosts) { post in
                             NavigationLink(value: CommunityTabDestination.postDetail(post.id)) {
                                 CommunityPostRow(
-                                    appState: appState,
+                                    currentUserId: appState.authService.userId,
+                                    isRead: appState.isPostRead(post.id),
                                     post: post,
                                     authorEmoji: authorEmoji)
                                 .frame(maxWidth: .infinity, alignment: .leading)
