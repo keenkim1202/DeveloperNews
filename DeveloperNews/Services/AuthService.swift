@@ -6,7 +6,7 @@ import GoogleSignIn
 
 @Observable
 @MainActor
-final class AuthService {
+final class AuthService: AuthServicing {
     private(set) var user: FirebaseAuth.User?
     private(set) var isLoading = false
     private(set) var errorMessage: String?
