@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AddSavedItemView: View {
-    private let appState: AppState
+    @State private var viewModel: AddSavedItemViewModel
 
     @State private var title = ""
     @State private var description = ""
@@ -9,7 +9,7 @@ struct AddSavedItemView: View {
     @State private var selectedTopics: Set<Topic> = []
 
     init(appState: AppState) {
-        self.appState = appState
+        _viewModel = State(initialValue: AddSavedItemViewModel(appState: appState))
     }
 
     var body: some View {
@@ -26,38 +26,11 @@ struct AddSavedItemView: View {
     }
 
     private func saveItem() {
-        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedLink = link.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let itemURL: URL
-        if let parsed = URL(string: trimmedLink), !trimmedLink.isEmpty {
-            itemURL = parsed
-        }
-        else if let synthetic = URL(string: "devnews://saved/\(UUID().uuidString)") {
-            itemURL = synthetic
-        }
-        else {
-            return
-        }
-
-        let item = ContentItem(
-            id: UUID(),
-            kind: .article,
-            title: trimmedTitle,
-            summary: trimmedDescription,
-            sourceName: appState.profileService.displayName.isEmpty
-                ? String(localized: .saveMyBookmark)
-                : appState.profileService.displayName,
-            sourceCategory: .article,
-            authorName: nil,
-            url: itemURL,
-            publishedAt: .now,
-            topics: Topic.allCases.filter { selectedTopics.contains($0) },
-            trendScore: 0,
-            isUserCreated: true)
-
-        appState.addSavedItem(item)
+        viewModel.saveItem(
+            title: title,
+            description: description,
+            link: link,
+            selectedTopics: selectedTopics)
     }
 }
 

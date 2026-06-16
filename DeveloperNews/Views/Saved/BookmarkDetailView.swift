@@ -148,8 +148,7 @@ struct BookmarkDetailView: View {
 
 
 struct EditBookmarkView: View {
-    private let appState: AppState
-    private let item: ContentItem
+    @State private var viewModel: EditBookmarkViewModel
 
     @State private var title: String
     @State private var description: String
@@ -160,8 +159,9 @@ struct EditBookmarkView: View {
         appState: AppState,
         item: ContentItem,
     ) {
-        self.appState = appState
-        self.item = item
+        _viewModel = State(initialValue: EditBookmarkViewModel(
+            appState: appState,
+            item: item))
         _title = State(initialValue: item.title)
         _description = State(initialValue: item.summary)
         _link = State(initialValue: item.hasExternalLink ? item.url.absoluteString : "")
@@ -182,44 +182,11 @@ struct EditBookmarkView: View {
     }
 
     private func saveChanges() {
-        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedLink = link.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let newURL: URL
-        if let parsed = URL(string: trimmedLink), !trimmedLink.isEmpty {
-            newURL = parsed
-        }
-        else if item.hasExternalLink,
-                let synthetic = URL(string: "devnews://saved/\(item.id.uuidString)") {
-            newURL = synthetic
-        }
-        else {
-            newURL = item.url
-        }
-
-        let updated = ContentItem(
-            id: item.id,
-            kind: item.kind,
-            title: trimmedTitle,
-            summary: trimmedDescription,
-            sourceName: item.sourceName,
-            sourceCategory: item.sourceCategory,
-            authorName: item.authorName,
-            url: newURL,
-            publishedAt: item.publishedAt,
-            topics: Topic.allCases.filter { selectedTopics.contains($0) },
-            trendScore: item.trendScore,
-            isUserCreated: true,
-            updatedAt: .now)
-
-        if newURL != item.url {
-            appState.removeSavedItem(at: item.url)
-            appState.addSavedItem(updated)
-        }
-        else {
-            appState.updateSavedItem(updated)
-        }
+        viewModel.saveChanges(
+            title: title,
+            description: description,
+            link: link,
+            selectedTopics: selectedTopics)
     }
 }
 

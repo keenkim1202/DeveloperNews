@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SavedItemNoteComposerView: View {
-    private let appState: AppState
+    @State private var viewModel: SavedItemNoteComposerViewModel
     private let item: ContentItem
 
     @State private var description: String
@@ -12,7 +12,9 @@ struct SavedItemNoteComposerView: View {
         appState: AppState,
         item: ContentItem,
     ) {
-        self.appState = appState
+        _viewModel = State(initialValue: SavedItemNoteComposerViewModel(
+            appState: appState,
+            item: item))
         self.item = item
         _description = State(initialValue: item.summary)
     }
@@ -84,25 +86,7 @@ struct SavedItemNoteComposerView: View {
     }
 
     private func saveChanges() {
-        guard let saved = appState.savedItemSnapshots[item.url] else { return }
-        let trimmed = description.trimmingCharacters(in: .whitespacesAndNewlines)
-        let updated = ContentItem(
-            id: saved.id,
-            kind: saved.kind,
-            title: saved.title,
-            summary: trimmed,
-            sourceName: saved.sourceName,
-            sourceCategory: saved.sourceCategory,
-            authorName: saved.authorName,
-            url: saved.url,
-            publishedAt: saved.publishedAt,
-            topics: saved.topics,
-            trendScore: saved.trendScore,
-            thumbnailURL: saved.thumbnailURL,
-            engagement: saved.engagement,
-            isUserCreated: saved.isUserCreated,
-            updatedAt: .now)
-        appState.updateSavedItem(updated)
+        viewModel.saveChanges(description: description)
     }
 }
 
