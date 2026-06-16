@@ -15,6 +15,7 @@ final class AppState {
 
     private(set) var feedStore: FeedStore!
     private(set) var savedItemsStore: SavedItemsStore!
+    private(set) var readTracker: ReadTracker!
 
     let translator = ContentTranslator()
     let authService = AuthService()
@@ -27,8 +28,6 @@ final class AppState {
     var notificationsEnabled = false
     var disabledSourceCategories: Set<SourceCategory> = []
     var blockedUserIds: Set<String> = []
-    var readItemURLs: Set<String> = []
-    var readPostIds: Set<String> = []
     var toastMessage: String?
     var toastTrigger: Int = 0
     var hasSeenIntro = false
@@ -169,6 +168,11 @@ final class AppState {
                     saveSavedItems(snapshots: snapshots, timestamps: timestamps)
                 },
                 persistSortOrder: { [unowned self] order in saveSortOrder(order) }))
+        self.readTracker = ReadTracker(
+            inputs: ReadTracker.Inputs(
+                persistReadItems: { [unowned self] urls, postIds in
+                    saveReadItems(readItemURLs: urls, readPostIds: postIds)
+                }))
         loadPersistedState()
     }
 
@@ -291,7 +295,13 @@ final class AppState {
     }
 
 
-    private static let maxReadItems = 5000
+    var readItemURLs: Set<String> {
+        readTracker.readItemURLs
+    }
+
+    var readPostIds: Set<String> {
+        readTracker.readPostIds
+    }
 
     func setTranslationLanguage(_ code: String?) {
         translator.targetLanguageCode = code
@@ -299,40 +309,23 @@ final class AppState {
     }
 
     func markURLAsRead(_ urlString: String) {
-        readItemURLs.insert(HashUtil.shortHash(urlString))
-        trimReadItems()
-        saveReadItems()
+        readTracker.markURLAsRead(urlString)
     }
 
     func markAsRead(_ item: ContentItem) {
-        readItemURLs.insert(HashUtil.shortHash(item.url.absoluteString))
-        trimReadItems()
-        saveReadItems()
+        readTracker.markAsRead(item)
     }
 
     func isRead(_ item: ContentItem) -> Bool {
-        readItemURLs.contains(HashUtil.shortHash(item.url.absoluteString))
+        readTracker.isRead(item)
     }
 
     func markPostAsRead(_ postId: String) {
-        readPostIds.insert(HashUtil.shortHash(postId))
-        trimReadItems()
-        saveReadItems()
+        readTracker.markPostAsRead(postId)
     }
 
     func isPostRead(_ postId: String) -> Bool {
-        readPostIds.contains(HashUtil.shortHash(postId))
-    }
-
-    private func trimReadItems() {
-        if readItemURLs.count > Self.maxReadItems {
-            let excess = readItemURLs.count - Self.maxReadItems
-            readItemURLs = Set(readItemURLs.dropFirst(excess))
-        }
-        if readPostIds.count > Self.maxReadItems {
-            let excess = readPostIds.count - Self.maxReadItems
-            readPostIds = Set(readPostIds.dropFirst(excess))
-        }
+        readTracker.isPostRead(postId)
     }
 
     func blockUser(_ userId: String) {
@@ -464,8 +457,9 @@ final class AppState {
         notificationsEnabled = state.notificationsEnabled
         disabledSourceCategories = state.disabledSourceCategories
         blockedUserIds = state.blockedUserIds
-        readItemURLs = state.readItemURLs
-        readPostIds = state.readPostIds
+        readTracker.seedInitialState(
+            readItemURLs: state.readItemURLs,
+            readPostIds: state.readPostIds)
         translator.targetLanguageCode = state.translationLanguage
         hasSeenIntro = state.hasSeenIntro
         topStoryDismissedAt = state.topStoryDismissedAt
@@ -533,13 +527,14 @@ final class AppState {
         }
     }
 
-    private func saveReadItems() {
-        let urls = readItemURLs
-        let postIds = readPostIds
+    private func saveReadItems(
+        readItemURLs: Set<String>,
+        readPostIds: Set<String>,
+    ) {
         enqueuePersistence { store in
             await store.saveReadItems(
-                readItemURLs: urls,
-                readPostIds: postIds)
+                readItemURLs: readItemURLs,
+                readPostIds: readPostIds)
         }
     }
 
