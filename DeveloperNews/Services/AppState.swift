@@ -160,7 +160,11 @@ final class AppState {
                 focusedTopic: { [unowned self] in focusedTopic },
                 disabledSourceCategories: { [unowned self] in disabledSourceCategories },
                 savedItemSnapshots: { [unowned self] in savedItemSnapshots },
-                followingItems: { [unowned self] in followingItems },
+                followedUserIds: { [unowned self] in profileService.followedUserIds },
+                communityPosts: { [unowned self] in communityService.posts },
+                isFollowingSourceEnabled: { [unowned self] in
+                    sourceCategoryStore.isSourceCategoryEnabled(.following)
+                },
                 persistAllItems: { [unowned self] items in saveAllItems(items) },
                 persistLastUpdatedAt: { [unowned self] date in saveLastUpdatedAt(date) },
                 showSourcesUnavailableToast: { [unowned self] in showSourcesUnavailableToast() }))
@@ -193,32 +197,6 @@ final class AppState {
 
     var isOnboardingComplete: Bool {
         !selectedTopics.isEmpty
-    }
-
-    var followingItems: [ContentItem] {
-        guard sourceCategoryStore.isSourceCategoryEnabled(.following) else { return [] }
-        let followedIds = profileService.followedUserIds
-        guard !followedIds.isEmpty else { return [] }
-
-        return communityService.posts
-            .filter { followedIds.contains($0.authorId) }
-            .compactMap { post in
-                guard let url = URL(string: "devnews://community/\(post.id)") else {
-                    return nil
-                }
-                return ContentItem(
-                    id: UUID(uuidString: post.id) ?? UUID(),
-                    kind: .article,
-                    title: post.title,
-                    summary: post.description,
-                    sourceName: post.authorName,
-                    sourceCategory: .following,
-                    authorName: post.authorName,
-                    url: url,
-                    publishedAt: post.createdAt,
-                    topics: post.topics,
-                    trendScore: post.likeCount)
-            }
     }
 
     var savedItems: [ContentItem] {
