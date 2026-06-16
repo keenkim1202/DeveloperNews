@@ -119,9 +119,9 @@ final class CommunityPostDetailViewModel {
         }
     }
 
-    func submitReport(_ reason: String) async {
+    func submitReport(_ reason: ReportReason) async {
         guard let uid = currentUserId else { return }
-        await community.reportPost(currentPost, reporterId: uid, reason: reason)
+        await community.reportPost(currentPost, reporterId: uid, reason: reason.storageValue)
         if let message = community.errorMessage {
             appState.presentError(message)
         }
