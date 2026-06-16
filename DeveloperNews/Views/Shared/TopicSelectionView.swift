@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct TopicSelectionView: View {
-    private let appState: AppState
+    @State private var viewModel: TopicSelectionViewModel
 
     init(appState: AppState) {
-        self.appState = appState
+        _viewModel = State(initialValue: TopicSelectionViewModel(appState: appState))
     }
 
     var body: some View {
@@ -23,9 +23,9 @@ struct TopicSelectionView: View {
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text("\(appState.selectedTopics.count) / \(AppState.maxSelectedTopics)")
+                        Text("\(viewModel.selectedCount) / \(viewModel.maxSelectedTopics)")
                             .font(.subheadline.monospacedDigit().weight(.semibold))
-                            .foregroundStyle(appState.selectedTopics.isEmpty ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.accentColor))
+                            .foregroundStyle(viewModel.selectedTopics.isEmpty ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.accentColor))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background {
@@ -36,8 +36,8 @@ struct TopicSelectionView: View {
 
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         ForEach(Topic.allCases) { topic in
-                            let isSelected = appState.selectedTopics.contains(topic)
-                            let isDisabled = !isSelected && !appState.canSelectMoreTopics
+                            let isSelected = viewModel.selectedTopics.contains(topic)
+                            let isDisabled = !isSelected && !viewModel.canSelectMore
 
                             Button(action: { toggleTopic(topic) }) {
                                 HStack {
@@ -59,7 +59,7 @@ struct TopicSelectionView: View {
                         }
                     }
 
-                    Text("Pick 1 to \(AppState.maxSelectedTopics) topics to continue.")
+                    Text("Pick 1 to \(viewModel.maxSelectedTopics) topics to continue.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -70,7 +70,7 @@ struct TopicSelectionView: View {
     }
 
     private func toggleTopic(_ topic: Topic) {
-        appState.toggleTopic(topic)
+        viewModel.toggleTopic(topic)
     }
 }
 
