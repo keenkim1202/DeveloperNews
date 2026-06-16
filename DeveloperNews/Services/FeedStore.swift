@@ -32,7 +32,9 @@ final class FeedStore {
         var focusedTopic: @MainActor () -> Topic?
         var disabledSourceCategories: @MainActor () -> Set<SourceCategory>
         var savedItemSnapshots: @MainActor () -> [URL: ContentItem]
-        var followingItems: @MainActor () -> [ContentItem]
+        var followedUserIds: @MainActor () -> Set<String>
+        var communityPosts: @MainActor () -> [CommunityPost]
+        var isFollowingSourceEnabled: @MainActor () -> Bool
         var persistAllItems: @MainActor ([ContentItem]) -> Void
         var persistLastUpdatedAt: @MainActor (Date?) -> Void
         var showSourcesUnavailableToast: @MainActor () -> Void
@@ -57,7 +59,29 @@ final class FeedStore {
     // MARK: - Personalization
 
     var followingItems: [ContentItem] {
-        inputs.followingItems()
+        guard inputs.isFollowingSourceEnabled() else { return [] }
+        let followedIds = inputs.followedUserIds()
+        guard !followedIds.isEmpty else { return [] }
+
+        return inputs.communityPosts()
+            .filter { followedIds.contains($0.authorId) }
+            .compactMap { post in
+                guard let url = URL(string: "devnews://community/\(post.id)") else {
+                    return nil
+                }
+                return ContentItem(
+                    id: UUID(uuidString: post.id) ?? UUID(),
+                    kind: .article,
+                    title: post.title,
+                    summary: post.description,
+                    sourceName: post.authorName,
+                    sourceCategory: .following,
+                    authorName: post.authorName,
+                    url: url,
+                    publishedAt: post.createdAt,
+                    topics: post.topics,
+                    trendScore: post.likeCount)
+            }
     }
 
     var personalizedItems: [ContentItem] {
