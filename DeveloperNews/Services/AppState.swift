@@ -18,10 +18,10 @@ final class AppState {
     private(set) var readTracker: ReadTracker!
     private(set) var sourceCategoryStore: SourceCategoryStore!
 
-    let translator = ContentTranslator()
-    let authService = AuthService()
-    let profileService = ProfileService()
-    let communityService = CommunityService()
+    let translator: any Translating
+    let authService: any AuthServicing
+    let profileService: any ProfileServicing
+    let communityService: any CommunityServicing
 
     var selectedTopics: Set<Topic> = []
     var focusedTopic: Topic?
@@ -150,7 +150,17 @@ final class AppState {
         savedItemsStore.isSaved(item)
     }
 
-    init(contentSourceClient: (any ContentSourceClient)? = nil) {
+    init(
+        translator: any Translating,
+        authService: any AuthServicing,
+        profileService: any ProfileServicing,
+        communityService: any CommunityServicing,
+        contentSourceClient: (any ContentSourceClient)? = nil,
+    ) {
+        self.translator = translator
+        self.authService = authService
+        self.profileService = profileService
+        self.communityService = communityService
         let client = contentSourceClient ?? Self.defaultContentSourceClient()
         self.contentSourceClient = client
         self.feedStore = FeedStore(
@@ -160,8 +170,8 @@ final class AppState {
                 focusedTopic: { [unowned self] in focusedTopic },
                 disabledSourceCategories: { [unowned self] in disabledSourceCategories },
                 savedItemSnapshots: { [unowned self] in savedItemSnapshots },
-                followedUserIds: { [unowned self] in profileService.followedUserIds },
-                communityPosts: { [unowned self] in communityService.posts },
+                followedUserIds: { [profileService] in profileService.followedUserIds },
+                communityPosts: { [communityService] in communityService.posts },
                 isFollowingSourceEnabled: { [unowned self] in
                     sourceCategoryStore.isSourceCategoryEnabled(.following)
                 },

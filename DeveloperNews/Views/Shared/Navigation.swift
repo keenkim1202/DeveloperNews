@@ -67,7 +67,7 @@ private enum FeedItemRoute {
 
     static func forFeedItem(
         _ item: ContentItem,
-        communityService: CommunityService,
+        communityService: any CommunityServicing,
     ) -> FeedItemRoute {
         if item.sourceCategory == .following,
            let postId = item.url.pathComponents.last,
@@ -85,7 +85,7 @@ extension HomeTabDestination {
     /// Resolves a feed `ContentItem` to the matching Home-tab detail destination.
     static func forFeedItem(
         _ item: ContentItem,
-        communityService: CommunityService,
+        communityService: any CommunityServicing,
     ) -> HomeTabDestination {
         switch FeedItemRoute.forFeedItem(item, communityService: communityService) {
         case let .communityPost(postId):
@@ -102,7 +102,7 @@ extension SavedTabDestination {
     /// Resolves a feed `ContentItem` to the matching Saved-tab detail destination.
     static func forFeedItem(
         _ item: ContentItem,
-        communityService: CommunityService,
+        communityService: any CommunityServicing,
     ) -> SavedTabDestination {
         switch FeedItemRoute.forFeedItem(item, communityService: communityService) {
         case let .communityPost(postId):

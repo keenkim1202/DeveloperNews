@@ -5,7 +5,7 @@ import Observation
 @MainActor
 final class PasswordResetViewModel {
     private let appState: AppState
-    private var authService: AuthService {
+    private var authService: any AuthServicing {
         appState.authService
     }
 
