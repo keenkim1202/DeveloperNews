@@ -47,7 +47,9 @@ struct RedditSourceClient: ContentSourceClient {
     }
 
     private func fetchItems(for feed: RedditFeedDefinition) async throws -> [ContentItem] {
-        let url = URL(string: "https://www.reddit.com/r/\(feed.subreddit).json")!
+        guard let url = URL(string: "https://www.reddit.com/r/\(feed.subreddit).json") else {
+            throw URLError(.badURL)
+        }
         var request = URLRequest(url: url)
         request.setValue(AppIdentity.userAgent, forHTTPHeaderField: "User-Agent")
 
