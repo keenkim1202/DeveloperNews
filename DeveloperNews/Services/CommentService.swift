@@ -83,6 +83,7 @@ final class CommentService {
     }
 
     func deleteComment(_ comment: CommunityComment) async {
+        errorMessage = nil
         do {
             try await commentsRef(comment.postId).document(comment.id).delete()
 

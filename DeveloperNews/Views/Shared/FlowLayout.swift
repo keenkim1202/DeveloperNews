@@ -20,7 +20,11 @@ struct FlowLayout: Layout {
             total += row.height
         }
         let spacingHeight = spacing * CGFloat(max(0, rows.count - 1))
-        return CGSize(width: maxWidth, height: height + spacingHeight)
+        // When the proposed width is unbounded, fall back to the widest row's
+        // content width instead of returning an infinite size.
+        let contentWidth = rows.map(\.width).max() ?? 0
+        let width = maxWidth.isFinite ? maxWidth : contentWidth
+        return CGSize(width: width, height: height + spacingHeight)
     }
 
     func placeSubviews(
@@ -56,6 +60,7 @@ struct FlowLayout: Layout {
         for index in subviews.indices {
             let size = subviews[index].sizeThatFits(.unspecified)
             if !current.indices.isEmpty, x + size.width > maxWidth {
+                current.width = x - spacing
                 rows.append(current)
                 current = Row()
                 x = 0
@@ -66,6 +71,7 @@ struct FlowLayout: Layout {
         }
 
         if !current.indices.isEmpty {
+            current.width = x - spacing
             rows.append(current)
         }
         return rows
@@ -74,5 +80,6 @@ struct FlowLayout: Layout {
     private struct Row {
         var indices: [Int] = []
         var height: CGFloat = 0
+        var width: CGFloat = 0
     }
 }
