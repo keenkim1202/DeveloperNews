@@ -97,6 +97,13 @@ struct SavedView: View {
         SavedTabDestination.forFeedItem(item, communityService: appState.communityService)
     }
 
+    private func followingPost(for item: ContentItem) -> CommunityPost? {
+        guard item.sourceCategory == .following,
+              let postId = item.url.pathComponents.last
+        else { return nil }
+        return appState.communityService.posts.first { $0.id == postId }
+    }
+
     private func navigateToProfile(_ author: AuthorInfo) {
         navigation(.saved(.userProfile(author)))
     }
@@ -129,7 +136,11 @@ struct SavedView: View {
         }
         else {
             FeedSectionListView(
-                appState: appState,
+                translator: appState.translator,
+                lastUpdatedAt: appState.lastUpdatedAt,
+                isRead: { appState.isRead($0) },
+                followingPost: followingPost(for:),
+                authorEmoji: { appState.communityService.authorEmoji(for: $0) },
                 articleItems: viewModel.matchingArticleItems,
                 discussionItems: viewModel.matchingDiscussionItems,
                 destinationFor: destinationFor,
