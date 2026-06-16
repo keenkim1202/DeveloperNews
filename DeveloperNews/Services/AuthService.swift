@@ -5,13 +5,15 @@ import Foundation
 import GoogleSignIn
 
 @Observable
+@MainActor
 final class AuthService {
     private(set) var user: FirebaseAuth.User?
     private(set) var isLoading = false
     private(set) var errorMessage: String?
 
     private var currentNonce: String?
-    private var authStateHandle: AuthStateDidChangeListenerHandle?
+    @ObservationIgnored
+    nonisolated(unsafe) private var authStateHandle: AuthStateDidChangeListenerHandle?
 
     var isSignedIn: Bool {
         user != nil
@@ -32,7 +34,9 @@ final class AuthService {
 
     init() {
         authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
-            self?.user = user
+            Task { @MainActor [weak self] in
+                self?.user = user
+            }
         }
     }
 

@@ -2,7 +2,7 @@ import FirebaseAuth
 import FirebaseFirestore
 import Foundation
 
-struct CommunityPost: Identifiable, Hashable {
+struct CommunityPost: Identifiable, Hashable, Sendable {
     let id: String
     let authorId: String
     let authorName: String
@@ -27,6 +27,7 @@ struct CommunityPost: Identifiable, Hashable {
 }
 
 @Observable
+@MainActor
 final class CommunityService {
     private(set) var posts: [CommunityPost] = []
     private(set) var isLoading = false
@@ -54,24 +55,24 @@ final class CommunityService {
             .order(by: "createdAt", descending: true)
             .limit(to: 100)
             .addSnapshotListener { [weak self] snapshot, error in
-                guard let self else { return }
-                self.isLoading = false
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    self.isLoading = false
 
-                if let error {
-                    self.errorMessage = error.localizedDescription
-                    return
-                }
+                    if let error {
+                        self.errorMessage = error.localizedDescription
+                        return
+                    }
 
-                guard let documents = snapshot?.documents else {
-                    self.posts = []
-                    return
-                }
+                    guard let documents = snapshot?.documents else {
+                        self.posts = []
+                        return
+                    }
 
-                self.posts = documents.compactMap { doc in
-                    Self.parsePost(doc)
-                }
-                Task { [weak self] in
-                    await self?.fetchAuthorEmojis()
+                    self.posts = documents.compactMap { doc in
+                        Self.parsePost(doc)
+                    }
+                    await self.fetchAuthorEmojis()
                 }
             }
     }

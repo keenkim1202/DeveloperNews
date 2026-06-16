@@ -4,13 +4,13 @@ enum AppIdentity {
     static let userAgent = "DeveloperNews/1.0 (https://github.com/keenkim1202/DeveloperNews)"
 }
 
-struct SourceFetchResult {
+struct SourceFetchResult: Sendable {
     let items: [ContentItem]
     let failedSourceNames: [String]
     let totalSourceCount: Int
 }
 
-protocol ContentSourceClient {
+protocol ContentSourceClient: Sendable {
     func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem]
     func fetchItemsWithStatus(selectedTopics: Set<Topic>) async -> SourceFetchResult
 }
