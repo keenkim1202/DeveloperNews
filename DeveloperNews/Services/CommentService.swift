@@ -82,13 +82,35 @@ final class CommentService {
         do {
             try await commentsRef(comment.postId).document(comment.id).delete()
 
-            let postRef = db.collection("posts").document(comment.postId)
-            let snapshot = try await postRef.getDocument()
-            let current = snapshot.data()?["commentCount"] as? Int ?? 0
-            try await postRef.updateData(["commentCount": max(0, current - 1)])
+            // Atomic, clamped decrement. Security rules reject commentCount < 0,
+            // so we can't use FieldValue.increment(-1) on a 0-count post; a
+            // transaction lets us read-modify-write safely under contention.
+            try await Self.decrementCommentCount(db, postId: comment.postId)
         }
         catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    // nonisolated so the transaction closure captures only the local Firestore
+    // handle and post id rather than MainActor-isolated `self`.
+    nonisolated private static func decrementCommentCount(
+        _ db: Firestore,
+        postId: String,
+    ) async throws {
+        let postRef = db.collection("posts").document(postId)
+        _ = try await db.runTransaction { transaction, errorPointer in
+            let snapshot: DocumentSnapshot
+            do {
+                snapshot = try transaction.getDocument(postRef)
+            }
+            catch let error as NSError {
+                errorPointer?.pointee = error
+                return nil
+            }
+            let current = snapshot.data()?["commentCount"] as? Int ?? 0
+            transaction.updateData(["commentCount": max(0, current - 1)], forDocument: postRef)
+            return nil
         }
     }
 
