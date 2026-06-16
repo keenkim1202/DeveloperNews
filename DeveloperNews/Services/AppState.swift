@@ -14,6 +14,7 @@ final class AppState {
     private var persistenceChain: Task<Void, Never> = Task {}
 
     private(set) var feedStore: FeedStore!
+    private(set) var savedItemsStore: SavedItemsStore!
 
     let translator = ContentTranslator()
     let authService = AuthService()
@@ -23,9 +24,6 @@ final class AppState {
     var selectedTopics: Set<Topic> = []
     var focusedTopic: Topic?
     var currentTab: AppTab = .home
-    var savedItemSnapshots: [URL: ContentItem] = [:]
-    var savedItemTimestampsByURL: [URL: Date] = [:]
-    var savedSortOrder: SavedSortOrder = .recentlySaved
     var notificationsEnabled = false
     var disabledSourceCategories: Set<SourceCategory> = []
     var blockedUserIds: Set<String> = []
@@ -47,13 +45,24 @@ final class AppState {
         return Date().timeIntervalSince(topStoryDismissedAt) < Self.topStoryDismissalWindow
     }
 
+    var savedItemSnapshots: [URL: ContentItem] {
+        savedItemsStore.savedItemSnapshots
+    }
+
+    var savedItemTimestampsByURL: [URL: Date] {
+        savedItemsStore.savedItemTimestampsByURL
+    }
+
+    var savedSortOrder: SavedSortOrder {
+        savedItemsStore.savedSortOrder
+    }
+
     var savedURLs: Set<URL> {
-        Set(savedItemSnapshots.keys)
+        savedItemsStore.savedURLs
     }
 
     var savedItemIDs: Set<ContentItem.ID> {
-        let urls = savedURLs
-        return Set(allItems.filter { urls.contains($0.url) }.map(\.id))
+        savedItemsStore.savedItemIDs
     }
 
     // MARK: - Feed pass-throughs
@@ -135,7 +144,7 @@ final class AppState {
     }
 
     func isSaved(_ item: ContentItem) -> Bool {
-        savedItemSnapshots[item.url] != nil
+        savedItemsStore.isSaved(item)
     }
 
     init(contentSourceClient: (any ContentSourceClient)? = nil) {
@@ -152,6 +161,14 @@ final class AppState {
                 persistAllItems: { [unowned self] items in saveAllItems(items) },
                 persistLastUpdatedAt: { [unowned self] date in saveLastUpdatedAt(date) },
                 showSourcesUnavailableToast: { [unowned self] in showSourcesUnavailableToast() }))
+        self.savedItemsStore = SavedItemsStore(
+            inputs: SavedItemsStore.Inputs(
+                allItems: { [unowned self] in allItems },
+                personalizedItems: { [unowned self] in personalizedItems },
+                persistSavedItems: { [unowned self] snapshots, timestamps in
+                    saveSavedItems(snapshots: snapshots, timestamps: timestamps)
+                },
+                persistSortOrder: { [unowned self] order in saveSortOrder(order) }))
         loadPersistedState()
     }
 
@@ -191,22 +208,7 @@ final class AppState {
     }
 
     var savedItems: [ContentItem] {
-        let items = Array(savedItemSnapshots.values)
-        switch savedSortOrder {
-        case .recentlySaved:
-            return items.sorted { lhs, rhs in
-                let lhsDate = savedItemTimestampsByURL[lhs.url] ?? .distantPast
-                let rhsDate = savedItemTimestampsByURL[rhs.url] ?? .distantPast
-                return lhsDate > rhsDate
-            }
-        case .trending:
-            return items.sorted { lhs, rhs in
-                if lhs.trendScore == rhs.trendScore {
-                    return lhs.publishedAt > rhs.publishedAt
-                }
-                return lhs.trendScore > rhs.trendScore
-            }
-        }
+        savedItemsStore.savedItems
     }
 
     func isSourceCategoryEnabled(_ category: SourceCategory) -> Bool {
@@ -228,21 +230,15 @@ final class AppState {
     }
 
     var savedArticleItems: [ContentItem] {
-        savedItems.filter { $0.kind == .article }
+        savedItemsStore.savedArticleItems
     }
 
     var savedDiscussionItems: [ContentItem] {
-        savedItems.filter { $0.kind == .discussion }
+        savedItemsStore.savedDiscussionItems
     }
 
-    /// Looks up a `ContentItem` by url across saved items and personalized feed.
-    /// URL is the stable identifier across app restarts (unlike `id`, which is regenerated per fetch).
-    /// Returns nil if the item has been removed from both sources.
     func resolveItem(url: URL) -> ContentItem? {
-        if let snapshot = savedItemSnapshots[url] {
-            return snapshot
-        }
-        return personalizedItems.first { $0.url == url }
+        savedItemsStore.resolveItem(url: url)
     }
 
     var canSelectMoreTopics: Bool {
@@ -283,21 +279,15 @@ final class AppState {
     }
 
     func addSavedItem(_ item: ContentItem) {
-        savedItemSnapshots[item.url] = item
-        savedItemTimestampsByURL[item.url] = .now
-        saveSavedItems()
+        savedItemsStore.addSavedItem(item)
     }
 
     func updateSavedItem(_ item: ContentItem) {
-        guard savedItemSnapshots[item.url] != nil else { return }
-        savedItemSnapshots[item.url] = item
-        saveSavedItems()
+        savedItemsStore.updateSavedItem(item)
     }
 
     func removeSavedItem(at url: URL) {
-        savedItemSnapshots[url] = nil
-        savedItemTimestampsByURL[url] = nil
-        saveSavedItems()
+        savedItemsStore.removeSavedItem(at: url)
     }
 
 
@@ -387,24 +377,11 @@ final class AppState {
     }
 
     func toggleSaved(_ item: ContentItem) {
-        if savedItemSnapshots[item.url] != nil {
-            savedItemSnapshots[item.url] = nil
-            savedItemTimestampsByURL[item.url] = nil
-        }
-        else {
-            savedItemSnapshots[item.url] = item
-            savedItemTimestampsByURL[item.url] = .now
-        }
-
-        saveSavedItems()
+        savedItemsStore.toggleSaved(item)
     }
 
     func setSavedSortOrder(_ order: SavedSortOrder) {
-        guard savedSortOrder != order else {
-            return
-        }
-        savedSortOrder = order
-        saveSortOrder()
+        savedItemsStore.setSavedSortOrder(order)
     }
 
     func markIntroSeen() {
@@ -480,9 +457,10 @@ final class AppState {
     private func loadPersistedState() {
         let state = persistenceStore.load()
         selectedTopics = state.selectedTopics
-        savedItemSnapshots = state.savedItemSnapshots
-        savedItemTimestampsByURL = state.savedItemTimestampsByURL
-        savedSortOrder = state.savedSortOrder
+        savedItemsStore.seedInitialState(
+            snapshots: state.savedItemSnapshots,
+            timestamps: state.savedItemTimestampsByURL,
+            sortOrder: state.savedSortOrder)
         notificationsEnabled = state.notificationsEnabled
         disabledSourceCategories = state.disabledSourceCategories
         blockedUserIds = state.blockedUserIds
@@ -517,9 +495,10 @@ final class AppState {
         }
     }
 
-    private func saveSavedItems() {
-        let snapshots = savedItemSnapshots
-        let timestamps = savedItemTimestampsByURL
+    private func saveSavedItems(
+        snapshots: [URL: ContentItem],
+        timestamps: [URL: Date],
+    ) {
         enqueuePersistence { store in
             await store.saveSavedItems(
                 snapshots: snapshots,
@@ -527,8 +506,7 @@ final class AppState {
         }
     }
 
-    private func saveSortOrder() {
-        let order = savedSortOrder
+    private func saveSortOrder(_ order: SavedSortOrder) {
         enqueuePersistence { store in
             await store.saveSortOrder(order)
         }
