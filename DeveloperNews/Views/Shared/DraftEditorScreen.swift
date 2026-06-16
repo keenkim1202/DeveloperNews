@@ -67,24 +67,12 @@ struct DraftEditorScreen: View {
                     Text(.saveDescription)
                 }
                 Section {
-                    ForEach(Topic.allCases) { topic in
-                        Button(action: { toggleTopic(topic) }) {
-                            HStack {
-                                Label {
-                                    Text(topic.title)
-                                } icon: {
-                                    Image(systemName: topic.symbolName)
-                                }
-                                Spacer()
-                                if selectedTopics.wrappedValue.contains(topic) {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.tint)
-                                }
-                            }
-                            .contentShape(Rectangle())
+                    FlowLayout(spacing: 8) {
+                        ForEach(Topic.allCases) { topic in
+                            topicTag(topic)
                         }
-                        .buttonStyle(.plain)
                     }
+                    .padding(.vertical, 4)
                 } header: {
                     Text(.saveTopic)
                 }
@@ -102,6 +90,25 @@ struct DraftEditorScreen: View {
                 }
             }
         }
+    }
+
+    private func topicTag(_ topic: Topic) -> some View {
+        let isSelected = selectedTopics.wrappedValue.contains(topic)
+        return Button(action: { toggleTopic(topic) }) {
+            HStack(spacing: 4) {
+                Image(systemName: topic.symbolName)
+                Text(topic.title)
+            }
+            .font(.subheadline.weight(.medium))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background {
+                isSelected ? Color.accentColor.opacity(0.18) : Color(.secondarySystemBackground)
+            }
+            .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     private func toggleTopic(_ topic: Topic) {

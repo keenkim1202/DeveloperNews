@@ -190,6 +190,8 @@ struct GitHubTrendingSourceClient: ContentSourceClient {
                 "topic:\"developer-tools\" stars:>20 \(recency)",
                 "topic:cli stars:>20 \(recency)",
             ]
+        case .etc:
+            return []
         }
     }
 

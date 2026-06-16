@@ -1080,6 +1080,91 @@
         }
       }
     },
+    "community.commentPlaceholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a comment"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "댓글을 입력하세요"
+          }
+        }
+      }
+    },
+    "community.comments" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comments"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "댓글"
+          }
+        }
+      }
+    },
+    "community.commentsEmpty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No comments yet. Be the first to comment."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아직 댓글이 없어요. 첫 댓글을 남겨보세요."
+          }
+        }
+      }
+    },
+    "community.commentSubmit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Post"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "등록"
+          }
+        }
+      }
+    },
+    "community.deleteCommentConfirm" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this comment?"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 댓글을 삭제할까요?"
+          }
+        }
+      }
+    },
     "community.blockConfirmAction" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3423,6 +3508,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "백엔드"
+          }
+        }
+      }
+    },
+    "topic.etc" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기타"
           }
         }
       }

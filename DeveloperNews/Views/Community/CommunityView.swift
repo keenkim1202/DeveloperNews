@@ -239,11 +239,18 @@ struct CommunityPostRow: View {
                 }
             }
 
-            HStack(spacing: 4) {
-                Image(systemName: isLiked ? "heart.fill" : "heart")
-                    .foregroundStyle(isLiked ? .red : .secondary)
-                Text("\(post.likeCount)")
-                    .foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                HStack(spacing: 4) {
+                    Image(systemName: isLiked ? "heart.fill" : "heart")
+                        .foregroundStyle(isLiked ? .red : .secondary)
+                    Text("\(post.likeCount)")
+                        .foregroundStyle(.secondary)
+                }
+                HStack(spacing: 4) {
+                    Image(systemName: "bubble.right")
+                    Text("\(post.commentCount)")
+                }
+                .foregroundStyle(.secondary)
             }
             .font(.caption)
         }

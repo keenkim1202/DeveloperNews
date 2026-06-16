@@ -12,6 +12,7 @@ struct CommunityPost: Identifiable, Hashable, Sendable {
     let topics: [Topic]
     let likeCount: Int
     let likedBy: Set<String>
+    let commentCount: Int
     let createdAt: Date
     let updatedAt: Date?
 
@@ -116,6 +117,7 @@ final class CommunityService {
             "topics": topics.map(\.rawValue),
             "likeCount": 0,
             "likedBy": [String](),
+            "commentCount": 0,
             "createdAt": FieldValue.serverTimestamp(),
         ]
 
@@ -250,6 +252,18 @@ final class CommunityService {
         for doc in submittedReports.documents {
             try await doc.reference.delete()
         }
+
+        let ownComments = try await db.collectionGroup("comments")
+            .whereField("authorId", isEqualTo: uid)
+            .getDocuments()
+        for doc in ownComments.documents {
+            try await doc.reference.delete()
+            if let postRef = doc.reference.parent.parent {
+                try await postRef.updateData([
+                    "commentCount": FieldValue.increment(Int64(-1)),
+                ])
+            }
+        }
     }
 
     func toggleLike(
@@ -296,8 +310,9 @@ final class CommunityService {
             description: data["description"] as? String ?? "",
             link: (data["link"] as? String).flatMap { $0.isEmpty ? nil : $0 },
             topics: topics,
-            likeCount: data["likeCount"] as? Int ?? 0,
+            likeCount: max(0, data["likeCount"] as? Int ?? 0),
             likedBy: Set(likedByArray),
+            commentCount: max(0, data["commentCount"] as? Int ?? 0),
             createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
             updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue())
     }
