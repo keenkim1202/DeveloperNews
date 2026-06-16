@@ -23,6 +23,13 @@
 			remoteGlobalIDString = 1C8320F32F8C1EF200C9DE50;
 			remoteInfo = ShareExtension;
 		};
+		1CDA0000000000000000A0X0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1C831E612F8A7E2400C9DE50 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1C831E682F8A7E2400C9DE50;
+			remoteInfo = DeveloperNews;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -42,6 +49,7 @@
 /* Begin PBXFileReference section */
 		1C831E692F8A7E2400C9DE50 /* DeveloperNews.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeveloperNews.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C8320F42F8C1EF200C9DE50 /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		1CDA0000000000000000A0P0 /* DeveloperNewsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DeveloperNewsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -68,6 +76,11 @@
 			path = ShareExtension;
 			sourceTree = "<group>";
 		};
+		1CDA0000000000000000A0G0 /* DeveloperNewsTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DeveloperNewsTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,6 +97,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		1C8320F12F8C1EF200C9DE50 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1CDA0000000000000000A0F0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -107,6 +127,7 @@
 			children = (
 				1C831E692F8A7E2400C9DE50 /* DeveloperNews.app */,
 				1C8320F42F8C1EF200C9DE50 /* ShareExtension.appex */,
+				1CDA0000000000000000A0P0 /* DeveloperNewsTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -165,6 +186,29 @@
 			productReference = 1C8320F42F8C1EF200C9DE50 /* ShareExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		1CDA0000000000000000A0T1 /* DeveloperNewsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1CDA0000000000000000A0C0 /* Build configuration list for PBXNativeTarget "DeveloperNewsTests" */;
+			buildPhases = (
+				1CDA0000000000000000A0S0 /* Sources */,
+				1CDA0000000000000000A0F0 /* Frameworks */,
+				1CDA0000000000000000A0R0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				1CDA0000000000000000A0D0 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				1CDA0000000000000000A0G0 /* DeveloperNewsTests */,
+			);
+			name = DeveloperNewsTests;
+			packageProductDependencies = (
+			);
+			productName = DeveloperNewsTests;
+			productReference = 1CDA0000000000000000A0P0 /* DeveloperNewsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -180,6 +224,10 @@
 					};
 					1C8320F32F8C1EF200C9DE50 = {
 						CreatedOnToolsVersion = 26.0;
+					};
+					1CDA0000000000000000A0T1 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = 1C831E682F8A7E2400C9DE50;
 					};
 				};
 			};
@@ -204,6 +252,7 @@
 			targets = (
 				1C831E682F8A7E2400C9DE50 /* DeveloperNews */,
 				1C8320F32F8C1EF200C9DE50 /* ShareExtension */,
+				1CDA0000000000000000A0T1 /* DeveloperNewsTests */,
 			);
 		};
 /* End PBXProject section */
@@ -217,6 +266,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		1C8320F22F8C1EF200C9DE50 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1CDA0000000000000000A0R0 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -240,6 +296,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		1CDA0000000000000000A0S0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -247,6 +310,11 @@
 			isa = PBXTargetDependency;
 			target = 1C8320F32F8C1EF200C9DE50 /* ShareExtension */;
 			targetProxy = 1C8320FC2F8C1EF200C9DE50 /* PBXContainerItemProxy */;
+		};
+		1CDA0000000000000000A0D0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1C831E682F8A7E2400C9DE50 /* DeveloperNews */;
+			targetProxy = 1CDA0000000000000000A0X0 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -504,6 +572,50 @@
 			};
 			name = Release;
 		};
+		1CDA0000000000000000A0C1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5LZNHGFB8C;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "keen-onit.DeveloperNewsTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DeveloperNews.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DeveloperNews";
+			};
+			name = Debug;
+		};
+		1CDA0000000000000000A0C2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5LZNHGFB8C;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "keen-onit.DeveloperNewsTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = nonisolated;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DeveloperNews.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DeveloperNews";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -530,6 +642,15 @@
 			buildConfigurations = (
 				1C8321012F8C1EF200C9DE50 /* Debug */,
 				1C8321022F8C1EF200C9DE50 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1CDA0000000000000000A0C0 /* Build configuration list for PBXNativeTarget "DeveloperNewsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1CDA0000000000000000A0C1 /* Debug */,
+				1CDA0000000000000000A0C2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

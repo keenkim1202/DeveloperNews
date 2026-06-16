@@ -5,10 +5,14 @@ import SwiftUI
 
 @main
 struct DeveloperNewsApp: App {
-    @State private var appState: AppState
+    @State private var appState: AppState?
 
     init() {
-        FirebaseApp.configure()
+        guard !Self.isRunningUnitTests else {
+            return
+        }
+
+        Self.configureFirebaseIfAvailable()
         Self.configureSharedImageCache()
         Self.registerCustomFonts()
 
@@ -26,8 +30,30 @@ struct DeveloperNewsApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView(appState: appState)
+            if let appState {
+                ContentView(appState: appState)
+            }
         }
+    }
+
+    // True when the process is hosting an XCTest bundle. The unit-test target
+    // uses this app as its TEST_HOST, so the host must launch without standing
+    // up the real Firebase-backed services that tests do not need.
+    private static var isRunningUnitTests: Bool {
+        NSClassFromString("XCTestCase") != nil
+    }
+
+    // Configures Firebase only when a GoogleService-Info.plist is bundled. The
+    // plist is not committed (it carries project secrets), so skipping
+    // configuration when it is absent keeps the host from crashing at startup
+    // while a real build still configures normally.
+    private static func configureFirebaseIfAvailable() {
+        guard let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+              let options = FirebaseOptions(contentsOfFile: path)
+        else {
+            return
+        }
+        FirebaseApp.configure(options: options)
     }
 
     private static func configureSharedImageCache() {
