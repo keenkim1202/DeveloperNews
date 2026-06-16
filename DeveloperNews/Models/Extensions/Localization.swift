@@ -14,6 +14,7 @@ extension Topic: LocalizedTitle {
         case .ai: .topicAi
         case .security: .topicSecurity
         case .product: .topicProduct
+        case .etc: .topicEtc
         }
     }
 }

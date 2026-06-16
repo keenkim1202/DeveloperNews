@@ -11,6 +11,12 @@ struct CommunityPostDetailView: View {
     @State private var showOtherReasonInput = false
     @State private var otherReasonText = ""
     @State private var alreadyReported = false
+    @State private var commentService = CommentService()
+    @State private var commentText = ""
+    @State private var shouldScrollToLatestComment = false
+    @State private var commentPendingDeletion: CommunityComment?
+    @State private var showDeleteCommentConfirm = false
+    @FocusState private var commentFieldFocused: Bool
 
     @Environment(\.dismiss) private var dismiss
 
@@ -46,11 +52,20 @@ struct CommunityPostDetailView: View {
         community.posts.first { $0.id == post.id } ?? post
     }
 
+    private var visibleComments: [CommunityComment] {
+        commentService.comments.filter { !appState.blockedUserIds.contains($0.authorId) }
+    }
+
+    private var canSubmitComment: Bool {
+        currentUserId != nil && !commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text(currentPost.title)
-                    .font(.title2.bold())
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(currentPost.title)
+                        .font(.title2.bold())
                 HStack(spacing: 8) {
                     NavigationLink(
                         value: CommunityTabDestination.userProfile(
@@ -155,7 +170,7 @@ struct CommunityPostDetailView: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.tertiary)
-                HStack {
+                HStack(spacing: 16) {
                     Button(action: toggleLike) {
                         HStack(spacing: 4) {
                             Image(systemName: isLiked ? "heart.fill" : "heart")
@@ -166,6 +181,12 @@ struct CommunityPostDetailView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(currentUserId == nil)
+                    HStack(spacing: 4) {
+                        Image(systemName: "bubble.right")
+                        Text("\(currentPost.commentCount)")
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                     Spacer()
                 }
 
@@ -192,8 +213,24 @@ struct CommunityPostDetailView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+
+                Divider()
+                commentsSection
             }
             .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .refreshable(action: refresh)
+        .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
+        .keenOnChange(of: visibleComments.count) {
+            scrollToLatestComment(proxy)
+        }
+        .safeAreaInset(edge: .bottom) {
+            if currentUserId != nil {
+                commentInputBar
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
@@ -208,6 +245,7 @@ struct CommunityPostDetailView: View {
             }
         }
         .onAppear(perform: onAppear)
+        .onDisappear(perform: onDisappear)
         .alert(.communityReportReasonOtherTitle, isPresented: $showOtherReasonInput) {
             TextField(.communityReportReasonOtherPlaceholder, text: $otherReasonText)
                 .keenOnChange(of: otherReasonText, perform: onOtherReasonTextChange)
@@ -218,10 +256,24 @@ struct CommunityPostDetailView: View {
         } message: {
             Text(.communityReportReasonOtherMessage)
         }
-        .dialog(
+        .alert(
             .communityDeleteConfirm,
-            isPresented: $showDeleteConfirm,
-            buttons: communityDeleteConfirmDialogView)
+            isPresented: $showDeleteConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button(
+                "Delete",
+                role: .destructive,
+                action: deletePost)
+        }
+        .alert(
+            .communityDeleteCommentConfirm,
+            isPresented: $showDeleteCommentConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button(
+                "Delete",
+                role: .destructive,
+                action: deleteConfirmedComment)
+        }
         .dialog(
             .communityReportConfirmTitle,
             isPresented: $showReportConfirm,
@@ -236,13 +288,7 @@ struct CommunityPostDetailView: View {
                 appState: appState,
                 post: currentPost)
         }
-    }
-
-    private var communityDeleteConfirmDialogView: some View {
-        Button(
-            "Delete",
-            role: .destructive,
-            action: deletePost)
+        }
     }
 
     @ViewBuilder
@@ -259,12 +305,151 @@ struct CommunityPostDetailView: View {
             action: blockUser)
     }
 
+    private var commentsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(.communityComments)
+                .font(.headline)
+
+            if visibleComments.isEmpty {
+                Text(.communityCommentsEmpty)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            else {
+                ForEach(visibleComments) { comment in
+                    commentRow(comment)
+                        .id(comment.id)
+                }
+            }
+        }
+    }
+
+    private var commentInputBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(alignment: .bottom, spacing: 8) {
+                TextField(
+                    .communityCommentPlaceholder,
+                    text: $commentText,
+                    axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .lineLimit(1...4)
+                    .focused($commentFieldFocused)
+                Button(action: submitComment) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.title2)
+                }
+                .disabled(!canSubmitComment)
+                .accessibilityLabel(.communityCommentSubmit)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+        }
+        .background(Color.black)
+    }
+
+    private func commentRow(_ comment: CommunityComment) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                if let emoji = comment.authorEmoji {
+                    Text(emoji)
+                        .font(.caption)
+                }
+                Text(comment.authorName)
+                    .font(.caption.weight(.semibold))
+                Text("·")
+                    .foregroundStyle(.tertiary)
+                Text(comment.createdAt, style: .date)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(comment.createdAt, style: .time)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if comment.authorId == currentUserId {
+                    Menu {
+                        Button(role: .destructive, action: { confirmDeleteComment(comment) }) {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            Text(comment.text)
+                .font(.subheadline)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background {
+            Color(.secondarySystemBackground)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
     private func onAppear() {
         appState.markPostAsRead(post.id)
         appState.markURLAsRead("devnews://community/\(post.id)")
+        commentService.startListening(postId: post.id)
         Task {
             guard let uid = currentUserId else { return }
             alreadyReported = await community.hasReportedPost(post.id, reporterId: uid)
+        }
+    }
+
+    private func onDisappear() {
+        commentService.stopListening()
+    }
+
+    private func dismissKeyboard() {
+        commentFieldFocused = false
+    }
+
+    private func scrollToLatestComment(_ proxy: ScrollViewProxy) {
+        guard shouldScrollToLatestComment,
+              let lastId = visibleComments.last?.id
+        else { return }
+        shouldScrollToLatestComment = false
+        withAnimation {
+            proxy.scrollTo(lastId, anchor: .bottom)
+        }
+    }
+
+    private func refresh() async {
+        await community.refresh()
+    }
+
+    private func submitComment() {
+        let trimmed = commentText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let user = appState.authService.user
+        else { return }
+        commentText = ""
+        shouldScrollToLatestComment = true
+        Task {
+            await commentService.addComment(
+                postId: post.id,
+                text: trimmed,
+                author: user,
+                authorDisplayName: appState.profileService.displayName,
+                authorEmoji: appState.profileService.profileEmoji)
+        }
+    }
+
+    private func confirmDeleteComment(_ comment: CommunityComment) {
+        commentPendingDeletion = comment
+        showDeleteCommentConfirm = true
+    }
+
+    private func deleteConfirmedComment() {
+        guard let comment = commentPendingDeletion else { return }
+        commentPendingDeletion = nil
+        Task {
+            await commentService.deleteComment(comment)
         }
     }
 

@@ -65,6 +65,7 @@ struct DevToSourceClient: ContentSourceClient {
         case .ai: "ai"
         case .security: "security"
         case .product: "productivity"
+        case .etc: nil
         }
     }
 

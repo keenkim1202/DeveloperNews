@@ -8,6 +8,7 @@ enum Topic: String, CaseIterable, Identifiable, Hashable, Codable, Sendable {
     case ai
     case security
     case product
+    case etc
 
     var id: String {
         rawValue
@@ -22,6 +23,7 @@ enum Topic: String, CaseIterable, Identifiable, Hashable, Codable, Sendable {
         case .ai: "sparkles"
         case .security: "lock.shield"
         case .product: "square.stack.3d.up"
+        case .etc: "ellipsis.circle"
         }
     }
 }
