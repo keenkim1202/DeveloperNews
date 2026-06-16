@@ -34,8 +34,9 @@ final class AuthService {
 
     init() {
         authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
-            Task { @MainActor [weak self] in
-                self?.user = user
+            Task { @MainActor in
+                guard let self else { return }
+                self.user = user
             }
         }
     }
