@@ -41,6 +41,13 @@ struct FeedSectionListView<Destination: Hashable>: View {
         articleItems.first?.id ?? discussionItems.first?.id
     }
 
+    private func followingPost(for item: ContentItem) -> CommunityPost? {
+        guard item.sourceCategory == .following,
+              let postId = item.url.pathComponents.last
+        else { return nil }
+        return appState.communityService.posts.first { $0.id == postId }
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             list
@@ -84,9 +91,12 @@ struct FeedSectionListView<Destination: Hashable>: View {
                 Section {
                     ForEach(articleItems) { item in
                         FeedItemRow(
-                            appState: appState,
+                            translator: appState.translator,
                             item: item,
                             destination: destinationFor(item),
+                            isRead: appState.isRead(item),
+                            followingPost: followingPost(for: item),
+                            authorEmoji: { appState.communityService.authorEmoji(for: $0) },
                             onAuthorTap: onAuthorTap)
                     }
                 }
@@ -96,9 +106,12 @@ struct FeedSectionListView<Destination: Hashable>: View {
                 Section(.discussions) {
                     ForEach(discussionItems) { item in
                         FeedItemRow(
-                            appState: appState,
+                            translator: appState.translator,
                             item: item,
                             destination: destinationFor(item),
+                            isRead: appState.isRead(item),
+                            followingPost: followingPost(for: item),
+                            authorEmoji: { appState.communityService.authorEmoji(for: $0) },
                             onAuthorTap: onAuthorTap)
                     }
                 }
