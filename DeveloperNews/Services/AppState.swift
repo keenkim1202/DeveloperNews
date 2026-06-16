@@ -205,6 +205,11 @@ final class AppState {
         toastTrigger += 1
     }
 
+    func presentError(_ message: String) {
+        toastMessage = message
+        toastTrigger += 1
+    }
+
     var isOnboardingComplete: Bool {
         !selectedTopics.isEmpty
     }

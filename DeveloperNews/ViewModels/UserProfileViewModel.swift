@@ -35,10 +35,16 @@ final class UserProfileViewModel {
     func loadFollowCounts() async {
         followerCount = await appState.profileService.fetchFollowerCount(for: authorId)
         followingCount = await appState.profileService.fetchFollowingCount(for: authorId)
+        if let message = appState.profileService.errorMessage {
+            appState.presentError(message)
+        }
     }
 
     func toggleFollow() async {
         await appState.profileService.toggleFollow(authorId)
+        if let message = appState.profileService.errorMessage {
+            appState.presentError(message)
+        }
         followerCount = await appState.profileService.fetchFollowerCount(for: authorId)
     }
 }
