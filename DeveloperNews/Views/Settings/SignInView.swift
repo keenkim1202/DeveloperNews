@@ -260,7 +260,7 @@ struct SignInView: View {
 
 
 struct PasswordResetView: View {
-    private let appState: AppState
+    @State private var viewModel: PasswordResetViewModel
 
     @State private var email = ""
     @State private var successMessage: String?
@@ -268,16 +268,7 @@ struct PasswordResetView: View {
     @Environment(\.dismiss) private var dismiss
 
     init(appState: AppState) {
-        self.appState = appState
-    }
-
-    private var authService: AuthService {
-        appState.authService
-    }
-
-    private var isEmailFormatValid: Bool {
-        let pattern = #"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
-        return email.range(of: pattern, options: .regularExpression) != nil
+        _viewModel = State(initialValue: PasswordResetViewModel(appState: appState))
     }
 
     var body: some View {
@@ -309,7 +300,7 @@ struct PasswordResetView: View {
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
-                .disabled(!isEmailFormatValid || authService.isLoading)
+                .disabled(!viewModel.canSubmit(email: email))
 
                 if let successMessage {
                     Text(successMessage)
@@ -318,7 +309,7 @@ struct PasswordResetView: View {
                         .multilineTextAlignment(.leading)
                 }
 
-                if let error = authService.errorMessage {
+                if let error = viewModel.errorMessage {
                     Text(error)
                         .font(.footnote)
                         .foregroundStyle(.red)
@@ -343,7 +334,7 @@ struct PasswordResetView: View {
                     for: nil)
             }
             .overlay {
-                if authService.isLoading {
+                if viewModel.isLoading {
                     Color.black.opacity(0.2)
                         .ignoresSafeArea()
                     ProgressView()
@@ -355,16 +346,15 @@ struct PasswordResetView: View {
     private func sendPasswordReset() {
         Task {
             successMessage = nil
-            authService.setErrorMessage(nil)
-            let result = await authService.sendPasswordReset(email: email)
-            if case .success = result {
+            let didSucceed = await viewModel.sendPasswordReset(email: email)
+            if didSucceed {
                 successMessage = String(localized: .authPasswordResetSuccess)
             }
         }
     }
 
     private func cancel() {
-        authService.setErrorMessage(nil)
+        viewModel.clearError()
         dismiss()
     }
 }
