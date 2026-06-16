@@ -2,7 +2,7 @@ import SwiftUI
 
 struct BookmarkDetailView: View {
     private let appState: AppState
-    private let item: ContentItem
+    @State private var viewModel: BookmarkDetailViewModel
     @Environment(\.dismiss) private var dismiss
 
     @State private var showEdit = false
@@ -13,11 +13,13 @@ struct BookmarkDetailView: View {
         item: ContentItem,
     ) {
         self.appState = appState
-        self.item = item
+        _viewModel = State(initialValue: BookmarkDetailViewModel(
+            appState: appState,
+            item: item))
     }
 
     private var currentItem: ContentItem {
-        appState.savedItemSnapshots[item.url] ?? item
+        viewModel.currentItem
     }
 
     var body: some View {
@@ -129,7 +131,7 @@ struct BookmarkDetailView: View {
     }
 
     private func onAppear() {
-        appState.markAsRead(currentItem)
+        viewModel.markCurrentAsRead()
     }
 
     private func confirmDelete() {
@@ -137,7 +139,7 @@ struct BookmarkDetailView: View {
     }
 
     private func deleteBookmark() {
-        appState.removeSavedItem(at: currentItem.url)
+        viewModel.deleteBookmark()
         dismiss()
     }
 
