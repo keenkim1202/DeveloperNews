@@ -12,6 +12,7 @@ final class CommunityService {
 
     private let db = Firestore.firestore()
     private var listenerRegistration: ListenerRegistration?
+    private var authorEmojiFetchGeneration = 0
 
     private var postsRef: CollectionReference {
         db.collection("posts")
@@ -48,7 +49,8 @@ final class CommunityService {
                     self.posts = documents.compactMap { doc in
                         Self.parsePost(doc)
                     }
-                    await self.fetchAuthorEmojis()
+                    self.authorEmojiFetchGeneration += 1
+                    await self.fetchAuthorEmojis(generation: self.authorEmojiFetchGeneration)
                 }
             }
     }
@@ -61,7 +63,8 @@ final class CommunityService {
                 .getDocuments()
 
             posts = snapshot.documents.compactMap { Self.parsePost($0) }
-            await fetchAuthorEmojis()
+            authorEmojiFetchGeneration += 1
+            await fetchAuthorEmojis(generation: authorEmojiFetchGeneration)
         }
         catch {
             errorMessage = error.localizedDescription
@@ -181,18 +184,24 @@ final class CommunityService {
         authorEmojiCache[authorId]
     }
 
-    private func fetchAuthorEmojis() async {
+    // generation guards against a stale fetch writing after a newer snapshot
+    // arrived: each snapshot bumps authorEmojiFetchGeneration, and a fetch bails
+    // out as soon as its captured generation no longer matches.
+    private func fetchAuthorEmojis(generation: Int) async {
         let authorIds = Set(posts.map(\.authorId))
         let idsToFetch = authorIds.filter { authorEmojiCache[$0] == nil }
         guard !idsToFetch.isEmpty else { return }
 
         for uid in idsToFetch {
+            guard generation == authorEmojiFetchGeneration else { return }
             do {
                 let snapshot = try await db.collection("users").document(uid).getDocument()
+                guard generation == authorEmojiFetchGeneration else { return }
                 let emoji = (snapshot.data()?["profileEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 }
                 authorEmojiCache[uid] = emoji
             }
             catch {
+                guard generation == authorEmojiFetchGeneration else { return }
                 authorEmojiCache[uid] = nil
             }
         }
