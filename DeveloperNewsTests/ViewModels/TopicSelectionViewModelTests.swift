@@ -5,7 +5,6 @@ import XCTest
 final class TopicSelectionViewModelTests: XCTestCase {
     func testToggleAddsAndRemovesTopic() async {
         let appState = VMFixtures.makeAppState()
-        VMFixtures.resetState(appState)
         let vm = TopicSelectionViewModel(appState: appState)
 
         XCTAssertEqual(vm.selectedCount, 0)
@@ -16,13 +15,10 @@ final class TopicSelectionViewModelTests: XCTestCase {
         vm.toggleTopic(.ios)
         XCTAssertFalse(vm.selectedTopics.contains(.ios))
         XCTAssertEqual(vm.selectedCount, 0)
-
-        await VMFixtures.drainPersistence()
     }
 
     func testCanSelectMoreReflectsLimit() async {
         let appState = VMFixtures.makeAppState()
-        VMFixtures.resetState(appState)
         let vm = TopicSelectionViewModel(appState: appState)
 
         let allTopics = Topic.allCases.prefix(vm.maxSelectedTopics)
@@ -32,13 +28,10 @@ final class TopicSelectionViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.selectedCount, vm.maxSelectedTopics)
         XCTAssertFalse(vm.canSelectMore)
-
-        await VMFixtures.drainPersistence()
     }
 
     func testToggleBeyondLimitIsIgnored() async {
         let appState = VMFixtures.makeAppState()
-        VMFixtures.resetState(appState)
         let vm = TopicSelectionViewModel(appState: appState)
 
         let limited = Topic.allCases.prefix(vm.maxSelectedTopics)
@@ -53,7 +46,5 @@ final class TopicSelectionViewModelTests: XCTestCase {
             XCTAssertFalse(vm.selectedTopics.contains(extra))
         }
         XCTAssertEqual(vm.selectedCount, countAtLimit)
-
-        await VMFixtures.drainPersistence()
     }
 }

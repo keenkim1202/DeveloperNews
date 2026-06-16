@@ -8,9 +8,7 @@ final class HomeViewModelTests: XCTestCase {
     private func makeSeededAppState(_ items: [ContentItem]) async -> AppState {
         let appState = VMFixtures.makeAppState(
             contentSourceClient: StubContentSourceClient(items: items))
-        // Empty selectedTopics makes personalizedItems return every seeded item
-        // regardless of any topics carried over from persisted state.
-        VMFixtures.resetState(appState)
+        // Empty selectedTopics makes personalizedItems return every seeded item.
         await appState.reload()
         return appState
     }
@@ -21,8 +19,6 @@ final class HomeViewModelTests: XCTestCase {
 
         XCTAssertFalse(vm.shouldShowTopStory)
         XCTAssertNil(vm.topItem)
-
-        await VMFixtures.drainPersistence()
     }
 
     func testTopItemIsFirstPersonalizedWhenNoSearch() async {
@@ -33,8 +29,6 @@ final class HomeViewModelTests: XCTestCase {
 
         XCTAssertTrue(vm.shouldShowTopStory)
         XCTAssertEqual(vm.topItem?.title, "Top")
-
-        await VMFixtures.drainPersistence()
     }
 
     func testTopItemSuppressedDuringSearch() async {
@@ -45,8 +39,6 @@ final class HomeViewModelTests: XCTestCase {
 
         vm.searchQuery = "Top"
         XCTAssertNil(vm.topItem)
-
-        await VMFixtures.drainPersistence()
     }
 
     func testArticlesExcludingTopStoryDropsTheTopItem() async {
@@ -59,8 +51,6 @@ final class HomeViewModelTests: XCTestCase {
         let remaining = vm.articlesExcludingTopStory.map(\.title)
         XCTAssertFalse(remaining.contains("Top"))
         XCTAssertTrue(remaining.contains("Other"))
-
-        await VMFixtures.drainPersistence()
     }
 
     func testSearchFiltersArticles() async {
@@ -73,8 +63,6 @@ final class HomeViewModelTests: XCTestCase {
         vm.searchQuery = "swiftui"
         let titles = vm.filteredArticleItems.map(\.title)
         XCTAssertEqual(titles, ["SwiftUI"])
-
-        await VMFixtures.drainPersistence()
     }
 
     func testShouldShowTopStoryFalseWhenDismissedRecently() async {
@@ -86,7 +74,5 @@ final class HomeViewModelTests: XCTestCase {
 
         XCTAssertTrue(appState.isTopStoryHidden)
         XCTAssertFalse(vm.shouldShowTopStory)
-
-        await VMFixtures.drainPersistence()
     }
 }

@@ -3,9 +3,15 @@ import XCTest
 
 @MainActor
 final class GitHubTrendingSourceClientTests: XCTestCase {
-    override func tearDown() {
+    override func setUp() async throws {
+        try await super.setUp()
+        await GitHubTrendingSourceClient.resetCacheForTesting()
+    }
+
+    override func tearDown() async throws {
+        await GitHubTrendingSourceClient.resetCacheForTesting()
         StubURLProtocol.reset()
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func testMapsSearchResultsIntoContentItems() async throws {
@@ -29,11 +35,8 @@ final class GitHubTrendingSourceClientTests: XCTestCase {
             }
             """)
 
-        // Use a unique maxResults so the static search cache key does not collide
-        // with other tests in this run.
         let client = GitHubTrendingSourceClient(
-            session: StubURLProtocol.makeSession(),
-            maxResults: 7001)
+            session: StubURLProtocol.makeSession())
         let items = try await client.fetchItems(selectedTopics: [])
 
         XCTAssertEqual(items.count, 1)
@@ -82,8 +85,7 @@ final class GitHubTrendingSourceClientTests: XCTestCase {
             """)
 
         let client = GitHubTrendingSourceClient(
-            session: StubURLProtocol.makeSession(),
-            maxResults: 7002)
+            session: StubURLProtocol.makeSession())
         let items = try await client.fetchItems(selectedTopics: [])
 
         XCTAssertEqual(items.count, 1)

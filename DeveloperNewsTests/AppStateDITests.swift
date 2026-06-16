@@ -16,7 +16,8 @@ final class AppStateDITests: XCTestCase {
             translator: translator,
             authService: auth,
             profileService: profile,
-            communityService: community)
+            communityService: community,
+            persistenceStore: VMFixtures.makeIsolatedPersistenceStore())
     }
 
     private func isFailed(_ result: DeleteAccountResult) -> Bool {
@@ -63,10 +64,6 @@ final class AppStateDITests: XCTestCase {
 
         XCTAssertTrue(auth.didSignOut)
         XCTAssertTrue(profile.didStopListening)
-
-        // Let the AppState-owned persistence task settle before this scope
-        // releases the instance, so teardown does not race a pending Task.
-        await Task.yield()
     }
 
     func testUpdateDisplayNameForwardsToProfileMock() async {

@@ -51,7 +51,6 @@ final class ReadTrackerTests: XCTestCase {
 
         // Cap holds at 5000 after the new insert triggers eviction.
         XCTAssertEqual(tracker.readItemURLs.count, 5000)
-        XCTAssertLessThanOrEqual(tracker.readItemURLs.count, 5000)
     }
 
     func testTrimReadPostIdsEvictsAboveCap() async {
