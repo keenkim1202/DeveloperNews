@@ -49,13 +49,14 @@ final class ProfileService {
 
         let ref = db.collection("users").document(user.uid)
         listenerRegistration = ref.addSnapshotListener { [weak self] snapshot, _ in
-            Task { @MainActor [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
                 guard let data = snapshot?.data(), snapshot?.exists == true else {
-                    self?.profile = nil
+                    self.profile = nil
                     return
                 }
                 let followedArray = data["followedUserIds"] as? [String] ?? []
-                self?.profile = UserProfile(
+                self.profile = UserProfile(
                     uid: user.uid,
                     displayName: data["displayName"] as? String ?? "",
                     photoURL: data["photoURL"] as? String,

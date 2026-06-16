@@ -56,7 +56,7 @@ final class CommunityService {
             .order(by: "createdAt", descending: true)
             .limit(to: 100)
             .addSnapshotListener { [weak self] snapshot, error in
-                Task { @MainActor [weak self] in
+                Task { @MainActor in
                     guard let self else { return }
                     self.isLoading = false
 

@@ -111,21 +111,17 @@ struct ArticleWebView: UIViewRepresentable {
             _ webView: WKWebView,
             didStartProvisionalNavigation navigation: WKNavigation!,
         ) {
-            DispatchQueue.main.async {
-                self.parent.isLoading.wrappedValue = true
-                self.parent.loadError.wrappedValue = nil
-                self.parent.progress.wrappedValue = 0
-            }
+            parent.isLoading.wrappedValue = true
+            parent.loadError.wrappedValue = nil
+            parent.progress.wrappedValue = 0
         }
 
         func webView(
             _ webView: WKWebView,
             didFinish navigation: WKNavigation!,
         ) {
-            DispatchQueue.main.async {
-                self.parent.isLoading.wrappedValue = false
-                self.parent.progress.wrappedValue = 1
-            }
+            parent.isLoading.wrappedValue = false
+            parent.progress.wrappedValue = 1
         }
 
         func webView(
@@ -133,10 +129,8 @@ struct ArticleWebView: UIViewRepresentable {
             didFail navigation: WKNavigation!,
             withError error: Error,
         ) {
-            DispatchQueue.main.async {
-                self.parent.isLoading.wrappedValue = false
-                self.parent.loadError.wrappedValue = error.localizedDescription
-            }
+            parent.isLoading.wrappedValue = false
+            parent.loadError.wrappedValue = error.localizedDescription
         }
 
         func webView(
@@ -144,10 +138,8 @@ struct ArticleWebView: UIViewRepresentable {
             didFailProvisionalNavigation navigation: WKNavigation!,
             withError error: Error,
         ) {
-            DispatchQueue.main.async {
-                self.parent.isLoading.wrappedValue = false
-                self.parent.loadError.wrappedValue = error.localizedDescription
-            }
+            parent.isLoading.wrappedValue = false
+            parent.loadError.wrappedValue = error.localizedDescription
         }
     }
 }

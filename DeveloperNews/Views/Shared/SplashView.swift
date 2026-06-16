@@ -30,15 +30,20 @@ struct SplashView: View {
             Color(.systemBackground).ignoresSafeArea()
         }
         .onAppear(perform: onAppear)
+        .task(runSplash)
     }
 
     private func onAppear() {
         Task {
             await appState.loadIfNeeded()
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            onComplete()
-        }
+    }
+
+    @Sendable
+    private func runSplash() async {
+        try? await Task.sleep(for: .seconds(1.5))
+        guard !Task.isCancelled else { return }
+        onComplete()
     }
 }
 

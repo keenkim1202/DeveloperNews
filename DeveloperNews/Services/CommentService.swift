@@ -1,5 +1,5 @@
 import FirebaseAuth
-import FirebaseFirestore
+@preconcurrency import FirebaseFirestore
 import Foundation
 
 struct CommunityComment: Identifiable, Hashable, Sendable {
@@ -19,7 +19,12 @@ final class CommentService {
     private(set) var errorMessage: String?
 
     private let db = Firestore.firestore()
-    private var listenerRegistration: ListenerRegistration?
+    @ObservationIgnored
+    nonisolated(unsafe) private var listenerRegistration: ListenerRegistration?
+
+    deinit {
+        listenerRegistration?.remove()
+    }
 
     private func commentsRef(_ postId: String) -> CollectionReference {
         db.collection("posts").document(postId).collection("comments")
@@ -32,7 +37,7 @@ final class CommentService {
             .order(by: "createdAt", descending: false)
             .limit(to: 200)
             .addSnapshotListener { [weak self] snapshot, error in
-                Task { @MainActor [weak self] in
+                Task { @MainActor in
                     guard let self else { return }
 
                     if let error {
