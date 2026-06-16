@@ -58,40 +58,59 @@ final class Navigation {
     }
 }
 
+/// Tab-agnostic resolution of a feed `ContentItem` to its detail route.
+/// Following feed -> community post, user-saved -> bookmark, otherwise -> external article.
+private enum FeedItemRoute {
+    case communityPost(CommunityPost.ID)
+    case bookmark(URL)
+    case article(URL)
+
+    static func forFeedItem(
+        _ item: ContentItem,
+        communityService: CommunityService,
+    ) -> FeedItemRoute {
+        if item.sourceCategory == .following,
+           let postId = item.url.pathComponents.last,
+           communityService.post(id: postId) != nil {
+            return .communityPost(postId)
+        }
+        if item.isUserCreated {
+            return .bookmark(item.url)
+        }
+        return .article(item.url)
+    }
+}
+
 extension HomeTabDestination {
     /// Resolves a feed `ContentItem` to the matching Home-tab detail destination.
-    /// Following feed -> community post detail, user-saved -> bookmark detail, otherwise -> external article.
     static func forFeedItem(
         _ item: ContentItem,
         communityService: CommunityService,
     ) -> HomeTabDestination {
-        if item.sourceCategory == .following,
-           let postId = item.url.pathComponents.last,
-           communityService.post(id: postId) != nil {
+        switch FeedItemRoute.forFeedItem(item, communityService: communityService) {
+        case let .communityPost(postId):
             return .communityPostDetail(postId)
+        case let .bookmark(url):
+            return .bookmarkDetail(url)
+        case let .article(url):
+            return .articleDetail(url)
         }
-        if item.isUserCreated {
-            return .bookmarkDetail(item.url)
-        }
-        return .articleDetail(item.url)
     }
 }
 
 extension SavedTabDestination {
     /// Resolves a feed `ContentItem` to the matching Saved-tab detail destination.
-    /// Following feed -> community post detail, user-saved -> bookmark detail, otherwise -> external article.
     static func forFeedItem(
         _ item: ContentItem,
         communityService: CommunityService,
     ) -> SavedTabDestination {
-        if item.sourceCategory == .following,
-           let postId = item.url.pathComponents.last,
-           communityService.post(id: postId) != nil {
+        switch FeedItemRoute.forFeedItem(item, communityService: communityService) {
+        case let .communityPost(postId):
             return .communityPostDetail(postId)
+        case let .bookmark(url):
+            return .bookmarkDetail(url)
+        case let .article(url):
+            return .articleDetail(url)
         }
-        if item.isUserCreated {
-            return .bookmarkDetail(item.url)
-        }
-        return .articleDetail(item.url)
     }
 }
