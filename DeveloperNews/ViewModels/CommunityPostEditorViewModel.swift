@@ -40,6 +40,9 @@ final class CommunityPostEditorViewModel {
                     link: trimmedLink.isEmpty ? nil : trimmedLink,
                     topics: topics,
                     editorId: userId)
+                if let message = appState.communityService.errorMessage {
+                    appState.presentError(message)
+                }
             }
         }
         else {
@@ -52,6 +55,9 @@ final class CommunityPostEditorViewModel {
                     topics: topics,
                     author: user,
                     authorDisplayName: appState.profileService.displayName)
+                if let message = appState.communityService.errorMessage {
+                    appState.presentError(message)
+                }
             }
         }
     }

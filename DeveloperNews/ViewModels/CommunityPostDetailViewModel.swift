@@ -97,20 +97,32 @@ final class CommunityPostDetailViewModel {
 
     func toggleFollow() async {
         await appState.profileService.toggleFollow(currentPost.authorId)
+        if let message = appState.profileService.errorMessage {
+            appState.presentError(message)
+        }
     }
 
     func toggleLike() async {
         guard let uid = currentUserId else { return }
         await community.toggleLike(currentPost, userId: uid)
+        if let message = community.errorMessage {
+            appState.presentError(message)
+        }
     }
 
     func deletePost() async {
         await community.deletePost(currentPost)
+        if let message = community.errorMessage {
+            appState.presentError(message)
+        }
     }
 
     func submitReport(_ reason: String) async {
         guard let uid = currentUserId else { return }
         await community.reportPost(currentPost, reporterId: uid, reason: reason)
+        if let message = community.errorMessage {
+            appState.presentError(message)
+        }
     }
 
     func blockAuthor() {
