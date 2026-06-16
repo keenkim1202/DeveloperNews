@@ -76,6 +76,13 @@ struct HomeView: View {
         HomeTabDestination.forFeedItem(item, communityService: appState.communityService)
     }
 
+    private func followingPost(for item: ContentItem) -> CommunityPost? {
+        guard item.sourceCategory == .following,
+              let postId = item.url.pathComponents.last
+        else { return nil }
+        return appState.communityService.posts.first { $0.id == postId }
+    }
+
     private func navigateToProfile(_ author: AuthorInfo) {
         navigation(.home(.userProfile(author)))
     }
@@ -123,7 +130,11 @@ struct HomeView: View {
         }
         else {
             FeedSectionListView(
-                appState: appState,
+                translator: appState.translator,
+                lastUpdatedAt: appState.lastUpdatedAt,
+                isRead: { appState.isRead($0) },
+                followingPost: followingPost(for:),
+                authorEmoji: { appState.communityService.authorEmoji(for: $0) },
                 articleItems: viewModel.articlesExcludingTopStory,
                 discussionItems: viewModel.discussionsExcludingTopStory,
                 destinationFor: destinationFor,
@@ -134,9 +145,10 @@ struct HomeView: View {
                 topContent: viewModel.topItem.map { item in
                     AnyView(
                         HomeTopStoryCard(
-                            appState: appState,
+                            translator: appState.translator,
                             item: item,
-                            destination: destinationFor(item))
+                            destination: destinationFor(item),
+                            onHide: { appState.dismissTopStory() })
                             .padding(.horizontal, 2)
                             .padding(.vertical, 4))
                 })

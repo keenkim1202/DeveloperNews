@@ -1,7 +1,11 @@
 import SwiftUI
 
 struct FeedSectionListView<Destination: Hashable>: View {
-    private let appState: AppState
+    private let translator: ContentTranslator
+    private let lastUpdatedAt: Date?
+    private let isRead: (ContentItem) -> Bool
+    private let followingPost: (ContentItem) -> CommunityPost?
+    private let authorEmoji: (String) -> String?
     private let articleItems: [ContentItem]
     private let discussionItems: [ContentItem]
     private let destinationFor: (ContentItem) -> Destination
@@ -14,7 +18,11 @@ struct FeedSectionListView<Destination: Hashable>: View {
     private var topContent: AnyView?
 
     init(
-        appState: AppState,
+        translator: ContentTranslator,
+        lastUpdatedAt: Date?,
+        isRead: @escaping (ContentItem) -> Bool,
+        followingPost: @escaping (ContentItem) -> CommunityPost?,
+        authorEmoji: @escaping (String) -> String?,
         articleItems: [ContentItem],
         discussionItems: [ContentItem],
         destinationFor: @escaping (ContentItem) -> Destination,
@@ -25,7 +33,11 @@ struct FeedSectionListView<Destination: Hashable>: View {
         scrollToTopTrigger: Int = 0,
         topContent: AnyView? = nil,
     ) {
-        self.appState = appState
+        self.translator = translator
+        self.lastUpdatedAt = lastUpdatedAt
+        self.isRead = isRead
+        self.followingPost = followingPost
+        self.authorEmoji = authorEmoji
         self.articleItems = articleItems
         self.discussionItems = discussionItems
         self.destinationFor = destinationFor
@@ -39,13 +51,6 @@ struct FeedSectionListView<Destination: Hashable>: View {
 
     private var firstAnchorID: ContentItem.ID? {
         articleItems.first?.id ?? discussionItems.first?.id
-    }
-
-    private func followingPost(for item: ContentItem) -> CommunityPost? {
-        guard item.sourceCategory == .following,
-              let postId = item.url.pathComponents.last
-        else { return nil }
-        return appState.communityService.posts.first { $0.id == postId }
     }
 
     var body: some View {
@@ -77,7 +82,7 @@ struct FeedSectionListView<Destination: Hashable>: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
 
-                        if let lastUpdatedAt = appState.lastUpdatedAt {
+                        if let lastUpdatedAt {
                             Text("Updated \(relativeDateFormatter.localizedString(for: lastUpdatedAt, relativeTo: .now))")
                                 .font(.caption)
                                 .foregroundStyle(.tertiary)
@@ -91,12 +96,12 @@ struct FeedSectionListView<Destination: Hashable>: View {
                 Section {
                     ForEach(articleItems) { item in
                         FeedItemRow(
-                            translator: appState.translator,
+                            translator: translator,
                             item: item,
                             destination: destinationFor(item),
-                            isRead: appState.isRead(item),
-                            followingPost: followingPost(for: item),
-                            authorEmoji: { appState.communityService.authorEmoji(for: $0) },
+                            isRead: isRead(item),
+                            followingPost: followingPost(item),
+                            authorEmoji: authorEmoji,
                             onAuthorTap: onAuthorTap)
                     }
                 }
@@ -106,12 +111,12 @@ struct FeedSectionListView<Destination: Hashable>: View {
                 Section(.discussions) {
                     ForEach(discussionItems) { item in
                         FeedItemRow(
-                            translator: appState.translator,
+                            translator: translator,
                             item: item,
                             destination: destinationFor(item),
-                            isRead: appState.isRead(item),
-                            followingPost: followingPost(for: item),
-                            authorEmoji: { appState.communityService.authorEmoji(for: $0) },
+                            isRead: isRead(item),
+                            followingPost: followingPost(item),
+                            authorEmoji: authorEmoji,
                             onAuthorTap: onAuthorTap)
                     }
                 }

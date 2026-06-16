@@ -2,25 +2,24 @@ import SwiftUI
 import Translation
 
 struct HomeTopStoryCard: View {
-    private let appState: AppState
+    private let translator: ContentTranslator
     private let item: ContentItem
     private let destination: HomeTabDestination
+    private let onHide: () -> Void
 
     @State private var translationTrigger = 0
     @State private var showingTranslation = false
 
     init(
-        appState: AppState,
+        translator: ContentTranslator,
         item: ContentItem,
         destination: HomeTabDestination,
+        onHide: @escaping () -> Void,
     ) {
-        self.appState = appState
+        self.translator = translator
         self.item = item
         self.destination = destination
-    }
-
-    private var translator: ContentTranslator {
-        appState.translator
+        self.onHide = onHide
     }
 
     private var displayTitle: String {
@@ -111,7 +110,7 @@ struct HomeTopStoryCard: View {
 
     private func hideTopStory() {
         withAnimation(.easeInOut(duration: 0.2)) {
-            appState.dismissTopStory()
+            onHide()
         }
     }
 
