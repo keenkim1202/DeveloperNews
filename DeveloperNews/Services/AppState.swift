@@ -16,6 +16,7 @@ final class AppState {
     private(set) var feedStore: FeedStore!
     private(set) var savedItemsStore: SavedItemsStore!
     private(set) var readTracker: ReadTracker!
+    private(set) var sourceCategoryStore: SourceCategoryStore!
 
     let translator = ContentTranslator()
     let authService = AuthService()
@@ -26,7 +27,6 @@ final class AppState {
     var focusedTopic: Topic?
     var currentTab: AppTab = .home
     var notificationsEnabled = false
-    var disabledSourceCategories: Set<SourceCategory> = []
     var blockedUserIds: Set<String> = []
     var toastMessage: String?
     var toastTrigger: Int = 0
@@ -62,6 +62,10 @@ final class AppState {
 
     var savedItemIDs: Set<ContentItem.ID> {
         savedItemsStore.savedItemIDs
+    }
+
+    var disabledSourceCategories: Set<SourceCategory> {
+        sourceCategoryStore.disabledSourceCategories
     }
 
     // MARK: - Feed pass-throughs
@@ -173,6 +177,12 @@ final class AppState {
                 persistReadItems: { [unowned self] urls, postIds in
                     saveReadItems(readItemURLs: urls, readPostIds: postIds)
                 }))
+        self.sourceCategoryStore = SourceCategoryStore(
+            inputs: SourceCategoryStore.Inputs(
+                resetPagination: { [unowned self] in resetPagination() },
+                persistDisabledSourceCategories: { [unowned self] categories in
+                    saveDisabledSourceCategories(categories)
+                }))
         loadPersistedState()
     }
 
@@ -186,7 +196,7 @@ final class AppState {
     }
 
     var followingItems: [ContentItem] {
-        guard !disabledSourceCategories.contains(.following) else { return [] }
+        guard sourceCategoryStore.isSourceCategoryEnabled(.following) else { return [] }
         let followedIds = profileService.followedUserIds
         guard !followedIds.isEmpty else { return [] }
 
@@ -216,21 +226,14 @@ final class AppState {
     }
 
     func isSourceCategoryEnabled(_ category: SourceCategory) -> Bool {
-        !disabledSourceCategories.contains(category)
+        sourceCategoryStore.isSourceCategoryEnabled(category)
     }
 
     func setSourceCategory(
         _ category: SourceCategory,
         enabled: Bool,
     ) {
-        if enabled {
-            disabledSourceCategories.remove(category)
-        }
-        else {
-            disabledSourceCategories.insert(category)
-        }
-        resetPagination()
-        saveDisabledSourceCategories()
+        sourceCategoryStore.setSourceCategory(category, enabled: enabled)
     }
 
     var savedArticleItems: [ContentItem] {
@@ -455,7 +458,8 @@ final class AppState {
             timestamps: state.savedItemTimestampsByURL,
             sortOrder: state.savedSortOrder)
         notificationsEnabled = state.notificationsEnabled
-        disabledSourceCategories = state.disabledSourceCategories
+        sourceCategoryStore.seedInitialState(
+            disabledSourceCategories: state.disabledSourceCategories)
         blockedUserIds = state.blockedUserIds
         readTracker.seedInitialState(
             readItemURLs: state.readItemURLs,
@@ -513,8 +517,7 @@ final class AppState {
         }
     }
 
-    private func saveDisabledSourceCategories() {
-        let categories = disabledSourceCategories
+    private func saveDisabledSourceCategories(_ categories: Set<SourceCategory>) {
         enqueuePersistence { store in
             await store.saveDisabledSourceCategories(categories)
         }
