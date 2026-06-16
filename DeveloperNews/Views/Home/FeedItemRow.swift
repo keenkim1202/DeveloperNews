@@ -2,28 +2,33 @@ import SwiftUI
 import Translation
 
 struct FeedItemRow<Destination: Hashable>: View {
-    private let appState: AppState
+    private let translator: ContentTranslator
     private let item: ContentItem
     private let destination: Destination
+    private let isRead: Bool
+    private let followingPost: CommunityPost?
+    private let authorEmoji: (String) -> String?
     private let onAuthorTap: (AuthorInfo) -> Void
 
     @State private var translationTrigger = 0
     @State private var showingTranslation = false
 
     init(
-        appState: AppState,
+        translator: ContentTranslator,
         item: ContentItem,
         destination: Destination,
+        isRead: Bool,
+        followingPost: CommunityPost?,
+        authorEmoji: @escaping (String) -> String?,
         onAuthorTap: @escaping (AuthorInfo) -> Void,
     ) {
-        self.appState = appState
+        self.translator = translator
         self.item = item
         self.destination = destination
+        self.isRead = isRead
+        self.followingPost = followingPost
+        self.authorEmoji = authorEmoji
         self.onAuthorTap = onAuthorTap
-    }
-
-    private var translator: ContentTranslator {
-        appState.translator
     }
 
     private var displayTitle: String {
@@ -34,35 +39,27 @@ struct FeedItemRow<Destination: Hashable>: View {
         showingTranslation ? translator.summary(for: item) : item.summary
     }
 
-    private var followingPost: CommunityPost? {
-        guard item.sourceCategory == .following,
-              let postId = item.url.pathComponents.last
-        else { return nil }
-        return appState.communityService.posts.first { $0.id == postId }
-    }
-
     var body: some View {
         NavigationLink(value: destination) {
             VStack(alignment: .leading, spacing: 8) {
                 FeedItemMetaView(
-                    appState: appState,
                     item: item,
                     authorEmoji: followingPost.flatMap {
-                        appState.communityService.authorEmoji(for: $0.authorId)
+                        authorEmoji($0.authorId)
                     }) {
                     guard let post = followingPost else { return }
                     onAuthorTap(
                         AuthorInfo(
                             id: post.authorId,
                             name: post.authorName,
-                            emoji: appState.communityService.authorEmoji(for: post.authorId)))
+                            emoji: authorEmoji(post.authorId)))
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .top, spacing: 10) {
                         Text(displayTitle)
                             .font(.headline)
-                            .foregroundStyle(appState.isRead(item) ? .secondary : .primary)
+                            .foregroundStyle(isRead ? .secondary : .primary)
                             .lineLimit(3)
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -175,18 +172,15 @@ struct FeedItemThumbnailView: View {
 
 
 struct FeedItemMetaView: View {
-    private let appState: AppState
     private let item: ContentItem
     private var authorEmoji: String?
     private var onAuthorTap: (() -> Void)?
 
     init(
-        appState: AppState,
         item: ContentItem,
         authorEmoji: String? = nil,
         onAuthorTap: (() -> Void)? = nil,
     ) {
-        self.appState = appState
         self.item = item
         self.authorEmoji = authorEmoji
         self.onAuthorTap = onAuthorTap
