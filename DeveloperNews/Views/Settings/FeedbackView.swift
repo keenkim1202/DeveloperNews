@@ -23,10 +23,11 @@ struct FeedbackView: View {
                             .padding(.top, 24)
                     }
 
-                    Text(try! AttributedString(
+                    Text((try? AttributedString(
                         markdown: String(localized: .feedbackInstagramMessage),
                         options: AttributedString.MarkdownParsingOptions(
                             interpretedSyntax: .inlineOnlyPreservingWhitespace)))
+                        ?? AttributedString(String(localized: .feedbackInstagramMessage)))
                         .font(.body)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)

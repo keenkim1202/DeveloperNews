@@ -34,8 +34,11 @@ struct AddSavedItemView: View {
         if let parsed = URL(string: trimmedLink), !trimmedLink.isEmpty {
             itemURL = parsed
         }
+        else if let synthetic = URL(string: "devnews://saved/\(UUID().uuidString)") {
+            itemURL = synthetic
+        }
         else {
-            itemURL = URL(string: "devnews://saved/\(UUID().uuidString)")!
+            return
         }
 
         let item = ContentItem(

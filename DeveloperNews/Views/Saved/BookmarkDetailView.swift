@@ -190,8 +190,9 @@ struct EditBookmarkView: View {
         if let parsed = URL(string: trimmedLink), !trimmedLink.isEmpty {
             newURL = parsed
         }
-        else if item.hasExternalLink {
-            newURL = URL(string: "devnews://saved/\(item.id.uuidString)")!
+        else if item.hasExternalLink,
+                let synthetic = URL(string: "devnews://saved/\(item.id.uuidString)") {
+            newURL = synthetic
         }
         else {
             newURL = item.url

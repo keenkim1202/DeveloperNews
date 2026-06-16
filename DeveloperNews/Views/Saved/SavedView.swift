@@ -41,8 +41,7 @@ struct SavedView: View {
                             Menu {
                                 Picker(.sort, selection: Binding(
                                     get: { viewModel.savedSortOrder },
-                                    set: { viewModel.setSavedSortOrder($0) }
-                                )) {
+                                    set: { viewModel.setSavedSortOrder($0) })) {
                                     ForEach(SavedSortOrder.allCases) { order in
                                         Text(order.title).tag(order)
                                     }

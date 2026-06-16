@@ -29,14 +29,13 @@ struct SplashView: View {
         .background {
             Color(.systemBackground).ignoresSafeArea()
         }
-        .onAppear(perform: onAppear)
+        .task(loadContent)
         .task(runSplash)
     }
 
-    private func onAppear() {
-        Task {
-            await appState.loadIfNeeded()
-        }
+    @Sendable
+    private func loadContent() async {
+        await appState.loadIfNeeded()
     }
 
     @Sendable

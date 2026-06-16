@@ -72,8 +72,7 @@ struct CommunityPostDetailView: View {
                             AuthorInfo(
                                 id: currentPost.authorId,
                                 name: currentPost.authorName,
-                                emoji: authorEmoji))
-                    ) {
+                                emoji: authorEmoji))) {
                         HStack(spacing: 4) {
                             if let authorEmoji {
                                 Text(authorEmoji)
@@ -92,10 +91,11 @@ struct CommunityPostDetailView: View {
                                 .font(.caption2.weight(.semibold))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
-                                .background(
+                                .background {
                                     isFollowingAuthor
                                         ? Color.accentColor
-                                        : Color(.secondarySystemBackground))
+                                        : Color(.secondarySystemBackground)
+                                }
                                 .foregroundStyle(
                                     isFollowingAuthor
                                         ? Color.white
@@ -354,7 +354,9 @@ struct CommunityPostDetailView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
         }
-        .background(Color.black)
+        .background {
+            Color.black
+        }
     }
 
     private func commentRow(_ comment: CommunityComment) -> some View {

@@ -13,8 +13,7 @@ enum SampleData {
             url: URL(string: "https://swiftwithmajid.com")!,
             publishedAt: .now.addingTimeInterval(-60 * 40),
             topics: [.ios, .product],
-            trendScore: 92
-        ),
+            trendScore: 92),
         ContentItem(
             id: UUID(),
             kind: .discussion,
@@ -26,8 +25,7 @@ enum SampleData {
             url: URL(string: "https://news.ycombinator.com")!,
             publishedAt: .now.addingTimeInterval(-60 * 90),
             topics: [.backend],
-            trendScore: 88
-        ),
+            trendScore: 88),
         ContentItem(
             id: UUID(),
             kind: .article,
@@ -39,8 +37,7 @@ enum SampleData {
             url: URL(string: "https://developer.android.com")!,
             publishedAt: .now.addingTimeInterval(-60 * 180),
             topics: [.android, .product],
-            trendScore: 83
-        ),
+            trendScore: 83),
         ContentItem(
             id: UUID(),
             kind: .article,

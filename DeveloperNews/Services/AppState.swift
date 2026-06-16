@@ -5,7 +5,6 @@ import Observation
 @MainActor
 final class AppState {
     static let maxSelectedTopics = 5
-    static let pageSize = 30
 
     private static let topStoryDismissalWindow: TimeInterval = 24 * 60 * 60
     static let feedStaleThreshold: TimeInterval = FeedStore.feedStaleThreshold
@@ -172,8 +171,11 @@ final class AppState {
 
         return communityService.posts
             .filter { followedIds.contains($0.authorId) }
-            .map { post in
-                ContentItem(
+            .compactMap { post in
+                guard let url = URL(string: "devnews://community/\(post.id)") else {
+                    return nil
+                }
+                return ContentItem(
                     id: UUID(uuidString: post.id) ?? UUID(),
                     kind: .article,
                     title: post.title,
@@ -181,7 +183,7 @@ final class AppState {
                     sourceName: post.authorName,
                     sourceCategory: .following,
                     authorName: post.authorName,
-                    url: URL(string: "devnews://community/\(post.id)")!,
+                    url: url,
                     publishedAt: post.createdAt,
                     topics: post.topics,
                     trendScore: post.likeCount)

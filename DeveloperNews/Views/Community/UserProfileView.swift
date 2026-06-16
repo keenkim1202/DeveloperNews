@@ -74,10 +74,11 @@ struct UserProfileView: View {
                             Text(viewModel.isFollowingAuthor ? .communityFollowing : .communityFollow)
                                 .font(.subheadline.weight(.semibold))
                                 .frame(width: 120, height: 34)
-                                .background(
+                                .background {
                                     viewModel.isFollowingAuthor
                                         ? Color.accentColor
-                                        : Color(.secondarySystemBackground))
+                                        : Color(.secondarySystemBackground)
+                                }
                                 .foregroundStyle(
                                     viewModel.isFollowingAuthor
                                         ? Color.white
