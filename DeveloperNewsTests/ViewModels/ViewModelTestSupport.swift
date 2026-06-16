@@ -17,31 +17,14 @@ enum VMFixtures {
             authService: auth,
             profileService: profile,
             communityService: community,
-            contentSourceClient: contentSourceClient)
+            contentSourceClient: contentSourceClient,
+            persistenceStore: makeIsolatedPersistenceStore())
     }
 
-    // The persistence store is backed by a shared app-group UserDefaults suite,
-    // so a freshly built AppState may carry over saved items / selected topics
-    // from a prior run on the same simulator. Normalize to a blank slate so each
-    // test asserts against deterministic state.
-    static func resetState(_ appState: AppState) {
-        for url in Array(appState.savedItemSnapshots.keys) {
-            appState.removeSavedItem(at: url)
-        }
-        for topic in Array(appState.selectedTopics) {
-            appState.toggleTopic(topic)
-        }
-        appState.blockedUserIds = []
-    }
-
-    // Lets AppState-owned persistence tasks settle before the instance is
-    // released, so teardown does not race a pending Task (which crashes).
-    // Yields repeatedly because a chained write awaits the prior one.
-    static func drainPersistence() async {
-        for _ in 0..<20 {
-            await Task.yield()
-        }
-        try? await Task.sleep(for: .milliseconds(20))
+    // Each test gets a throwaway UserDefaults suite so persistence never reads or
+    // writes the real app-group store, and no prior run can leak state in.
+    static func makeIsolatedPersistenceStore() -> PersistenceStore {
+        PersistenceStore(defaults: UserDefaults(suiteName: "test-\(UUID().uuidString)")!)
     }
 
     static func makeItem(

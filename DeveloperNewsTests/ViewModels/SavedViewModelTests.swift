@@ -8,7 +8,6 @@ final class SavedViewModelTests: XCTestCase {
         _ appState: AppState,
         _ items: [ContentItem],
     ) {
-        VMFixtures.resetState(appState)
         for item in items {
             appState.addSavedItem(item)
         }
@@ -27,8 +26,6 @@ final class SavedViewModelTests: XCTestCase {
         XCTAssertTrue(topics.contains(.web))
         XCTAssertTrue(topics.contains(.ai))
         XCTAssertFalse(topics.contains(.android))
-
-        await VMFixtures.drainPersistence()
     }
 
     func testSearchFilterMatchesTitleSummaryAndSource() async {
@@ -51,8 +48,6 @@ final class SavedViewModelTests: XCTestCase {
 
         vm.searchQuery = "nomatch"
         XCTAssertTrue(vm.matchingArticleItems.isEmpty)
-
-        await VMFixtures.drainPersistence()
     }
 
     func testTopicAndSearchFiltersCombine() async {
@@ -71,8 +66,6 @@ final class SavedViewModelTests: XCTestCase {
         // Topic gate keeps iOS-only, search gate keeps "Alpha"-titled -> 1 result.
         XCTAssertEqual(vm.matchingArticleItems.count, 1)
         XCTAssertEqual(vm.matchingArticleItems.first?.title, "iOS Alpha")
-
-        await VMFixtures.drainPersistence()
     }
 
     func testEmptyFiltersReturnAllSavedArticles() async {
@@ -85,7 +78,5 @@ final class SavedViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.matchingArticleItems.count, 2)
         XCTAssertTrue(vm.hasAnyMatches)
-
-        await VMFixtures.drainPersistence()
     }
 }

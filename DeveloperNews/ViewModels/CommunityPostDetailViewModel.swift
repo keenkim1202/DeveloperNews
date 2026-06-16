@@ -6,14 +6,16 @@ import Observation
 final class CommunityPostDetailViewModel {
     private let appState: AppState
     private let post: CommunityPost
-    private let commentService = CommentService()
+    private let commentService: any CommentServicing
 
     init(
         appState: AppState,
         post: CommunityPost,
+        commentService: any CommentServicing = CommentService(),
     ) {
         self.appState = appState
         self.post = post
+        self.commentService = commentService
     }
 
     private var community: any CommunityServicing {

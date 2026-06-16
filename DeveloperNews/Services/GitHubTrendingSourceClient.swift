@@ -25,6 +25,10 @@ private actor GitHubRepositorySearchCache {
             repositories: repositories,
             expiresAt: Date().addingTimeInterval(ttl))
     }
+
+    func clear() {
+        storage.removeAll()
+    }
 }
 
 struct GitHubTrendingSourceClient: ContentSourceClient {
@@ -39,6 +43,12 @@ struct GitHubTrendingSourceClient: ContentSourceClient {
     ) {
         self.session = session
         self.maxResults = maxResults
+    }
+
+    // Test-only seam: clears the process-wide search cache so tests do not see
+    // entries left behind by a prior test in the same run.
+    static func resetCacheForTesting() async {
+        await cache.clear()
     }
 
     func fetchItems(selectedTopics: Set<Topic>) async throws -> [ContentItem] {

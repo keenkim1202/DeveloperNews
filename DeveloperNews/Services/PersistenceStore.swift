@@ -52,8 +52,12 @@ actor PersistenceStore {
     // from both the nonisolated `load()` and the actor-isolated writes.
     private nonisolated(unsafe) let defaults: UserDefaults
 
+    init(defaults: UserDefaults) {
+        self.defaults = defaults
+    }
+
     init() {
-        defaults = UserDefaults(suiteName: "group.keen-onit.DeveloperNews") ?? .standard
+        self.init(defaults: UserDefaults(suiteName: "group.keen-onit.DeveloperNews") ?? .standard)
     }
 
     // MARK: - Load

@@ -10,7 +10,7 @@ final class AppState {
     static let feedStaleThreshold: TimeInterval = FeedStore.feedStaleThreshold
 
     private let contentSourceClient: any ContentSourceClient
-    private let persistenceStore = PersistenceStore()
+    private let persistenceStore: PersistenceStore
     private var persistenceChain: Task<Void, Never> = Task {}
 
     private(set) var feedStore: FeedStore!
@@ -156,11 +156,13 @@ final class AppState {
         profileService: any ProfileServicing,
         communityService: any CommunityServicing,
         contentSourceClient: (any ContentSourceClient)? = nil,
+        persistenceStore: PersistenceStore = PersistenceStore(),
     ) {
         self.translator = translator
         self.authService = authService
         self.profileService = profileService
         self.communityService = communityService
+        self.persistenceStore = persistenceStore
         let client = contentSourceClient ?? Self.defaultContentSourceClient()
         self.contentSourceClient = client
         self.feedStore = FeedStore(
