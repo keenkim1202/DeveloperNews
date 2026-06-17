@@ -109,6 +109,27 @@ final class FeedPostService: FeedPostServicing {
         }
     }
 
+    func reportPost(
+        _ post: FeedPost,
+        reporterId: String,
+        reason: String,
+    ) async {
+        let docId = "\(reporterId)_\(post.id)"
+        do {
+            try await db.collection("reports").document(docId).setData([
+                "postId": post.id,
+                "postTitle": post.story.title,
+                "authorId": post.authorId,
+                "reporterId": reporterId,
+                "reason": reason,
+                "createdAt": FieldValue.serverTimestamp(),
+            ])
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func fetchRecentPosts(limit: Int) async -> [FeedPost] {
         do {
             let snapshot = try await feedPostsRef
