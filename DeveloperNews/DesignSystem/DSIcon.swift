@@ -53,6 +53,7 @@ enum DSIcon: String {
     case allTopics = "square.grid.2x2"
     case emptyTray = "tray"
     case community = "person.2"
+    case quote = "quote.bubble"
 }
 
 extension Image {

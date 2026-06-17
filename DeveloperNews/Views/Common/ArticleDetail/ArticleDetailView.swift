@@ -14,6 +14,7 @@ struct ArticleDetailView: View {
     @State private var webViewRef: WKWebView?
     @State private var pageTranslationTrigger = 0
     @State private var showEditNote = false
+    @State private var showPostComposer = false
 
     init(
         appState: AppState,
@@ -78,6 +79,14 @@ struct ArticleDetailView: View {
             }
         }
         .toolbar {
+            if appState.authService.userId != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: openPostComposer) {
+                        Image(.quote)
+                    }
+                    .accessibilityLabel(.feedPostShareAsPost)
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: toggleSaved) {
                     Image(viewModel.isSaved ? .bookmarkFilled : .bookmark)
@@ -125,6 +134,7 @@ struct ArticleDetailView: View {
         .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: onAppear)
         .sheet(isPresented: $showEditNote) { noteEditorSheet }
+        .sheet(isPresented: $showPostComposer) { postComposerSheet }
     }
 
     private func onAppear() {
@@ -144,6 +154,10 @@ struct ArticleDetailView: View {
         showEditNote = true
     }
 
+    private func openPostComposer() {
+        showPostComposer = true
+    }
+
     private func togglePageTranslation() {
         if viewModel.isPageTranslated {
             restoreOriginalPage()
@@ -160,6 +174,11 @@ struct ArticleDetailView: View {
     @ViewBuilder
     private var noteEditorSheet: some View {
         SavedItemNoteComposerView(appState: appState, item: viewModel.noteEditorItem)
+    }
+
+    @ViewBuilder
+    private var postComposerSheet: some View {
+        FeedPostComposerView(appState: appState, item: item)
     }
 
     private func translateWebPage(using session: TranslationSession) async {
