@@ -68,7 +68,9 @@ final class StoryEngagementViewModel {
     }
 
     func startListening() async {
-        await storyEngagementService.ensureDocument(storyURL: storyURL)
+        // Avoid creating an empty engagement document just for viewing. The
+        // listener tolerates a missing doc and reports zero counts until a real
+        // like or comment creates it.
         storyEngagementService.startListening(storyURL: storyURL)
         commentService.startListening(postId: documentId)
     }
@@ -82,7 +84,8 @@ final class StoryEngagementViewModel {
         guard let uid = currentUserId else {
             return
         }
-        await storyEngagementService.ensureDocument(storyURL: storyURL)
+        // StoryEngagementService.toggleLike creates-or-updates inside its
+        // transaction, so no separate ensureDocument call is required here.
         await storyEngagementService.toggleLike(storyURL: storyURL, userId: uid)
         if let message = storyEngagementService.errorMessage {
             appState.presentError(message)
