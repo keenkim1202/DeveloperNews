@@ -4,6 +4,7 @@ import Translation
 
 struct ArticleDetailView: View {
     @State private var viewModel: ArticleDetailViewModel
+    @State private var engagementViewModel: StoryEngagementViewModel
     private let appState: AppState
     private let item: ContentItem
 
@@ -15,6 +16,7 @@ struct ArticleDetailView: View {
     @State private var pageTranslationTrigger = 0
     @State private var showEditNote = false
     @State private var showPostComposer = false
+    @State private var showComments = false
 
     init(
         appState: AppState,
@@ -23,6 +25,9 @@ struct ArticleDetailView: View {
         _viewModel = State(initialValue: ArticleDetailViewModel(
             appState: appState,
             item: item))
+        _engagementViewModel = State(initialValue: StoryEngagementViewModel(
+            appState: appState,
+            storyURL: item.url.absoluteString))
         self.appState = appState
         self.item = item
     }
@@ -79,20 +84,6 @@ struct ArticleDetailView: View {
             }
         }
         .toolbar {
-            if appState.authService.userId != nil {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: openPostComposer) {
-                        Image(.quote)
-                    }
-                    .accessibilityLabel(.feedPostShareAsPost)
-                }
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: toggleSaved) {
-                    Image(viewModel.isSaved ? .bookmarkFilled : .bookmark)
-                }
-                .accessibilityLabel(viewModel.isSaved ? .removeFromSaved : .saveStory)
-            }
             if viewModel.isSaved {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: openNoteEditor) {
@@ -130,15 +121,107 @@ struct ArticleDetailView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            storyActionBar
+        }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: onAppear)
+        .onDisappear(perform: onDisappear)
         .sheet(isPresented: $showEditNote) { noteEditorSheet }
         .sheet(isPresented: $showPostComposer) { postComposerSheet }
+        .sheet(isPresented: $showComments) { commentsSheet }
+    }
+
+    private var storyActionBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 0) {
+                Button(action: toggleLike) {
+                    actionLabel(
+                        icon: engagementViewModel.isLiked ? .likeFilled : .like,
+                        count: engagementViewModel.likeCount,
+                        tint: engagementViewModel.isLiked ? .red : .primary)
+                }
+                .buttonStyle(.plain)
+                .disabled(engagementViewModel.currentUserId == nil)
+                .frame(maxWidth: .infinity)
+                Button(action: openComments) {
+                    actionLabel(
+                        icon: .comment,
+                        count: engagementViewModel.commentCount,
+                        tint: .primary)
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+                Button(action: toggleSaved) {
+                    actionLabel(
+                        icon: viewModel.isSaved ? .bookmarkFilled : .bookmark,
+                        count: nil,
+                        tint: viewModel.isSaved ? DSColor.accent : .primary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(viewModel.isSaved ? .removeFromSaved : .saveStory)
+                .frame(maxWidth: .infinity)
+                Button(action: openPostComposer) {
+                    actionLabel(
+                        icon: .quote,
+                        count: nil,
+                        tint: .primary)
+                }
+                .buttonStyle(.plain)
+                .disabled(engagementViewModel.currentUserId == nil)
+                .accessibilityLabel(.feedPostShareAsPost)
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        }
+        .background {
+            DSColor.background
+        }
+    }
+
+    private func actionLabel(
+        icon: DSIcon,
+        count: Int?,
+        tint: Color,
+    ) -> some View {
+        HStack(spacing: 6) {
+            Image(icon)
+                .foregroundStyle(tint)
+            if let count {
+                Text("\(count)")
+                    .foregroundStyle(.primary)
+            }
+        }
+        .font(.subheadline)
+    }
+
+    @ViewBuilder
+    private var commentsSheet: some View {
+        StoryCommentsSheet(viewModel: engagementViewModel)
     }
 
     private func onAppear() {
         viewModel.markAsRead()
+        Task {
+            await engagementViewModel.startListening()
+        }
+    }
+
+    private func onDisappear() {
+        engagementViewModel.stopListening()
+    }
+
+    private func toggleLike() {
+        Task {
+            await engagementViewModel.toggleLike()
+        }
+    }
+
+    private func openComments() {
+        showComments = true
     }
 
     private func retryLoad() {

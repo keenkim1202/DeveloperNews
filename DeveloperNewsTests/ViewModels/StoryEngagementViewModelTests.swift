@@ -52,7 +52,7 @@ import Foundation
         #expect(storyEngagement.ensuredURLs.isEmpty)
     }
 
-    @Test func toggleLikeSignedInCallsServiceAndEnsuresDocument() async {
+    @Test func toggleLikeSignedInCallsServiceWithoutEnsuringDocument() async {
         let storyEngagement = MockStoryEngagementServicing()
         let appState = VMFixtures.makeAppState(
             auth: MockAuthServicing(userId: "me"),
@@ -64,7 +64,7 @@ import Foundation
             commentService: MockCommentServicing())
         await vm.toggleLike()
 
-        #expect(storyEngagement.ensuredURLs == [storyURL])
+        #expect(storyEngagement.ensuredURLs.isEmpty)
         #expect(storyEngagement.toggledLikes.map(\.storyURL) == [storyURL])
         #expect(storyEngagement.toggledLikes.first?.userId == "me")
     }
@@ -131,7 +131,7 @@ import Foundation
         #expect(vm.visibleComments.map(\.id) == ["c1"])
     }
 
-    @Test func startListeningEnsuresDocumentThenStartsListeners() async {
+    @Test func startListeningStartsListenersWithoutEnsuringDocument() async {
         let storyEngagement = MockStoryEngagementServicing()
         let comments = MockCommentServicing()
         let appState = VMFixtures.makeAppState(storyEngagement: storyEngagement)
@@ -142,9 +142,23 @@ import Foundation
             commentService: comments)
         await vm.startListening()
 
-        #expect(storyEngagement.ensuredURLs == [storyURL])
+        #expect(storyEngagement.ensuredURLs.isEmpty)
         #expect(storyEngagement.listeningStoryURL == storyURL)
         #expect(comments.listeningPostId == StoryEngagement.documentId(for: storyURL))
+    }
+
+    @Test func addCommentWhileSignedOutDoesNotEnsureDocument() async {
+        let storyEngagement = MockStoryEngagementServicing()
+        let comments = MockCommentServicing()
+        let appState = VMFixtures.makeAppState(storyEngagement: storyEngagement)
+
+        let vm = StoryEngagementViewModel(
+            appState: appState,
+            storyURL: storyURL,
+            commentService: comments)
+        await vm.addComment(text: "hello")
+
+        #expect(storyEngagement.ensuredURLs.isEmpty)
     }
 
     @Test func canSubmitCommentRequiresSignInAndNonEmptyText() async {
