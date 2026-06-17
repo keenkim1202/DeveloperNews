@@ -9,6 +9,7 @@ final class UserProfileViewModel {
 
     var followerCount = 0
     var followingCount = 0
+    var authorFeedPosts: [FeedPost] = []
 
     init(
         appState: AppState,
@@ -28,8 +29,12 @@ final class UserProfileViewModel {
         appState.profileService.isFollowing(authorId)
     }
 
-    var authorPosts: [CommunityPost] {
-        appState.communityService.posts.filter { $0.authorId == authorId }
+    func loadFeedPosts() async {
+        let posts = await appState.feedPostService.fetchPosts(byAuthor: authorId)
+        authorFeedPosts = posts.sorted { $0.createdAt > $1.createdAt }
+        if let message = appState.feedPostService.errorMessage {
+            appState.presentError(message)
+        }
     }
 
     func loadFollowCounts() async {

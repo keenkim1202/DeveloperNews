@@ -42,7 +42,7 @@ struct UserProfileView: View {
                         .font(.title3.bold())
                     HStack(spacing: 20) {
                         VStack {
-                            Text("\(viewModel.authorPosts.count)")
+                            Text("\(viewModel.authorFeedPosts.count)")
                                 .font(.headline)
                             Text(.profilePosts)
                                 .font(.caption)
@@ -81,7 +81,7 @@ struct UserProfileView: View {
                 Divider()
                     .padding(.horizontal, 20)
 
-                if viewModel.authorPosts.isEmpty {
+                if viewModel.authorFeedPosts.isEmpty {
                     Text(.profileNoPosts)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -89,20 +89,13 @@ struct UserProfileView: View {
                 }
                 else {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(viewModel.authorPosts) { post in
-                            NavigationLink(value: CommunityTabDestination.postDetail(post.id)) {
-                                CommunityPostRow(
-                                    currentUserId: appState.authService.userId,
-                                    isRead: appState.isPostRead(post.id),
-                                    post: post,
-                                    authorEmoji: authorEmoji)
+                        ForEach(viewModel.authorFeedPosts) { post in
+                            FeedPostRow(
+                                post: post,
+                                currentUserId: appState.authService.userId)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, 20)
                                 .padding(.vertical, 10)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .frame(maxWidth: .infinity, alignment: .leading)
                             Divider()
                                 .padding(.horizontal, 20)
                         }
@@ -128,6 +121,7 @@ struct UserProfileView: View {
             }
         }
         .task(loadFollowCounts)
+        .task(loadFeedPosts)
         .alert(
             .communityBlockConfirmTitle,
             isPresented: $showBlockConfirm) {
@@ -147,6 +141,10 @@ struct UserProfileView: View {
 
     private func loadFollowCounts() async {
         await viewModel.loadFollowCounts()
+    }
+
+    private func loadFeedPosts() async {
+        await viewModel.loadFeedPosts()
     }
 
     private func toggleFollow() {
