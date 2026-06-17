@@ -12,8 +12,6 @@ struct FeedPostDetailView: View {
     @State private var pendingReason: ReportReason?
     @State private var commentText = ""
     @State private var shouldScrollToLatestComment = false
-    @State private var commentPendingDeletion: CommunityComment?
-    @State private var showDeleteCommentConfirm = false
     @State private var showEditSheet = false
     @FocusState private var commentFieldFocused: Bool
 
@@ -129,15 +127,6 @@ struct FeedPostDetailView: View {
                     action: blockUser)
             } message: {
                 Text(.communityBlockConfirmMessage)
-            }
-            .alert(
-                .communityDeleteCommentConfirm,
-                isPresented: $showDeleteCommentConfirm) {
-                Button("Cancel", role: .cancel) {}
-                Button(
-                    "Delete",
-                    role: .destructive,
-                    action: deleteConfirmedComment)
             }
         }
     }
@@ -255,53 +244,16 @@ struct FeedPostDetailView: View {
             }
             else {
                 ForEach(visibleComments) { comment in
-                    commentRow(comment)
+                    CommentRow(
+                        comment: comment,
+                        currentUserId: currentUserId,
+                        onDelete: { deleteComment(comment) },
+                        onReport: { reportComment(comment, reason: $0) },
+                        onBlock: { blockCommentAuthor(comment) })
                         .id(comment.id)
                 }
             }
         }
-    }
-
-    private func commentRow(_ comment: CommunityComment) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 4) {
-                if let emoji = comment.authorEmoji {
-                    Text(emoji)
-                        .font(.caption)
-                }
-                Text(comment.authorName)
-                    .font(.dsLabel)
-                Text("·")
-                    .foregroundStyle(.tertiary)
-                Text(comment.createdAt, style: .date)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(comment.createdAt, style: .time)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if comment.authorId == currentUserId {
-                    Menu {
-                        Button(role: .destructive, action: { confirmDeleteComment(comment) }) {
-                            Label("Delete", systemImage: "trash")
-                        }
-                    } label: {
-                        Image(.more)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            Text(comment.text)
-                .font(.subheadline)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background {
-            DSColor.surface
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private func onAppear() {
@@ -338,17 +290,23 @@ struct FeedPostDetailView: View {
         }
     }
 
-    private func confirmDeleteComment(_ comment: CommunityComment) {
-        commentPendingDeletion = comment
-        showDeleteCommentConfirm = true
-    }
-
-    private func deleteConfirmedComment() {
-        guard let comment = commentPendingDeletion else { return }
-        commentPendingDeletion = nil
+    private func deleteComment(_ comment: CommunityComment) {
         Task {
             await viewModel.deleteComment(comment)
         }
+    }
+
+    private func reportComment(
+        _ comment: CommunityComment,
+        reason: ReportReason,
+    ) {
+        Task {
+            await viewModel.reportComment(comment, reason: reason)
+        }
+    }
+
+    private func blockCommentAuthor(_ comment: CommunityComment) {
+        viewModel.blockCommentAuthor(comment)
     }
 
     private func onOtherReasonTextChange(_ new: String) {

@@ -18,4 +18,10 @@ protocol CommentServicing {
     ) async
 
     func deleteComment(_ comment: CommunityComment) async
+
+    func reportComment(
+        _ comment: CommunityComment,
+        reporterId: String,
+        reason: String,
+    ) async
 }

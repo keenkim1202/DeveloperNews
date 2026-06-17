@@ -100,6 +100,29 @@ final class CommentService: CommentServicing {
         }
     }
 
+    func reportComment(
+        _ comment: CommunityComment,
+        reporterId: String,
+        reason: String,
+    ) async {
+        errorMessage = nil
+        let docId = "\(reporterId)_\(comment.id)"
+        do {
+            try await db.collection("reports").document(docId).setData([
+                "reporterId": reporterId,
+                "commentId": comment.id,
+                "reportedUserId": comment.authorId,
+                "parentCollection": parentCollection,
+                "postId": comment.postId,
+                "reason": reason,
+                "createdAt": FieldValue.serverTimestamp(),
+            ])
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     // nonisolated so the transaction closure captures only the local Firestore
     // handle and post id rather than MainActor-isolated `self`.
     nonisolated private static func decrementCommentCount(

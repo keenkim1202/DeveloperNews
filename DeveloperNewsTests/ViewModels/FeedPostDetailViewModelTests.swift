@@ -121,6 +121,55 @@ import Foundation
         await Task.yield()
     }
 
+    @Test func reportCommentWhileSignedOutIsNoOp() async {
+        let comments = MockCommentServicing()
+        let appState = VMFixtures.makeAppState(auth: MockAuthServicing())
+        let post = VMFixtures.makeFeedPost(id: "post-1")
+
+        let vm = FeedPostDetailViewModel(
+            appState: appState,
+            post: post,
+            commentService: comments)
+        await vm.reportComment(makeComment(id: "c1", authorId: "author"), reason: .spam)
+
+        #expect(comments.reportedComments.isEmpty)
+
+        await Task.yield()
+    }
+
+    @Test func reportCommentSignedInDelegatesToServiceWithReason() async {
+        let comments = MockCommentServicing()
+        let appState = VMFixtures.makeAppState(auth: MockAuthServicing(userId: "me"))
+        let post = VMFixtures.makeFeedPost(id: "post-1")
+
+        let vm = FeedPostDetailViewModel(
+            appState: appState,
+            post: post,
+            commentService: comments)
+        await vm.reportComment(makeComment(id: "c1", authorId: "author"), reason: .spam)
+
+        #expect(comments.reportedComments.map(\.commentId) == ["c1"])
+        #expect(comments.reportedComments.first?.reporterId == "me")
+        #expect(comments.reportedComments.first?.reason == "spam")
+
+        await Task.yield()
+    }
+
+    @Test func blockCommentAuthorBlocksTheAuthor() async {
+        let appState = VMFixtures.makeAppState(auth: MockAuthServicing(userId: "me"))
+        let post = VMFixtures.makeFeedPost(id: "post-1")
+
+        let vm = FeedPostDetailViewModel(
+            appState: appState,
+            post: post,
+            commentService: MockCommentServicing())
+        vm.blockCommentAuthor(makeComment(id: "c1", authorId: "author"))
+
+        #expect(appState.blockedUserIds.contains("author"))
+
+        await Task.yield()
+    }
+
     @Test func toggleLikeUpdatesLocalLikeState() async {
         let feedPost = MockFeedPostServicing()
         let appState = VMFixtures.makeAppState(

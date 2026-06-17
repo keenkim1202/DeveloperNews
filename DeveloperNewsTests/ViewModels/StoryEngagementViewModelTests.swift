@@ -217,4 +217,44 @@ import Foundation
         #expect(vm.canSubmitComment(commentText: "  ") == false)
         #expect(vm.canSubmitComment(commentText: "hello") == true)
     }
+
+    @Test func reportCommentWhileSignedOutIsNoOp() async {
+        let comments = MockCommentServicing()
+        let appState = VMFixtures.makeAppState(auth: MockAuthServicing())
+
+        let vm = StoryEngagementViewModel(
+            appState: appState,
+            storyURL: storyURL,
+            commentService: comments)
+        await vm.reportComment(makeComment(id: "c1", authorId: "author"), reason: .spam)
+
+        #expect(comments.reportedComments.isEmpty)
+    }
+
+    @Test func reportCommentSignedInDelegatesToServiceWithReason() async {
+        let comments = MockCommentServicing()
+        let appState = VMFixtures.makeAppState(auth: MockAuthServicing(userId: "me"))
+
+        let vm = StoryEngagementViewModel(
+            appState: appState,
+            storyURL: storyURL,
+            commentService: comments)
+        await vm.reportComment(makeComment(id: "c1", authorId: "author"), reason: .inappropriate)
+
+        #expect(comments.reportedComments.map(\.commentId) == ["c1"])
+        #expect(comments.reportedComments.first?.reporterId == "me")
+        #expect(comments.reportedComments.first?.reason == "inappropriate")
+    }
+
+    @Test func blockCommentAuthorBlocksTheAuthor() async {
+        let appState = VMFixtures.makeAppState(auth: MockAuthServicing(userId: "me"))
+
+        let vm = StoryEngagementViewModel(
+            appState: appState,
+            storyURL: storyURL,
+            commentService: MockCommentServicing())
+        vm.blockCommentAuthor(makeComment(id: "c1", authorId: "author"))
+
+        #expect(appState.blockedUserIds.contains("author"))
+    }
 }
