@@ -317,7 +317,8 @@ struct CommunityPostDetailView: View {
                         currentUserId: currentUserId,
                         onDelete: { deleteComment(comment) },
                         onReport: { reportComment(comment, reason: $0) },
-                        onBlock: { blockCommentAuthor(comment) })
+                        onBlock: { blockCommentAuthor(comment) },
+                        onLike: currentUserId == nil ? nil : { likeComment(comment) })
                         .id(comment.id)
                 }
             }
@@ -384,6 +385,12 @@ struct CommunityPostDetailView: View {
 
     private func blockCommentAuthor(_ comment: CommunityComment) {
         viewModel.blockCommentAuthor(comment)
+    }
+
+    private func likeComment(_ comment: CommunityComment) {
+        Task {
+            await viewModel.toggleCommentLike(comment)
+        }
     }
 
     private func onOtherReasonTextChange(_ new: String) {

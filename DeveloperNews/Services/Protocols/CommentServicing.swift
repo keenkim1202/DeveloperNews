@@ -19,6 +19,11 @@ protocol CommentServicing {
 
     func deleteComment(_ comment: CommunityComment) async
 
+    func toggleCommentLike(
+        _ comment: CommunityComment,
+        userId: String,
+    ) async
+
     func reportComment(
         _ comment: CommunityComment,
         reporterId: String,
