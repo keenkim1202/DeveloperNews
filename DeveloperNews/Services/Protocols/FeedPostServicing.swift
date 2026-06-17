@@ -26,6 +26,12 @@ protocol FeedPostServicing {
 
     func deletePost(_ post: FeedPost) async
 
+    func reportPost(
+        _ post: FeedPost,
+        reporterId: String,
+        reason: String,
+    ) async
+
     func fetchRecentPosts(limit: Int) async -> [FeedPost]
 
     func fetchPosts(byAuthor authorId: String) async -> [FeedPost]

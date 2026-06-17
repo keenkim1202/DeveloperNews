@@ -42,9 +42,13 @@ struct FeedPostRow: View {
         VStack(alignment: .leading, spacing: 8) {
             header
             if !post.comment.isEmpty {
-                Text(post.comment)
-                    .font(.body)
-                    .foregroundStyle(.primary)
+                NavigationLink(value: CommunityTabDestination.feedPostDetail(post)) {
+                    Text(post.comment)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.plain)
             }
             NavigationLink(value: CommunityTabDestination.storyDetail(post.story)) {
                 quoteCard
@@ -118,11 +122,14 @@ struct FeedPostRow: View {
             .buttonStyle(.plain)
             .disabled(onLike == nil)
 
-            HStack(spacing: 4) {
-                Image(.comment)
-                Text("\(post.commentCount)")
+            NavigationLink(value: CommunityTabDestination.feedPostDetail(post)) {
+                HStack(spacing: 4) {
+                    Image(.comment)
+                    Text("\(post.commentCount)")
+                }
+                .foregroundStyle(.secondary)
             }
-            .foregroundStyle(.secondary)
+            .buttonStyle(.plain)
         }
         .font(.caption)
     }

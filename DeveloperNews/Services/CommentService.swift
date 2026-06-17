@@ -9,15 +9,20 @@ final class CommentService: CommentServicing {
     private(set) var errorMessage: String?
 
     private let db = Firestore.firestore()
+    private let parentCollection: String
     @ObservationIgnored
     nonisolated(unsafe) private var listenerRegistration: ListenerRegistration?
+
+    init(parentCollection: String = "posts") {
+        self.parentCollection = parentCollection
+    }
 
     deinit {
         listenerRegistration?.remove()
     }
 
     private func commentsRef(_ postId: String) -> CollectionReference {
-        db.collection("posts").document(postId).collection("comments")
+        db.collection(parentCollection).document(postId).collection("comments")
     }
 
     func startListening(postId: String) {
@@ -68,7 +73,7 @@ final class CommentService: CommentServicing {
 
         do {
             try await commentsRef(postId).addDocument(data: data)
-            try await db.collection("posts").document(postId).updateData([
+            try await db.collection(parentCollection).document(postId).updateData([
                 "commentCount": FieldValue.increment(Int64(1)),
             ])
         }
@@ -85,7 +90,10 @@ final class CommentService: CommentServicing {
             // Atomic, clamped decrement. Security rules reject commentCount < 0,
             // so we can't use FieldValue.increment(-1) on a 0-count post; a
             // transaction lets us read-modify-write safely under contention.
-            try await Self.decrementCommentCount(db, postId: comment.postId)
+            try await Self.decrementCommentCount(
+                db,
+                parentCollection: parentCollection,
+                postId: comment.postId)
         }
         catch {
             errorMessage = error.localizedDescription
@@ -96,9 +104,10 @@ final class CommentService: CommentServicing {
     // handle and post id rather than MainActor-isolated `self`.
     nonisolated private static func decrementCommentCount(
         _ db: Firestore,
+        parentCollection: String,
         postId: String,
     ) async throws {
-        let postRef = db.collection("posts").document(postId)
+        let postRef = db.collection(parentCollection).document(postId)
         _ = try await db.runTransaction { transaction, errorPointer in
             let snapshot: DocumentSnapshot
             do {

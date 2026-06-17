@@ -36,10 +36,10 @@ final class Community2ViewModel {
         appState.authService.isSignedIn
     }
     var hasNoPosts: Bool {
-        posts.isEmpty
+        visiblePosts.isEmpty
     }
     var hasNoFollowingPosts: Bool {
-        followingPosts.isEmpty
+        visibleFollowingPosts.isEmpty
     }
     var displayedPosts: [FeedPost] {
         switch mode {
@@ -50,13 +50,23 @@ final class Community2ViewModel {
         }
     }
 
+    // Hide posts authored by blocked users from both feeds, mirroring how
+    // CommunityViewModel filters its post list.
+    private var visiblePosts: [FeedPost] {
+        posts.filter { !appState.blockedUserIds.contains($0.authorId) }
+    }
+
+    var visibleFollowingPosts: [FeedPost] {
+        followingPosts.filter { !appState.blockedUserIds.contains($0.authorId) }
+    }
+
     var recentPosts: [FeedPost] {
-        posts.sorted { $0.createdAt > $1.createdAt }
+        visiblePosts.sorted { $0.createdAt > $1.createdAt }
     }
 
     var trendingPosts: [FeedPost] {
         let now = Date()
-        return posts.sorted { lhs, rhs in
+        return visiblePosts.sorted { lhs, rhs in
             let lhsScore = Self.trendingScore(
                 likeCount: lhs.likeCount,
                 commentCount: lhs.commentCount,

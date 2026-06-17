@@ -174,6 +174,45 @@ import Foundation
         #expect(updated?.likedBy.contains("me") == true)
     }
 
+    @Test func blockedAuthorsAreFilteredFromDiscoverFeed() async {
+        let feedPost = MockFeedPostServicing()
+        let visible = VMFixtures.makeFeedPost(id: "visible", authorId: "ok")
+        let hidden = VMFixtures.makeFeedPost(id: "hidden", authorId: "blocked")
+        feedPost.recentPosts = [visible, hidden]
+        let appState = VMFixtures.makeAppState(feedPost: feedPost)
+        appState.blockUser("blocked")
+        let vm = Community2ViewModel(appState: appState)
+
+        await vm.load()
+
+        #expect(vm.recentPosts.map(\.id) == ["visible"])
+        #expect(vm.trendingPosts.map(\.id) == ["visible"])
+        #expect(vm.displayedPosts.map(\.id) == ["visible"])
+
+        await Task.yield()
+    }
+
+    @Test func blockedAuthorsAreFilteredFromFollowingFeed() async {
+        let feedPost = MockFeedPostServicing()
+        let visible = VMFixtures.makeFeedPost(id: "visible", authorId: "ok")
+        let hidden = VMFixtures.makeFeedPost(id: "hidden", authorId: "blocked")
+        feedPost.authorsPosts = [visible, hidden]
+        let profile = MockProfileServicing()
+        profile.followedUserIds = ["ok", "blocked"]
+        let appState = VMFixtures.makeAppState(
+            profile: profile,
+            feedPost: feedPost)
+        appState.blockUser("blocked")
+        let vm = Community2ViewModel(appState: appState)
+
+        await vm.loadFollowing()
+
+        #expect(vm.visibleFollowingPosts.map(\.id) == ["visible"])
+        #expect(vm.hasNoFollowingPosts == false)
+
+        await Task.yield()
+    }
+
     @Test func toggleLikeUpdatesLocalStateWhenSignedIn() async {
         let feedPost = MockFeedPostServicing()
         let post = VMFixtures.makeFeedPost(id: "p1", likeCount: 3)

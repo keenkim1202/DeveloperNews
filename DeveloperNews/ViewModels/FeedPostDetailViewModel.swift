@@ -1,0 +1,134 @@
+import Foundation
+import Observation
+
+@Observable
+@MainActor
+final class FeedPostDetailViewModel {
+    private let appState: AppState
+    private let commentService: any CommentServicing
+
+    // Snapshot of the post passed in. Like state is managed locally since the
+    // feed services do not expose a live `posts` collection to read back from.
+    private(set) var currentPost: FeedPost
+
+    init(
+        appState: AppState,
+        post: FeedPost,
+        commentService: any CommentServicing = CommentService(parentCollection: "feedPosts"),
+    ) {
+        self.appState = appState
+        self.currentPost = post
+        self.commentService = commentService
+    }
+
+    private var feedPostService: any FeedPostServicing {
+        appState.feedPostService
+    }
+    var currentUserId: String? {
+        appState.authService.userId
+    }
+    var isAuthor: Bool {
+        currentUserId == currentPost.authorId
+    }
+    var isLiked: Bool {
+        guard let uid = currentUserId else {
+            return false
+        }
+        return currentPost.likedBy.contains(uid)
+    }
+
+    var commentErrorMessage: String? {
+        commentService.errorMessage
+    }
+
+    var visibleComments: [CommunityComment] {
+        commentService.comments.filter { !appState.blockedUserIds.contains($0.authorId) }
+    }
+
+    func canSubmitComment(commentText: String) -> Bool {
+        currentUserId != nil && !commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var hasAuthenticatedUser: Bool {
+        appState.authService.user != nil
+    }
+
+    func startListening() {
+        commentService.startListening(postId: currentPost.id)
+    }
+
+    func stopListening() {
+        commentService.stopListening()
+    }
+
+    func addComment(text: String) async {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let user = appState.authService.user
+        else { return }
+        await commentService.addComment(
+            postId: currentPost.id,
+            text: trimmed,
+            author: user,
+            authorDisplayName: appState.profileService.displayName,
+            authorEmoji: appState.profileService.profileEmoji)
+    }
+
+    func deleteComment(_ comment: CommunityComment) async {
+        await commentService.deleteComment(comment)
+    }
+
+    func toggleLike() async {
+        guard let uid = currentUserId else {
+            return
+        }
+        await feedPostService.toggleLike(currentPost, userId: uid)
+        if let message = feedPostService.errorMessage {
+            appState.presentError(message)
+            return
+        }
+        currentPost = Self.applyLikeToggle(currentPost, userId: uid)
+    }
+
+    func submitReport(_ reason: ReportReason) async {
+        guard let uid = currentUserId else {
+            return
+        }
+        await feedPostService.reportPost(currentPost, reporterId: uid, reason: reason.storageValue)
+        if let message = feedPostService.errorMessage {
+            appState.presentError(message)
+        }
+    }
+
+    func blockAuthor() {
+        appState.blockUser(currentPost.authorId)
+    }
+
+    private static func applyLikeToggle(
+        _ post: FeedPost,
+        userId: String,
+    ) -> FeedPost {
+        var likedBy = post.likedBy
+        let likeCount: Int
+        if likedBy.contains(userId) {
+            likedBy.remove(userId)
+            likeCount = max(0, post.likeCount - 1)
+        }
+        else {
+            likedBy.insert(userId)
+            likeCount = post.likeCount + 1
+        }
+        return FeedPost(
+            id: post.id,
+            authorId: post.authorId,
+            authorName: post.authorName,
+            authorEmoji: post.authorEmoji,
+            comment: post.comment,
+            story: post.story,
+            likeCount: likeCount,
+            likedBy: likedBy,
+            commentCount: post.commentCount,
+            createdAt: post.createdAt,
+            updatedAt: post.updatedAt)
+    }
+}

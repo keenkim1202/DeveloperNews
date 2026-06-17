@@ -86,6 +86,8 @@ struct CommunityView: View {
             else {
                 UnavailableDestinationView(reason: .itemNotFound)
             }
+        case let .feedPostDetail(post):
+            FeedPostDetailView(appState: appState, post: post)
         }
     }
 
