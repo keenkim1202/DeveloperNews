@@ -7,6 +7,7 @@ struct BookmarkDetailView: View {
 
     @State private var showEdit = false
     @State private var showDeleteConfirm = false
+    @State private var showPostComposer = false
 
     init(
         appState: AppState,
@@ -95,6 +96,23 @@ struct BookmarkDetailView: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+                if appState.authService.userId != nil {
+                    Divider()
+                    Button(action: openPostComposer) {
+                        HStack {
+                            Label(.feedPostShareAsPost, icon: .quote)
+                            Spacer()
+                            Image(.chevronForward)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(12)
+                        .background {
+                            DSColor.surface
+                        }
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+                }
                 Button(
                     .bookmarkDelete,
                     role: .destructive,
@@ -121,6 +139,9 @@ struct BookmarkDetailView: View {
         .sheet(isPresented: $showEdit) {
             EditBookmarkView(appState: appState, item: currentItem)
         }
+        .sheet(isPresented: $showPostComposer) {
+            FeedPostComposerView(appState: appState, item: currentItem)
+        }
     }
 
     private var bookmarkDeleteConfirmDialogView: some View {
@@ -145,6 +166,10 @@ struct BookmarkDetailView: View {
 
     private func openEdit() {
         showEdit = true
+    }
+
+    private func openPostComposer() {
+        showPostComposer = true
     }
 }
 
