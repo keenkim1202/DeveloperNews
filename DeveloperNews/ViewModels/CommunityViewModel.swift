@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 
+@available(*, deprecated, message: "Replaced by Community2View")
 @Observable
 @MainActor
 final class CommunityViewModel {
