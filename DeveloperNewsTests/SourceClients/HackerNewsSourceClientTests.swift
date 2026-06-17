@@ -1,14 +1,17 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
+extension StubbedSourceClientTests {
 @MainActor
-final class HackerNewsSourceClientTests: XCTestCase {
-    override func tearDown() {
+@Suite struct HackerNewsSourceClientTests {
+    // Clear any stubs a prior test registered on the shared protocol before each
+    // test, mirroring the original per-test teardown reset.
+    init() {
         StubURLProtocol.reset()
-        super.tearDown()
     }
 
-    func testMapsTopStoryIntoContentItem() async throws {
+    @Test func mapsTopStoryIntoContentItem() async throws {
         StubURLProtocol.register(
             urlPrefix: "https://hacker-news.firebaseio.com/v0/topstories.json",
             json: "[101]")
@@ -29,21 +32,21 @@ final class HackerNewsSourceClientTests: XCTestCase {
         let client = HackerNewsSourceClient(session: StubURLProtocol.makeSession())
         let items = try await client.fetchItems(selectedTopics: [.ios])
 
-        XCTAssertEqual(items.count, 1)
-        let item = try XCTUnwrap(items.first)
-        XCTAssertEqual(item.title, "A SwiftUI deep dive")
-        XCTAssertEqual(item.sourceName, "Hacker News")
-        XCTAssertEqual(item.sourceCategory, .hackerNews)
-        XCTAssertEqual(item.kind, .discussion)
-        XCTAssertEqual(item.url.absoluteString, "https://example.com/swiftui")
-        XCTAssertEqual(item.authorName, "author1")
-        XCTAssertEqual(item.engagement?.reactionCount, 200)
-        XCTAssertEqual(item.engagement?.commentCount, 42)
+        #expect(items.count == 1)
+        let item = try #require(items.first)
+        #expect(item.title == "A SwiftUI deep dive")
+        #expect(item.sourceName == "Hacker News")
+        #expect(item.sourceCategory == .hackerNews)
+        #expect(item.kind == .discussion)
+        #expect(item.url.absoluteString == "https://example.com/swiftui")
+        #expect(item.authorName == "author1")
+        #expect(item.engagement?.reactionCount == 200)
+        #expect(item.engagement?.commentCount == 42)
         // "swiftui" keyword should map to the ios topic.
-        XCTAssertTrue(item.topics.contains(.ios))
+        #expect(item.topics.contains(.ios))
     }
 
-    func testSkipsNonStoryTypeAndMissingURL() async throws {
+    @Test func skipsNonStoryTypeAndMissingURL() async throws {
         StubURLProtocol.register(
             urlPrefix: "https://hacker-news.firebaseio.com/v0/topstories.json",
             json: "[201, 202]")
@@ -61,6 +64,7 @@ final class HackerNewsSourceClientTests: XCTestCase {
         let client = HackerNewsSourceClient(session: StubURLProtocol.makeSession())
         let items = try await client.fetchItems(selectedTopics: [.web, .ios])
 
-        XCTAssertTrue(items.isEmpty)
+        #expect(items.isEmpty)
     }
+}
 }

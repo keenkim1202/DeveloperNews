@@ -1,23 +1,24 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
 @MainActor
-final class TopicSelectionViewModelTests: XCTestCase {
-    func testToggleAddsAndRemovesTopic() async {
+@Suite struct TopicSelectionViewModelTests {
+    @Test func toggleAddsAndRemovesTopic() async {
         let appState = VMFixtures.makeAppState()
         let vm = TopicSelectionViewModel(appState: appState)
 
-        XCTAssertEqual(vm.selectedCount, 0)
+        #expect(vm.selectedCount == 0)
         vm.toggleTopic(.ios)
-        XCTAssertTrue(vm.selectedTopics.contains(.ios))
-        XCTAssertEqual(vm.selectedCount, 1)
+        #expect(vm.selectedTopics.contains(.ios))
+        #expect(vm.selectedCount == 1)
 
         vm.toggleTopic(.ios)
-        XCTAssertFalse(vm.selectedTopics.contains(.ios))
-        XCTAssertEqual(vm.selectedCount, 0)
+        #expect(!vm.selectedTopics.contains(.ios))
+        #expect(vm.selectedCount == 0)
     }
 
-    func testCanSelectMoreReflectsLimit() async {
+    @Test func canSelectMoreReflectsLimit() async {
         let appState = VMFixtures.makeAppState()
         let vm = TopicSelectionViewModel(appState: appState)
 
@@ -26,11 +27,11 @@ final class TopicSelectionViewModelTests: XCTestCase {
             vm.toggleTopic(topic)
         }
 
-        XCTAssertEqual(vm.selectedCount, vm.maxSelectedTopics)
-        XCTAssertFalse(vm.canSelectMore)
+        #expect(vm.selectedCount == vm.maxSelectedTopics)
+        #expect(!vm.canSelectMore)
     }
 
-    func testToggleBeyondLimitIsIgnored() async {
+    @Test func toggleBeyondLimitIsIgnored() async {
         let appState = VMFixtures.makeAppState()
         let vm = TopicSelectionViewModel(appState: appState)
 
@@ -43,8 +44,8 @@ final class TopicSelectionViewModelTests: XCTestCase {
         // Pick a topic not already selected and confirm it cannot be added.
         if let extra = Topic.allCases.first(where: { !vm.selectedTopics.contains($0) }) {
             vm.toggleTopic(extra)
-            XCTAssertFalse(vm.selectedTopics.contains(extra))
+            #expect(!vm.selectedTopics.contains(extra))
         }
-        XCTAssertEqual(vm.selectedCount, countAtLimit)
+        #expect(vm.selectedCount == countAtLimit)
     }
 }

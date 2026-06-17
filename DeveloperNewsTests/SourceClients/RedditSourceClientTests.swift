@@ -1,14 +1,17 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
+extension StubbedSourceClientTests {
 @MainActor
-final class RedditSourceClientTests: XCTestCase {
-    override func tearDown() {
+@Suite struct RedditSourceClientTests {
+    // Clear any stubs a prior test registered on the shared protocol before each
+    // test, mirroring the original per-test teardown reset.
+    init() {
         StubURLProtocol.reset()
-        super.tearDown()
     }
 
-    func testMapsListingIntoContentItems() async throws {
+    @Test func mapsListingIntoContentItems() async throws {
         StubURLProtocol.register(
             urlPrefix: "https://www.reddit.com/r/swift.json",
             json: """
@@ -78,22 +81,22 @@ final class RedditSourceClientTests: XCTestCase {
 
         // Only the first post is eligible: the NSFW post is filtered, and the
         // self post is dropped because it has no external link.
-        XCTAssertEqual(items.count, 1)
-        let item = try XCTUnwrap(items.first)
-        XCTAssertEqual(item.title, "SwiftUI tips")
-        XCTAssertEqual(item.sourceName, "Reddit")
-        XCTAssertEqual(item.sourceCategory, .reddit)
-        XCTAssertEqual(item.kind, .discussion)
-        XCTAssertEqual(item.authorName, "r/swift")
-        XCTAssertEqual(item.url.absoluteString, "https://example.com/swiftui-tips")
-        XCTAssertEqual(item.engagement?.reactionCount, 300)
-        XCTAssertEqual(item.engagement?.commentCount, 25)
+        #expect(items.count == 1)
+        let item = try #require(items.first)
+        #expect(item.title == "SwiftUI tips")
+        #expect(item.sourceName == "Reddit")
+        #expect(item.sourceCategory == .reddit)
+        #expect(item.kind == .discussion)
+        #expect(item.authorName == "r/swift")
+        #expect(item.url.absoluteString == "https://example.com/swiftui-tips")
+        #expect(item.engagement?.reactionCount == 300)
+        #expect(item.engagement?.commentCount == 25)
         // Fallback topics from the feed definition apply.
-        XCTAssertTrue(item.topics.contains(.ios))
-        XCTAssertNil(item.thumbnailURL)
+        #expect(item.topics.contains(.ios))
+        #expect(item.thumbnailURL == nil)
     }
 
-    func testRespectsMaxItemsPerFeed() async throws {
+    @Test func respectsMaxItemsPerFeed() async throws {
         let children = (0..<5).map { index in
             """
             {
@@ -126,6 +129,7 @@ final class RedditSourceClientTests: XCTestCase {
             maxItemsPerFeed: 2)
         let items = try await client.fetchItems(selectedTopics: [])
 
-        XCTAssertEqual(items.count, 2)
+        #expect(items.count == 2)
     }
+}
 }

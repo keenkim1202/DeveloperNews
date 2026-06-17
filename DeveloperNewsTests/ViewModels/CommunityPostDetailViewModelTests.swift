@@ -1,11 +1,12 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
 // Proves CommentService is injected via CommentServicing: a MockCommentServicing
 // is supplied and the VM's derived state (visibleComments, error pass-through)
 // reflects the mock rather than a hardcoded production service.
 @MainActor
-final class CommunityPostDetailViewModelTests: XCTestCase {
+@Suite struct CommunityPostDetailViewModelTests {
     private func makeComment(
         id: String,
         authorId: String,
@@ -20,7 +21,7 @@ final class CommunityPostDetailViewModelTests: XCTestCase {
             createdAt: .now)
     }
 
-    func testVisibleCommentsFiltersBlockedAuthorsFromInjectedService() async {
+    @Test func visibleCommentsFiltersBlockedAuthorsFromInjectedService() async {
         let comments = MockCommentServicing()
         comments.comments = [
             makeComment(id: "c1", authorId: "ok"),
@@ -36,14 +37,14 @@ final class CommunityPostDetailViewModelTests: XCTestCase {
             commentService: comments)
 
         let visibleIds = vm.visibleComments.map(\.id)
-        XCTAssertEqual(visibleIds, ["c1"])
+        #expect(visibleIds == ["c1"])
 
         // Minimal yield so the AppState-owned persistence task settles before this
         // scope releases the instance, avoiding a teardown race on a pending Task.
         await Task.yield()
     }
 
-    func testCommentErrorMessageReadsFromInjectedService() async {
+    @Test func commentErrorMessageReadsFromInjectedService() async {
         let comments = MockCommentServicing()
         comments.errorMessage = "boom"
         let appState = VMFixtures.makeAppState()
@@ -54,12 +55,12 @@ final class CommunityPostDetailViewModelTests: XCTestCase {
             post: post,
             commentService: comments)
 
-        XCTAssertEqual(vm.commentErrorMessage, "boom")
+        #expect(vm.commentErrorMessage == "boom")
 
         await Task.yield()
     }
 
-    func testStartListeningForwardsToInjectedService() async {
+    @Test func startListeningForwardsToInjectedService() async {
         let comments = MockCommentServicing()
         let appState = VMFixtures.makeAppState()
         let post = VMFixtures.makePost(id: "post-1")
@@ -70,7 +71,7 @@ final class CommunityPostDetailViewModelTests: XCTestCase {
             commentService: comments)
         vm.startListening()
 
-        XCTAssertEqual(comments.listeningPostId, "post-1")
+        #expect(comments.listeningPostId == "post-1")
 
         await Task.yield()
     }

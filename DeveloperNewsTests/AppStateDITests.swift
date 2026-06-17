@@ -1,11 +1,12 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
 // Proves protocol-based dependency injection works in tests: AppState is built
 // entirely from mock services and the assertions observe values that flow back
 // out through the injected dependencies.
 @MainActor
-final class AppStateDITests: XCTestCase {
+@Suite struct AppStateDITests {
     private func makeAppState(
         auth: MockAuthServicing,
         profile: MockProfileServicing = MockProfileServicing(),
@@ -34,16 +35,16 @@ final class AppStateDITests: XCTestCase {
         return false
     }
 
-    func testDeleteCurrentAccountFailsWithoutSignedInUser() async {
+    @Test func deleteCurrentAccountFailsWithoutSignedInUser() async {
         let auth = MockAuthServicing(userId: nil)
         let state = makeAppState(auth: auth)
 
         let result = await state.deleteCurrentAccount()
 
-        XCTAssertTrue(isFailed(result))
+        #expect(isFailed(result))
     }
 
-    func testDeleteCurrentAccountSucceedsWithInjectedMocks() async {
+    @Test func deleteCurrentAccountSucceedsWithInjectedMocks() async {
         let auth = MockAuthServicing(userId: "user-123")
         auth.deleteAccountResult = .success
         let profile = MockProfileServicing()
@@ -51,28 +52,28 @@ final class AppStateDITests: XCTestCase {
 
         let result = await state.deleteCurrentAccount()
 
-        XCTAssertTrue(isSuccess(result))
-        XCTAssertTrue(profile.didStopListening)
+        #expect(isSuccess(result))
+        #expect(profile.didStopListening)
     }
 
-    func testSignOutRoutesThroughInjectedServices() async {
+    @Test func signOutRoutesThroughInjectedServices() async {
         let auth = MockAuthServicing(userId: "user-123")
         let profile = MockProfileServicing()
         let state = makeAppState(auth: auth, profile: profile)
 
         state.signOut()
 
-        XCTAssertTrue(auth.didSignOut)
-        XCTAssertTrue(profile.didStopListening)
+        #expect(auth.didSignOut)
+        #expect(profile.didStopListening)
     }
 
-    func testUpdateDisplayNameForwardsToProfileMock() async {
+    @Test func updateDisplayNameForwardsToProfileMock() async {
         let auth = MockAuthServicing(userId: "user-123")
         let profile = MockProfileServicing()
         let state = makeAppState(auth: auth, profile: profile)
 
         await state.updateDisplayName("Renamed")
 
-        XCTAssertEqual(profile.displayName, "Renamed")
+        #expect(profile.displayName == "Renamed")
     }
 }

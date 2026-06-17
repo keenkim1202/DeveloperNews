@@ -1,9 +1,10 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
 @MainActor
-final class CommunityViewModelTests: XCTestCase {
-    func testFilteredPostsExcludesBlockedAuthors() async {
+@Suite struct CommunityViewModelTests {
+    @Test func filteredPostsExcludesBlockedAuthors() async {
         let community = MockCommunityServicing()
         community.posts = [
             VMFixtures.makePost(authorId: "ok", title: "Keep"),
@@ -14,10 +15,10 @@ final class CommunityViewModelTests: XCTestCase {
         let vm = CommunityViewModel(appState: appState)
 
         let titles = vm.filteredPosts.map(\.title)
-        XCTAssertEqual(titles, ["Keep"])
+        #expect(titles == ["Keep"])
     }
 
-    func testFilteredPostsSearchMatchesTitleDescriptionAndAuthor() async {
+    @Test func filteredPostsSearchMatchesTitleDescriptionAndAuthor() async {
         let community = MockCommunityServicing()
         community.posts = [
             VMFixtures.makePost(authorName: "Alice", title: "SwiftUI Tips", description: "x"),
@@ -28,16 +29,16 @@ final class CommunityViewModelTests: XCTestCase {
         let vm = CommunityViewModel(appState: appState)
 
         vm.searchQuery = "swiftui"
-        XCTAssertEqual(vm.filteredPosts.map(\.title), ["SwiftUI Tips"])
+        #expect(vm.filteredPosts.map(\.title) == ["SwiftUI Tips"])
 
         vm.searchQuery = "concurrency"
-        XCTAssertEqual(vm.filteredPosts.map(\.title), ["Other"])
+        #expect(vm.filteredPosts.map(\.title) == ["Other"])
 
         vm.searchQuery = "carol"
-        XCTAssertEqual(vm.filteredPosts.map(\.title), ["Z"])
+        #expect(vm.filteredPosts.map(\.title) == ["Z"])
     }
 
-    func testFilteredPostsCombineSearchAndBlock() async {
+    @Test func filteredPostsCombineSearchAndBlock() async {
         let community = MockCommunityServicing()
         community.posts = [
             VMFixtures.makePost(authorId: "ok", title: "Swift Alpha"),
@@ -50,10 +51,10 @@ final class CommunityViewModelTests: XCTestCase {
 
         vm.searchQuery = "swift"
         // "Swift Beta" is blocked, "Kotlin" fails search -> only "Swift Alpha".
-        XCTAssertEqual(vm.filteredPosts.map(\.title), ["Swift Alpha"])
+        #expect(vm.filteredPosts.map(\.title) == ["Swift Alpha"])
     }
 
-    func testEmptyQueryReturnsAllNonBlockedPosts() async {
+    @Test func emptyQueryReturnsAllNonBlockedPosts() async {
         let community = MockCommunityServicing()
         community.posts = [
             VMFixtures.makePost(authorId: "a"),
@@ -62,7 +63,7 @@ final class CommunityViewModelTests: XCTestCase {
         let appState = VMFixtures.makeAppState(community: community)
         let vm = CommunityViewModel(appState: appState)
 
-        XCTAssertEqual(vm.filteredPosts.count, 2)
-        XCTAssertFalse(vm.hasNoPosts)
+        #expect(vm.filteredPosts.count == 2)
+        #expect(!vm.hasNoPosts)
     }
 }

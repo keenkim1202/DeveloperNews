@@ -1,14 +1,17 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
+extension StubbedSourceClientTests {
 @MainActor
-final class RSSSourceClientTests: XCTestCase {
-    override func tearDown() {
+@Suite struct RSSSourceClientTests {
+    // Clear any stubs a prior test registered on the shared protocol before each
+    // test, mirroring the original per-test teardown reset.
+    init() {
         StubURLProtocol.reset()
-        super.tearDown()
     }
 
-    func testParsesRSSFeedIntoContentItems() async throws {
+    @Test func parsesRSSFeedIntoContentItems() async throws {
         let xml = """
         <?xml version="1.0" encoding="UTF-8"?>
         <rss version="2.0">
@@ -46,24 +49,24 @@ final class RSSSourceClientTests: XCTestCase {
             session: StubURLProtocol.makeSession())
         let items = try await client.fetchItems(selectedTopics: [])
 
-        XCTAssertEqual(items.count, 2)
+        #expect(items.count == 2)
 
-        let swiftItem = try XCTUnwrap(items.first { $0.title == "Understanding async/await in Swift" })
-        XCTAssertEqual(swiftItem.sourceName, "Test Source")
-        XCTAssertEqual(swiftItem.sourceCategory, .article)
-        XCTAssertEqual(swiftItem.kind, .article)
-        XCTAssertEqual(swiftItem.url.absoluteString, "https://example.com/swift-async")
-        XCTAssertEqual(swiftItem.authorName, "Author One")
+        let swiftItem = try #require(items.first { $0.title == "Understanding async/await in Swift" })
+        #expect(swiftItem.sourceName == "Test Source")
+        #expect(swiftItem.sourceCategory == .article)
+        #expect(swiftItem.kind == .article)
+        #expect(swiftItem.url.absoluteString == "https://example.com/swift-async")
+        #expect(swiftItem.authorName == "Author One")
         // "swift" keyword maps to ios; the fallback product topic is preserved.
-        XCTAssertTrue(swiftItem.topics.contains(.ios))
-        XCTAssertTrue(swiftItem.topics.contains(.product))
+        #expect(swiftItem.topics.contains(.ios))
+        #expect(swiftItem.topics.contains(.product))
 
-        let reactItem = try XCTUnwrap(items.first { $0.title == "React server components explained" })
-        XCTAssertNil(reactItem.authorName)
-        XCTAssertTrue(reactItem.topics.contains(.web))
+        let reactItem = try #require(items.first { $0.title == "React server components explained" })
+        #expect(reactItem.authorName == nil)
+        #expect(reactItem.topics.contains(.web))
     }
 
-    func testSkipsItemsMissingRequiredFields() async throws {
+    @Test func skipsItemsMissingRequiredFields() async throws {
         // Items without a pubDate or link must be dropped by the parser.
         let xml = """
         <?xml version="1.0" encoding="UTF-8"?>
@@ -96,6 +99,7 @@ final class RSSSourceClientTests: XCTestCase {
             session: StubURLProtocol.makeSession())
         let items = try await client.fetchItems(selectedTopics: [])
 
-        XCTAssertTrue(items.isEmpty)
+        #expect(items.isEmpty)
     }
+}
 }

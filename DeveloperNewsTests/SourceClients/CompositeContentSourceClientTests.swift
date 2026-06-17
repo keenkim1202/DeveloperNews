@@ -1,4 +1,5 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
 // A configurable in-test source client that either returns canned items or
@@ -16,7 +17,7 @@ private struct StubSourceClient: ContentSourceClient {
 }
 
 @MainActor
-final class CompositeContentSourceClientTests: XCTestCase {
+@Suite struct CompositeContentSourceClientTests {
     private func makeItem(
         title: String,
         sourceName: String,
@@ -36,7 +37,7 @@ final class CompositeContentSourceClientTests: XCTestCase {
             trendScore: 70)
     }
 
-    func testAggregatesItemsFromMultipleSources() async throws {
+    @Test func aggregatesItemsFromMultipleSources() async throws {
         let a = StubSourceClient(
             items: [makeItem(title: "Alpha", sourceName: "A", urlString: "https://a.com/1")],
             shouldFail: false)
@@ -51,12 +52,12 @@ final class CompositeContentSourceClientTests: XCTestCase {
 
         let result = await composite.fetchItemsWithStatus(selectedTopics: [])
 
-        XCTAssertEqual(result.totalSourceCount, 2)
-        XCTAssertTrue(result.failedSourceNames.isEmpty)
-        XCTAssertEqual(Set(result.items.map(\.title)), ["Alpha", "Beta"])
+        #expect(result.totalSourceCount == 2)
+        #expect(result.failedSourceNames.isEmpty)
+        #expect(Set(result.items.map(\.title)) == ["Alpha", "Beta"])
     }
 
-    func testReportsFailedSourceNames() async throws {
+    @Test func reportsFailedSourceNames() async throws {
         let ok = StubSourceClient(
             items: [makeItem(title: "Good", sourceName: "Good", urlString: "https://good.com/1")],
             shouldFail: false)
@@ -69,12 +70,12 @@ final class CompositeContentSourceClientTests: XCTestCase {
 
         let result = await composite.fetchItemsWithStatus(selectedTopics: [])
 
-        XCTAssertEqual(result.totalSourceCount, 2)
-        XCTAssertEqual(result.failedSourceNames, ["Broken"])
-        XCTAssertEqual(result.items.map(\.title), ["Good"])
+        #expect(result.totalSourceCount == 2)
+        #expect(result.failedSourceNames == ["Broken"])
+        #expect(result.items.map(\.title) == ["Good"])
     }
 
-    func testDeduplicatesItemsSharingURL() async throws {
+    @Test func deduplicatesItemsSharingURL() async throws {
         let a = StubSourceClient(
             items: [makeItem(title: "Shared", sourceName: "A", urlString: "https://dup.com/x")],
             shouldFail: false)
@@ -89,11 +90,11 @@ final class CompositeContentSourceClientTests: XCTestCase {
 
         let result = await composite.fetchItemsWithStatus(selectedTopics: [])
 
-        XCTAssertEqual(result.items.count, 1)
-        XCTAssertEqual(result.items.first?.title, "Shared")
+        #expect(result.items.count == 1)
+        #expect(result.items.first?.title == "Shared")
     }
 
-    func testAllSourcesFailingYieldsEmptyItemsAndAllNames() async throws {
+    @Test func allSourcesFailingYieldsEmptyItemsAndAllNames() async throws {
         let bad1 = StubSourceClient(items: [], shouldFail: true)
         let bad2 = StubSourceClient(items: [], shouldFail: true)
 
@@ -104,8 +105,8 @@ final class CompositeContentSourceClientTests: XCTestCase {
 
         let result = await composite.fetchItemsWithStatus(selectedTopics: [])
 
-        XCTAssertTrue(result.items.isEmpty)
-        XCTAssertEqual(Set(result.failedSourceNames), ["One", "Two"])
-        XCTAssertEqual(result.totalSourceCount, 2)
+        #expect(result.items.isEmpty)
+        #expect(Set(result.failedSourceNames) == ["One", "Two"])
+        #expect(result.totalSourceCount == 2)
     }
 }
