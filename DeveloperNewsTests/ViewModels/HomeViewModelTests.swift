@@ -66,6 +66,44 @@ import Foundation
         #expect(titles == ["SwiftUI"])
     }
 
+    @Test func loadEngagementsKeysByURLAndMergesAcrossCalls() async {
+        let shown = VMFixtures.makeItem(title: "Shown", trendScore: 50)
+        let unknown = VMFixtures.makeItem(title: "Unknown", trendScore: 1)
+
+        let engagement = StoryEngagement(
+            id: StoryEngagement.documentId(for: shown.url.absoluteString),
+            storyURL: shown.url.absoluteString,
+            likeCount: 3,
+            likedBy: ["u1"],
+            commentCount: 2)
+        let mock = MockStoryEngagementServicing()
+        mock.fetchedEngagements = [shown.url.absoluteString: engagement]
+
+        let appState = VMFixtures.makeAppState(
+            storyEngagement: mock,
+            contentSourceClient: StubContentSourceClient(items: [shown]))
+        await appState.reload()
+        let vm = HomeViewModel(appState: appState)
+
+        await vm.loadEngagements()
+        #expect(vm.engagement(for: shown) == engagement)
+        #expect(vm.engagement(for: unknown) == nil)
+
+        // A second fetch with a different key must not drop the first entry.
+        let other = VMFixtures.makeItem(title: "Other", trendScore: 2)
+        let otherEngagement = StoryEngagement(
+            id: StoryEngagement.documentId(for: other.url.absoluteString),
+            storyURL: other.url.absoluteString,
+            likeCount: 1,
+            likedBy: [],
+            commentCount: 0)
+        mock.fetchedEngagements = [other.url.absoluteString: otherEngagement]
+
+        await vm.loadEngagements()
+        #expect(vm.engagement(for: shown) == engagement)
+        #expect(vm.engagement(for: other) == otherEngagement)
+    }
+
     @Test func shouldShowTopStoryFalseWhenDismissedRecently() async {
         let appState = await makeSeededAppState([
             VMFixtures.makeItem(title: "Top", trendScore: 100)

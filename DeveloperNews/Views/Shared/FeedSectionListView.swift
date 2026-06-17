@@ -10,6 +10,7 @@ struct FeedSectionListView<Destination: Hashable>: View {
     private let discussionItems: [ContentItem]
     private let destinationFor: (ContentItem) -> Destination
     private let onAuthorTap: (AuthorInfo) -> Void
+    private let inAppEngagement: (ContentItem) -> StoryEngagement?
 
     private var showsSummary: Bool
     private var hasMore: Bool
@@ -27,6 +28,7 @@ struct FeedSectionListView<Destination: Hashable>: View {
         discussionItems: [ContentItem],
         destinationFor: @escaping (ContentItem) -> Destination,
         onAuthorTap: @escaping (AuthorInfo) -> Void,
+        inAppEngagement: @escaping (ContentItem) -> StoryEngagement? = { _ in nil },
         showsSummary: Bool = true,
         hasMore: Bool = false,
         onLoadMore: (() -> Void)? = nil,
@@ -42,6 +44,7 @@ struct FeedSectionListView<Destination: Hashable>: View {
         self.discussionItems = discussionItems
         self.destinationFor = destinationFor
         self.onAuthorTap = onAuthorTap
+        self.inAppEngagement = inAppEngagement
         self.showsSummary = showsSummary
         self.hasMore = hasMore
         self.onLoadMore = onLoadMore
@@ -102,7 +105,8 @@ struct FeedSectionListView<Destination: Hashable>: View {
                             isRead: isRead(item),
                             followingPost: followingPost(item),
                             authorEmoji: authorEmoji,
-                            onAuthorTap: onAuthorTap)
+                            onAuthorTap: onAuthorTap,
+                            storyEngagement: inAppEngagement(item))
                     }
                 }
             }
@@ -117,7 +121,8 @@ struct FeedSectionListView<Destination: Hashable>: View {
                             isRead: isRead(item),
                             followingPost: followingPost(item),
                             authorEmoji: authorEmoji,
-                            onAuthorTap: onAuthorTap)
+                            onAuthorTap: onAuthorTap,
+                            storyEngagement: inAppEngagement(item))
                     }
                 }
             }

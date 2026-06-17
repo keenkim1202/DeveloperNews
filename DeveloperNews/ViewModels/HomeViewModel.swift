@@ -8,6 +8,10 @@ final class HomeViewModel {
 
     var searchQuery = ""
 
+    // In-app engagement counts keyed by item.url.absoluteString, matching the
+    // detail screen's hashing so the same Firestore document is referenced.
+    private(set) var storyEngagements: [String: StoryEngagement] = [:]
+
     init(appState: AppState) {
         self.appState = appState
     }
@@ -73,10 +77,43 @@ final class HomeViewModel {
 
     func reload() async {
         await appState.reload()
+        await loadEngagements()
     }
 
     func loadMore() {
         appState.loadMore()
+        Task {
+            await loadEngagements()
+        }
+    }
+
+    // Read-only enrichment: fetch in-app counts for the currently displayed
+    // items and merge them in. Never blocks the feed; the service caps the batch
+    // at 30 URLs, so items beyond that simply show no in-app counts.
+    func loadEngagements() async {
+        var displayed = articlesExcludingTopStory + discussionsExcludingTopStory
+        if let top = topItem {
+            displayed.insert(top, at: 0)
+        }
+
+        var seen = Set<String>()
+        var urls: [String] = []
+        for item in displayed {
+            let key = item.url.absoluteString
+            if seen.insert(key).inserted {
+                urls.append(key)
+            }
+        }
+        guard !urls.isEmpty else { return }
+
+        let fetched = await appState.storyEngagementService.fetchEngagements(storyURLs: urls)
+        storyEngagements.merge(fetched) { _, new in
+            new
+        }
+    }
+
+    func engagement(for item: ContentItem) -> StoryEngagement? {
+        storyEngagements[item.url.absoluteString]
     }
 
     func toggleFocusedTopic(_ topic: Topic) {

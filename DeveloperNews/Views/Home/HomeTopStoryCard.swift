@@ -6,6 +6,7 @@ struct HomeTopStoryCard: View {
     private let item: ContentItem
     private let destination: HomeTabDestination
     private let onHide: () -> Void
+    private let storyEngagement: StoryEngagement?
 
     @State private var translationTrigger = 0
     @State private var showingTranslation = false
@@ -15,11 +16,13 @@ struct HomeTopStoryCard: View {
         item: ContentItem,
         destination: HomeTabDestination,
         onHide: @escaping () -> Void,
+        storyEngagement: StoryEngagement? = nil,
     ) {
         self.translator = translator
         self.item = item
         self.destination = destination
         self.onHide = onHide
+        self.storyEngagement = storyEngagement
     }
 
     private var displayTitle: String {
@@ -87,6 +90,10 @@ struct HomeTopStoryCard: View {
                     .foregroundStyle(showingTranslation ? DSColor.accent : Color.primary)
                 }
                 .buttonStyle(.plain)
+            }
+
+            if let storyEngagement {
+                InAppEngagementSummaryView(engagement: storyEngagement)
             }
         }
         .padding(.horizontal, 14)

@@ -9,6 +9,7 @@ struct FeedItemRow<Destination: Hashable>: View {
     private let followingPost: CommunityPost?
     private let authorEmoji: (String) -> String?
     private let onAuthorTap: (AuthorInfo) -> Void
+    private let storyEngagement: StoryEngagement?
 
     @State private var translationTrigger = 0
     @State private var showingTranslation = false
@@ -21,6 +22,7 @@ struct FeedItemRow<Destination: Hashable>: View {
         followingPost: CommunityPost?,
         authorEmoji: @escaping (String) -> String?,
         onAuthorTap: @escaping (AuthorInfo) -> Void,
+        storyEngagement: StoryEngagement? = nil,
     ) {
         self.translator = translator
         self.item = item
@@ -29,6 +31,7 @@ struct FeedItemRow<Destination: Hashable>: View {
         self.followingPost = followingPost
         self.authorEmoji = authorEmoji
         self.onAuthorTap = onAuthorTap
+        self.storyEngagement = storyEngagement
     }
 
     private var displayTitle: String {
@@ -109,8 +112,13 @@ struct FeedItemRow<Destination: Hashable>: View {
                     .buttonStyle(.plain)
                 }
 
-                if let engagement = item.engagement {
-                    EngagementSummaryView(engagement: engagement)
+                HStack(spacing: 12) {
+                    if let engagement = item.engagement {
+                        EngagementSummaryView(engagement: engagement)
+                    }
+                    if let storyEngagement {
+                        InAppEngagementSummaryView(engagement: storyEngagement)
+                    }
                 }
             }
             .padding(.vertical, 4)
