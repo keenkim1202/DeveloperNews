@@ -23,8 +23,6 @@ final class ArticleDetailViewModel {
         appState.translator
     }
 
-    // Saved-state
-
     var isSaved: Bool {
         appState.isSaved(item)
     }
@@ -44,8 +42,6 @@ final class ArticleDetailViewModel {
     var noteEditorItem: ContentItem {
         appState.savedItemSnapshots[item.url] ?? item
     }
-
-    // Translation
 
     var canTranslate: Bool {
         translator.canTranslate

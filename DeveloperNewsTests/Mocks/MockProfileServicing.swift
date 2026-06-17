@@ -2,7 +2,6 @@ import FirebaseAuth
 import Foundation
 @testable import DeveloperNews
 
-// Mock conformance to ProfileServicing returning canned values.
 @MainActor
 final class MockProfileServicing: ProfileServicing {
     var profile: UserProfile?
