@@ -114,6 +114,66 @@ import Foundation
         #expect(feedPost.toggledLikes.isEmpty)
     }
 
+    @Test func followingPostsLoadSortedByCreatedAtDescending() async {
+        let feedPost = MockFeedPostServicing()
+        let older = VMFixtures.makeFeedPost(
+            id: "older",
+            createdAt: Date(timeIntervalSinceNow: -10_000))
+        let newer = VMFixtures.makeFeedPost(
+            id: "newer",
+            createdAt: Date(timeIntervalSinceNow: -100))
+        feedPost.authorsPosts = [older, newer]
+        let profile = MockProfileServicing()
+        profile.followedUserIds = ["author-1", "author-2"]
+        let appState = VMFixtures.makeAppState(
+            profile: profile,
+            feedPost: feedPost)
+        let vm = Community2ViewModel(appState: appState)
+
+        await vm.loadFollowing()
+
+        #expect(vm.followingPosts.map(\.id) == ["newer", "older"])
+        #expect(feedPost.fetchedAuthorBatches.count == 1)
+        #expect(Set(feedPost.fetchedAuthorBatches[0]) == ["author-1", "author-2"])
+    }
+
+    @Test func emptyFollowSetYieldsEmptyFollowingFeed() async {
+        let feedPost = MockFeedPostServicing()
+        feedPost.authorsPosts = [VMFixtures.makeFeedPost(id: "p1")]
+        let profile = MockProfileServicing()
+        profile.followedUserIds = []
+        let appState = VMFixtures.makeAppState(
+            profile: profile,
+            feedPost: feedPost)
+        let vm = Community2ViewModel(appState: appState)
+
+        await vm.loadFollowing()
+
+        #expect(vm.followingPosts.isEmpty)
+        #expect(vm.hasLoadedFollowing)
+        #expect(feedPost.fetchedAuthorBatches.isEmpty)
+    }
+
+    @Test func toggleLikeUpdatesFollowingPost() async {
+        let feedPost = MockFeedPostServicing()
+        let post = VMFixtures.makeFeedPost(id: "p1", likeCount: 2)
+        feedPost.authorsPosts = [post]
+        let profile = MockProfileServicing()
+        profile.followedUserIds = ["author-1"]
+        let appState = VMFixtures.makeAppState(
+            auth: MockAuthServicing(userId: "me"),
+            profile: profile,
+            feedPost: feedPost)
+        let vm = Community2ViewModel(appState: appState)
+        await vm.loadFollowing()
+
+        await vm.toggleLike(post)
+
+        let updated = vm.followingPosts.first { $0.id == "p1" }
+        #expect(updated?.likeCount == 3)
+        #expect(updated?.likedBy.contains("me") == true)
+    }
+
     @Test func toggleLikeUpdatesLocalStateWhenSignedIn() async {
         let feedPost = MockFeedPostServicing()
         let post = VMFixtures.makeFeedPost(id: "p1", likeCount: 3)

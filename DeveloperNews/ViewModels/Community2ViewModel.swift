@@ -9,12 +9,21 @@ final class Community2ViewModel {
         case recent
     }
 
+    enum Tab: Hashable {
+        case discover
+        case following
+    }
+
     private let appState: AppState
 
     private(set) var posts: [FeedPost] = []
+    private(set) var followingPosts: [FeedPost] = []
     private(set) var isLoading = false
+    private(set) var isLoadingFollowing = false
     private(set) var hasLoaded = false
+    private(set) var hasLoadedFollowing = false
 
+    var tab: Tab = .discover
     var mode: Mode = .trending
 
     private static let fetchLimit = 200
@@ -28,6 +37,9 @@ final class Community2ViewModel {
     }
     var hasNoPosts: Bool {
         posts.isEmpty
+    }
+    var hasNoFollowingPosts: Bool {
+        followingPosts.isEmpty
     }
     var displayedPosts: [FeedPost] {
         switch mode {
@@ -78,6 +90,24 @@ final class Community2ViewModel {
         hasLoaded = true
     }
 
+    func loadFollowing() async {
+        guard !isLoadingFollowing else {
+            return
+        }
+        isLoadingFollowing = true
+        let authorIds = Array(appState.profileService.followedUserIds)
+        if authorIds.isEmpty {
+            followingPosts = []
+        }
+        else {
+            followingPosts = await appState.feedPostService
+                .fetchPosts(byAuthors: authorIds)
+                .sorted { $0.createdAt > $1.createdAt }
+        }
+        isLoadingFollowing = false
+        hasLoadedFollowing = true
+    }
+
     func toggleLike(_ post: FeedPost) async {
         guard let userId = appState.authService.userId else {
             return
@@ -85,6 +115,9 @@ final class Community2ViewModel {
         await appState.feedPostService.toggleLike(post, userId: userId)
         if let index = posts.firstIndex(where: { $0.id == post.id }) {
             posts[index] = Self.applyLikeToggle(posts[index], userId: userId)
+        }
+        if let index = followingPosts.firstIndex(where: { $0.id == post.id }) {
+            followingPosts[index] = Self.applyLikeToggle(followingPosts[index], userId: userId)
         }
     }
 
