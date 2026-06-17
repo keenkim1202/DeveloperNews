@@ -14,6 +14,7 @@ struct FeedPostDetailView: View {
     @State private var shouldScrollToLatestComment = false
     @State private var commentPendingDeletion: CommunityComment?
     @State private var showDeleteCommentConfirm = false
+    @State private var showEditSheet = false
     @FocusState private var commentFieldFocused: Bool
 
     @Environment(\.dismiss) private var dismiss
@@ -78,14 +79,24 @@ struct FeedPostDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(.hidden, for: .tabBar)
             .toolbar {
-                if !isAuthor, currentUserId != nil {
+                if currentUserId != nil {
                     ToolbarItem(placement: .topBarTrailing) {
-                        moderationMenu
+                        if isAuthor {
+                            authorEditButton
+                        }
+                        else {
+                            moderationMenu
+                        }
                     }
                 }
             }
             .onAppear(perform: onAppear)
             .onDisappear(perform: onDisappear)
+            .sheet(isPresented: $showEditSheet) {
+                FeedPostEditView(
+                    originalComment: currentPost.comment,
+                    onSave: saveEdit)
+            }
             .alert(.communityReportReasonOtherTitle, isPresented: $showOtherReasonInput) {
                 TextField(.communityReportReasonOtherPlaceholder, text: $otherReasonText)
                     .keenOnChange(of: otherReasonText, perform: onOtherReasonTextChange)
@@ -124,6 +135,13 @@ struct FeedPostDetailView: View {
                     action: deleteConfirmedComment)
             }
         }
+    }
+
+    private var authorEditButton: some View {
+        Button(action: openEdit) {
+            Image(.edit)
+        }
+        .accessibilityLabel(.communityEditPost)
     }
 
     private var moderationMenu: some View {
@@ -373,6 +391,16 @@ struct FeedPostDetailView: View {
     private func toggleLike() {
         Task {
             await viewModel.toggleLike()
+        }
+    }
+
+    private func openEdit() {
+        showEditSheet = true
+    }
+
+    private func saveEdit(_ text: String) {
+        Task {
+            await viewModel.updateComment(text)
         }
     }
 

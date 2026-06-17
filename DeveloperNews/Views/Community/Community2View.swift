@@ -116,16 +116,20 @@ struct Community2View: View {
         _ posts: [FeedPost],
         refresh: @escaping @Sendable () async -> Void,
     ) -> some View {
-        List {
-            ForEach(posts) { post in
-                FeedPostRow(
-                    post: post,
-                    currentUserId: appState.authService.userId,
-                    onAuthorTap: { navigateToProfile(post) },
-                    onLike: { toggleLike(post) })
+        ScrollView {
+            LazyVStack(spacing: 0) {
+                ForEach(posts) { post in
+                    FeedPostRow(
+                        post: post,
+                        currentUserId: appState.authService.userId,
+                        onAuthorTap: { navigateToProfile(post) },
+                        onLike: { toggleLike(post) })
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                    Divider()
+                }
             }
         }
-        .listStyle(.plain)
         .refreshable(action: refresh)
     }
 
