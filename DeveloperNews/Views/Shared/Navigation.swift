@@ -12,6 +12,12 @@ enum CommunityTabDestination: Hashable {
     case postDetail(CommunityPost.ID)
     case userProfile(AuthorInfo)
     case postLinkDetail(CommunityPost.ID)
+    case followList(FollowListTarget)
+}
+
+struct FollowListTarget: Hashable {
+    let userId: String
+    let kind: FollowListKind
 }
 
 enum SavedTabDestination: Hashable {

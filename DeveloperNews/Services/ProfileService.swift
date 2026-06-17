@@ -149,6 +149,53 @@ final class ProfileService: ProfileServicing {
         }
     }
 
+    func fetchUserSummaries(for userIds: [String]) async -> [UserSummary] {
+        var summaries: [UserSummary] = []
+        for id in userIds {
+            do {
+                let snapshot = try await db.collection("users").document(id).getDocument()
+                guard let data = snapshot.data() else { continue }
+                summaries.append(UserSummary(
+                    id: id,
+                    displayName: data["displayName"] as? String ?? "",
+                    emoji: (data["profileEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 }))
+            }
+            catch {
+                continue
+            }
+        }
+        return summaries
+    }
+
+    func fetchFollowers(of userId: String) async -> [UserSummary] {
+        do {
+            let snapshot = try await db.collection("users")
+                .whereField("followedUserIds", arrayContains: userId)
+                .getDocuments()
+            return snapshot.documents.map { doc in
+                let data = doc.data()
+                return UserSummary(
+                    id: doc.documentID,
+                    displayName: data["displayName"] as? String ?? "",
+                    emoji: (data["profileEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 })
+            }
+        }
+        catch {
+            return []
+        }
+    }
+
+    func fetchFollowing(of userId: String) async -> [UserSummary] {
+        do {
+            let snapshot = try await db.collection("users").document(userId).getDocument()
+            let followedArray = (snapshot.data()?["followedUserIds"] as? [String]) ?? []
+            return await fetchUserSummaries(for: followedArray)
+        }
+        catch {
+            return []
+        }
+    }
+
     private func updateAuthorFieldInPosts(
         uid: String,
         field: String,

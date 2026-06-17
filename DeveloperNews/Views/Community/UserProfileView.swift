@@ -6,6 +6,9 @@ struct UserProfileView: View {
     private let authorEmoji: String?
 
     @State private var viewModel: UserProfileViewModel
+    @State private var showBlockConfirm = false
+
+    @Environment(\.dismiss) private var dismiss
 
     init(
         appState: AppState,
@@ -45,47 +48,32 @@ struct UserProfileView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                        VStack {
-                            Text("\(viewModel.followerCount)")
-                                .font(.headline)
-                            Text(.profileFollowers)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                        NavigationLink(value: followListDestination(.followers)) {
+                            VStack {
+                                Text("\(viewModel.followerCount)")
+                                    .font(.headline)
+                                Text(.profileFollowers)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
-                        VStack {
-                            Text("\(viewModel.followingCount)")
-                                .font(.headline)
-                            Text(.communityFollowing)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                        .buttonStyle(.plain)
+                        NavigationLink(value: followListDestination(.following)) {
+                            VStack {
+                                Text("\(viewModel.followingCount)")
+                                    .font(.headline)
+                                Text(.communityFollowing)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
-                        VStack {
-                            let totalLikes = viewModel.authorPosts.reduce(0) { $0 + $1.likeCount }
-                            Text("\(totalLikes)")
-                                .font(.headline)
-                            Text(.profileLikes)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+                        .buttonStyle(.plain)
                     }
 
                     if !viewModel.isOwnProfile, viewModel.currentUserId != nil {
-                        Button(action: toggleFollow) {
-                            Text(viewModel.isFollowingAuthor ? .communityFollowing : .communityFollow)
-                                .font(.dsCardTitle)
-                                .frame(width: 120, height: 34)
-                                .background {
-                                    viewModel.isFollowingAuthor
-                                        ? DSColor.accent
-                                        : DSColor.surface
-                                }
-                                .foregroundStyle(
-                                    viewModel.isFollowingAuthor
-                                        ? DSColor.onAccent
-                                        : Color.primary)
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
+                        FollowButton(
+                            isFollowing: viewModel.isFollowingAuthor,
+                            action: toggleFollow)
                     }
                 }
                 .padding(.top, 20)
@@ -125,7 +113,36 @@ struct UserProfileView: View {
         .navigationTitle(authorName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .toolbar {
+            if !viewModel.isOwnProfile, viewModel.currentUserId != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button(
+                            .communityBlockUser,
+                            role: .destructive,
+                            action: confirmBlockUser)
+                    } label: {
+                        Image(.more)
+                    }
+                }
+            }
+        }
         .task(loadFollowCounts)
+        .alert(
+            .communityBlockConfirmTitle,
+            isPresented: $showBlockConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button(
+                .communityBlockConfirmAction,
+                role: .destructive,
+                action: blockUser)
+        } message: {
+            Text(.communityBlockConfirmMessage)
+        }
+    }
+
+    private func followListDestination(_ kind: FollowListKind) -> CommunityTabDestination {
+        .followList(FollowListTarget(userId: viewModel.authorId, kind: kind))
     }
 
     private func loadFollowCounts() async {
@@ -136,6 +153,15 @@ struct UserProfileView: View {
         Task {
             await viewModel.toggleFollow()
         }
+    }
+
+    private func confirmBlockUser() {
+        showBlockConfirm = true
+    }
+
+    private func blockUser() {
+        viewModel.blockAuthor()
+        dismiss()
     }
 }
 

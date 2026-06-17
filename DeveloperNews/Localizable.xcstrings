@@ -1063,6 +1063,23 @@
         }
       }
     },
+    "common.done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "완료"
+          }
+        }
+      }
+    },
     "community.alreadyReported" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2514,6 +2531,23 @@
         }
       }
     },
+    "profile.followList.empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No one here yet"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아직 아무도 없습니다"
+          }
+        }
+      }
+    },
     "profile.followers" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3156,6 +3190,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "차단 해제"
+          }
+        }
+      }
+    },
+    "settings.unblockConfirmTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unblock this user?"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 사용자의 차단을 해제할까요?"
+          }
+        }
+      }
+    },
+    "settings.unknownUser" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown user"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "알 수 없는 사용자"
           }
         }
       }
