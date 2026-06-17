@@ -22,6 +22,7 @@ final class AppState {
     let authService: any AuthServicing
     let profileService: any ProfileServicing
     let communityService: any CommunityServicing
+    let feedPostService: any FeedPostServicing
 
     var selectedTopics: Set<Topic> = []
     var focusedTopic: Topic?
@@ -155,6 +156,7 @@ final class AppState {
         authService: any AuthServicing,
         profileService: any ProfileServicing,
         communityService: any CommunityServicing,
+        feedPostService: any FeedPostServicing,
         contentSourceClient: (any ContentSourceClient)? = nil,
         persistenceStore: PersistenceStore = PersistenceStore(),
     ) {
@@ -162,6 +164,7 @@ final class AppState {
         self.authService = authService
         self.profileService = profileService
         self.communityService = communityService
+        self.feedPostService = feedPostService
         self.persistenceStore = persistenceStore
         let client = contentSourceClient ?? Self.defaultContentSourceClient()
         self.contentSourceClient = client

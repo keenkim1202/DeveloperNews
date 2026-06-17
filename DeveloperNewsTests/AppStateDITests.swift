@@ -11,6 +11,7 @@ import Foundation
         auth: MockAuthServicing,
         profile: MockProfileServicing = MockProfileServicing(),
         community: MockCommunityServicing = MockCommunityServicing(),
+        feedPost: MockFeedPostServicing = MockFeedPostServicing(),
         translator: MockTranslating = MockTranslating(),
     ) -> AppState {
         AppState(
@@ -18,6 +19,7 @@ import Foundation
             authService: auth,
             profileService: profile,
             communityService: community,
+            feedPostService: feedPost,
             persistenceStore: VMFixtures.makeIsolatedPersistenceStore())
     }
 
