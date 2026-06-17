@@ -19,7 +19,7 @@ struct UnavailableDestinationView: View {
             Label {
                 Text(headline)
             } icon: {
-                Image(systemName: symbol)
+                Image(symbol)
             }
         } description: {
             Text(message)
@@ -42,11 +42,11 @@ struct UnavailableDestinationView: View {
         }
     }
 
-    private var symbol: String {
+    private var symbol: DSIcon {
         switch reason {
-        case .itemNotFound:       "tray"
-        case .postDeleted:        "trash"
-        case .profileUnavailable: "person.slash"
+        case .itemNotFound:       .emptyTray
+        case .postDeleted:        .delete
+        case .profileUnavailable: .blockedUsers
         }
     }
 

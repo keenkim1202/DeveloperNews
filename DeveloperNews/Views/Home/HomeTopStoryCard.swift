@@ -29,21 +29,21 @@ struct HomeTopStoryCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Label(.topStory, systemImage: "sparkles")
-                    .font(.caption.weight(.semibold))
+                Label(.topStory, icon: .sparkles)
+                    .font(.dsLabel)
                     .foregroundStyle(.tint)
                 Spacer()
                 Button(action: hideTopStory) {
                     HStack(spacing: 4) {
                         Text(.hideForADay)
-                        Image(systemName: "xmark")
+                        Image(.close)
                     }
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background {
-                        Color(.tertiarySystemFill)
+                        DSColor.fill
                     }
                     .clipShape(Capsule())
                     .contentShape(Capsule())
@@ -57,7 +57,7 @@ struct HomeTopStoryCard: View {
                     HomeTopStoryThumbnail(url: item.thumbnailURL)
                     VStack(alignment: .leading, spacing: 4) {
                         Text(displayTitle)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.dsCardTitle)
                             .foregroundStyle(.primary)
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
@@ -80,11 +80,11 @@ struct HomeTopStoryCard: View {
             if translator.canTranslate {
                 Button(action: toggleTranslation) {
                     HStack(spacing: 2) {
-                        Image(systemName: "translate")
+                        Image(.translate)
                         Text(showingTranslation ? .translationShowOriginal : .translationShowTranslated)
                     }
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(showingTranslation ? Color.accentColor : Color.primary)
+                    .font(.dsTag)
+                    .foregroundStyle(showingTranslation ? DSColor.accent : Color.primary)
                 }
                 .buttonStyle(.plain)
             }
@@ -93,7 +93,7 @@ struct HomeTopStoryCard: View {
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            Color.accentColor.opacity(0.08)
+            DSColor.accent.opacity(0.08)
         }
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay {
@@ -144,7 +144,7 @@ struct HomeTopStoryThumbnail: View {
                     case .failure:
                         placeholder
                     case .empty:
-                        Color(.tertiarySystemFill)
+                        DSColor.fill
                             .overlay { ProgressView().controlSize(.small) }
                     @unknown default:
                         placeholder
@@ -160,9 +160,9 @@ struct HomeTopStoryThumbnail: View {
     }
 
     private var placeholder: some View {
-        Color(.tertiarySystemFill)
+        DSColor.fill
             .overlay {
-                Image(systemName: "newspaper")
+                Image(.newspaper)
                     .foregroundStyle(.secondary)
             }
     }

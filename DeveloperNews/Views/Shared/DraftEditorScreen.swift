@@ -103,9 +103,9 @@ struct DraftEditorScreen: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
             .background {
-                isSelected ? Color.accentColor.opacity(0.18) : Color(.secondarySystemBackground)
+                isSelected ? DSColor.accent.opacity(0.18) : DSColor.surface
             }
-            .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+            .foregroundStyle(isSelected ? DSColor.accent : Color.primary)
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)

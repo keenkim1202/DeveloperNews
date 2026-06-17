@@ -93,7 +93,7 @@ struct HomeView: View {
             VStack(spacing: 16) {
                 ProgressView()
                     .controlSize(.large)
-                    .tint(.accentColor)
+                    .tint(DSColor.accent)
                 VStack(spacing: 4) {
                     Text(.loadingStories)
                         .font(.headline)
@@ -110,7 +110,7 @@ struct HomeView: View {
         else if let errorMessage = viewModel.errorMessage,
                 !viewModel.hasLoadedContent {
             ContentUnavailableView {
-                Label(.couldNotLoadStories, systemImage: "wifi.exclamationmark")
+                Label(.couldNotLoadStories, icon: .networkError)
             } description: {
                 Text(errorMessage)
             } actions: {

@@ -41,11 +41,11 @@ struct BookmarkDetailView: View {
                             } icon: {
                                 Image(systemName: topic.symbolName)
                             }
-                            .font(.caption2.weight(.medium))
+                            .font(.dsTag)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background {
-                                Color(.secondarySystemBackground)
+                                DSColor.surface
                             }
                             .clipShape(Capsule())
                         }
@@ -65,15 +65,15 @@ struct BookmarkDetailView: View {
                         ArticleDetailView(appState: appState, item: currentItem)
                     } label: {
                         HStack {
-                            Label(.bookmarkOpenLink, systemImage: "safari")
+                            Label(.bookmarkOpenLink, icon: .safari)
                             Spacer()
-                            Image(systemName: "chevron.right")
+                            Image(.chevronForward)
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
                         .padding(12)
                         .background {
-                            Color(.secondarySystemBackground)
+                            DSColor.surface
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
@@ -109,7 +109,7 @@ struct BookmarkDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: openEdit) {
-                    Image(systemName: "pencil")
+                    Image(.edit)
                 }
             }
         }

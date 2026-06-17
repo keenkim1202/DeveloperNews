@@ -21,7 +21,7 @@ struct LimitedTextField: View {
                 .keenOnChange(of: text.wrappedValue, perform: onTextChange)
             Text("\(text.wrappedValue.count) / \(limit)")
                 .font(.caption2)
-                .foregroundStyle(text.wrappedValue.count >= limit ? Color.red : Color.secondary)
+                .foregroundStyle(text.wrappedValue.count >= limit ? DSColor.destructive : Color.secondary)
         }
     }
 

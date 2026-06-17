@@ -34,7 +34,7 @@ struct SavedView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 12) {
                         Button(action: openAddItem) {
-                            Image(systemName: "plus")
+                            Image(.add)
                         }
 
                         if !viewModel.savedItems.isEmpty {
@@ -47,7 +47,7 @@ struct SavedView: View {
                                     }
                                 }
                             } label: {
-                                Image(systemName: "arrow.up.arrow.down.circle")
+                                Image(.sortToggle)
                             }
                         }
                     }
@@ -112,7 +112,7 @@ struct SavedView: View {
     private var content: some View {
         if viewModel.savedItems.isEmpty {
             ContentUnavailableView {
-                Label(.noSavedStoriesYet, systemImage: "bookmark")
+                Label(.noSavedStoriesYet, icon: .bookmark)
             } description: {
                 Text(.openAStoryYouWantToComeBackToAndTapSaveItWillShowUpHere)
             } actions: {
@@ -127,7 +127,7 @@ struct SavedView: View {
             if viewModel.searchQuery.isEmpty {
                 ContentUnavailableView(
                     .noSavedStoriesInSelectedTopics,
-                    systemImage: "tray",
+                    systemImage: DSIcon.emptyTray.rawValue,
                     description: Text(.tapAllToClearTheTopicFilterOrPickDifferentTopicsAbove))
             }
             else {
@@ -177,7 +177,7 @@ struct SavedTopicFilterBar: View {
             HStack(spacing: 8) {
                 FocusChip(
                     title: .focusAll,
-                    systemImage: "square.grid.2x2",
+                    systemImage: DSIcon.allTopics.rawValue,
                     isSelected: selectedFilters.wrappedValue.isEmpty) {
                     selectedFilters.wrappedValue.removeAll()
                 }

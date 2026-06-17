@@ -37,7 +37,7 @@ struct CommunityView: View {
                 if viewModel.isSignedIn {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(action: openCreatePost) {
-                            Image(systemName: "plus")
+                            Image(.add)
                         }
                     }
                 }
@@ -92,7 +92,7 @@ struct CommunityView: View {
         }
         else if viewModel.hasNoPosts {
             ContentUnavailableView {
-                Label(.communityEmpty, systemImage: "person.2")
+                Label(.communityEmpty, icon: .community)
             } description: {
                 Text(.communityEmptyDescription)
             }
@@ -160,7 +160,7 @@ struct CommunityPostRow: View {
                 .font(.caption)
         }
         else {
-            Image(systemName: "questionmark.circle.dashed")
+            Image(.unknown)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -174,8 +174,8 @@ struct CommunityPostRow: View {
                         HStack(spacing: 4) {
                             authorIcon
                             Text(post.authorName)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(Color.accentColor)
+                                .font(.dsLabel)
+                                .foregroundStyle(DSColor.accent)
                                 .underline()
                         }
                     }
@@ -184,7 +184,7 @@ struct CommunityPostRow: View {
                 else {
                     authorIcon
                     Text(post.authorName)
-                        .font(.caption.weight(.semibold))
+                        .font(.dsLabel)
                 }
                 Text("·")
                     .foregroundStyle(.tertiary)
@@ -194,7 +194,7 @@ struct CommunityPostRow: View {
             }
 
             Text(post.title)
-                .font(.subheadline.weight(.semibold))
+                .font(.dsCardTitle)
                 .foregroundStyle(isRead ? .secondary : .primary)
                 .lineLimit(2)
 
@@ -213,7 +213,7 @@ struct CommunityPostRow: View {
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background {
-                                Color(.secondarySystemBackground)
+                                DSColor.surface
                             }
                             .clipShape(Capsule())
                     }
@@ -222,13 +222,13 @@ struct CommunityPostRow: View {
 
             HStack(spacing: 12) {
                 HStack(spacing: 4) {
-                    Image(systemName: isLiked ? "heart.fill" : "heart")
+                    Image(isLiked ? .likeFilled : .like)
                         .foregroundStyle(isLiked ? .red : .secondary)
                     Text("\(post.likeCount)")
                         .foregroundStyle(.secondary)
                 }
                 HStack(spacing: 4) {
-                    Image(systemName: "bubble.right")
+                    Image(.comment)
                     Text("\(post.commentCount)")
                 }
                 .foregroundStyle(.secondary)

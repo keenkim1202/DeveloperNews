@@ -112,7 +112,7 @@ struct SettingsView: View {
                             }
                             Spacer()
                             if isSelected {
-                                Image(systemName: "checkmark.circle.fill")
+                                Image(.checkmarkCircleFill)
                                     .foregroundStyle(.tint)
                             }
                         }
@@ -159,9 +159,9 @@ struct SettingsView: View {
             Section {
                 Button(action: openSystemSettings) {
                     HStack {
-                        Label(.language, systemImage: "globe")
+                        Label(.language, icon: .globe)
                         Spacer()
-                        Image(systemName: "arrow.up.forward.square")
+                        Image(.externalLinkSquare)
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -175,7 +175,7 @@ struct SettingsView: View {
                         Text(lang.name).tag(lang.code)
                     }
                 } label: {
-                    Label(.settingsTranslation, systemImage: "translate")
+                    Label(.settingsTranslation, icon: .translate)
                 }
                 Button(
                     .resetTopicSelection,
@@ -184,7 +184,7 @@ struct SettingsView: View {
 
                 NavigationLink(value: SettingsTabDestination.blockedUsers) {
                     HStack {
-                        Label(.settingsBlockedUsers, systemImage: "person.slash")
+                        Label(.settingsBlockedUsers, icon: .blockedUsers)
                         Spacer()
                         if !viewModel.blockedUserIds.isEmpty {
                             Text("\(viewModel.blockedUserIds.count)")
@@ -199,16 +199,16 @@ struct SettingsView: View {
 
             Section {
                 NavigationLink(value: SettingsTabDestination.sourcesAttribution) {
-                    Label(.contentSources, systemImage: "doc.text")
+                    Label(.contentSources, icon: .document)
                 }
                 NavigationLink(value: SettingsTabDestination.privacyPolicy) {
-                    Label(.privacyPolicy, systemImage: "hand.raised")
+                    Label(.privacyPolicy, icon: .privacy)
                 }
                 NavigationLink(value: SettingsTabDestination.termsOfUse) {
-                    Label(.termsOfUse, systemImage: "doc.plaintext")
+                    Label(.termsOfUse, icon: .terms)
                 }
                 Button(action: openFeedback) {
-                    Label(.sendFeedback, systemImage: "envelope")
+                    Label(.sendFeedback, icon: .feedback)
                 }
                 LabeledContent(.version, value: appVersionString)
             } header: {
@@ -236,7 +236,7 @@ struct SettingsView: View {
                                 .font(.system(size: 36))
                         }
                         else {
-                            Image(systemName: "questionmark.circle.dashed")
+                            Image(.unknown)
                                 .font(.system(size: 30))
                                 .foregroundStyle(.secondary)
                         }
@@ -255,10 +255,10 @@ struct SettingsView: View {
                 .padding(.vertical, 4)
 
                 Button(action: openEmojiPicker) {
-                    Label(.profileChangeEmoji, systemImage: "face.smiling")
+                    Label(.profileChangeEmoji, icon: .emoji)
                 }
                 Button(action: openNameEditor) {
-                    Label(.profileChangeName, systemImage: "pencil")
+                    Label(.profileChangeName, icon: .edit)
                 }
                 Button(
                     .authSignOut,
@@ -276,9 +276,9 @@ struct SettingsView: View {
             Section {
                 Button(action: openSignIn) {
                     HStack {
-                        Label(.authSignIn, systemImage: "person.crop.circle")
+                        Label(.authSignIn, icon: .account)
                         Spacer()
-                        Image(systemName: "chevron.right")
+                        Image(.chevronForward)
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
