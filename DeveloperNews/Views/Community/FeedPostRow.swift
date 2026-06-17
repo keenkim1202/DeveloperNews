@@ -3,17 +3,20 @@ import SwiftUI
 struct FeedPostRow: View {
     private let post: FeedPost
     private let currentUserId: String?
+    private var onTap: (() -> Void)?
     private var onAuthorTap: (() -> Void)?
     private var onLike: (() -> Void)?
 
     init(
         post: FeedPost,
         currentUserId: String?,
+        onTap: (() -> Void)? = nil,
         onAuthorTap: (() -> Void)? = nil,
         onLike: (() -> Void)? = nil,
     ) {
         self.post = post
         self.currentUserId = currentUserId
+        self.onTap = onTap
         self.onAuthorTap = onAuthorTap
         self.onLike = onLike
     }
@@ -55,12 +58,12 @@ struct FeedPostRow: View {
             engagementBar
         }
         .padding(.vertical, 4)
-        .background {
-            NavigationLink(value: CommunityTabDestination.feedPostDetail(post)) {
-                Color.clear
-            }
-            .buttonStyle(.plain)
-        }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: handleTap)
+    }
+
+    private func handleTap() {
+        onTap?()
     }
 
     private var header: some View {

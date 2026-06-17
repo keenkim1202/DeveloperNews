@@ -129,6 +129,7 @@ struct Community2View: View {
                     FeedPostRow(
                         post: post,
                         currentUserId: appState.authService.userId,
+                        onTap: { navigateToDetail(post) },
                         onAuthorTap: { navigateToProfile(post) },
                         onLike: { toggleLike(post) })
                         .padding(.horizontal, 16)
@@ -199,6 +200,10 @@ struct Community2View: View {
 
     private func openUserSearch() {
         navigation(.community(.userSearch))
+    }
+
+    private func navigateToDetail(_ post: FeedPost) {
+        navigation(.community(.feedPostDetail(post)))
     }
 
     private func navigateToProfile(_ post: FeedPost) {
