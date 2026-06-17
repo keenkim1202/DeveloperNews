@@ -17,6 +17,19 @@ final class StoryEngagementService: StoryEngagementServicing {
     // never fans out into an unbounded number of queries.
     private static let maxBatchedURLs = 30
 
+    // UserDefaults key holding a [docId: yyyy-MM-dd] map used to count a view at
+    // most once per device per calendar day.
+    private static let viewedDaysKey = "storyEngagement.viewedDays"
+
+    // Non-localized formatter so the day key is stable regardless of locale.
+    private static let dayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+
     @ObservationIgnored
     nonisolated(unsafe) private var listenerRegistration: ListenerRegistration?
 
@@ -131,6 +144,38 @@ final class StoryEngagementService: StoryEngagementServicing {
         return result
     }
 
+    // Counts a view at most once per device per calendar day. Dedup state lives
+    // in UserDefaults; the Firestore increment runs only when today's view has
+    // not been recorded yet, and the local marker is set only on success so a
+    // failed write retries on a later session or day.
+    func registerView(storyURL: String) async {
+        errorMessage = nil
+
+        let docId = StoryEngagement.documentId(for: storyURL)
+        let today = Self.dayFormatter.string(from: Date())
+
+        let defaults = UserDefaults.standard
+        var viewedDays = defaults.dictionary(forKey: Self.viewedDaysKey) as? [String: String] ?? [:]
+
+        // Prune stale entries so the map never grows beyond today's views.
+        viewedDays = viewedDays.filter { _, day in
+            day == today
+        }
+
+        if viewedDays[docId] == today {
+            return
+        }
+
+        do {
+            try await Self.incrementViewCount(db, storyURL: storyURL)
+            viewedDays[docId] = today
+            defaults.set(viewedDays, forKey: Self.viewedDaysKey)
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     // nonisolated so the transaction closure captures only the local Firestore
     // handle and story values rather than MainActor-isolated `self`.
     nonisolated private static func createIfMissing(
@@ -159,6 +204,7 @@ final class StoryEngagementService: StoryEngagementServicing {
                 "likeCount": 0,
                 "likedBy": [String](),
                 "commentCount": 0,
+                "viewCount": 0,
             ], forDocument: docRef)
             return nil
         }
@@ -188,6 +234,7 @@ final class StoryEngagementService: StoryEngagementServicing {
                     "likeCount": 1,
                     "likedBy": [userId],
                     "commentCount": 0,
+                    "viewCount": 0,
                 ], forDocument: docRef)
                 return nil
             }
@@ -212,6 +259,43 @@ final class StoryEngagementService: StoryEngagementServicing {
         }
     }
 
+    nonisolated private static func incrementViewCount(
+        _ db: Firestore,
+        storyURL: String,
+    ) async throws {
+        let docId = StoryEngagement.documentId(for: storyURL)
+        let docRef = db.collection("storyEngagement").document(docId)
+        _ = try await db.runTransaction { transaction, errorPointer in
+            let snapshot: DocumentSnapshot
+            do {
+                snapshot = try transaction.getDocument(docRef)
+            }
+            catch let error as NSError {
+                errorPointer?.pointee = error
+                return nil
+            }
+
+            guard snapshot.exists else {
+                // First view also creates the document.
+                transaction.setData([
+                    "storyURL": storyURL,
+                    "likeCount": 0,
+                    "likedBy": [String](),
+                    "commentCount": 0,
+                    "viewCount": 1,
+                ], forDocument: docRef)
+                return nil
+            }
+
+            let data = snapshot.data() ?? [:]
+            let currentCount = data["viewCount"] as? Int ?? 0
+            transaction.updateData([
+                "viewCount": currentCount + 1,
+            ], forDocument: docRef)
+            return nil
+        }
+    }
+
     private static func parseEngagement(_ snapshot: DocumentSnapshot?) -> StoryEngagement? {
         guard let snapshot, snapshot.exists,
               let data = snapshot.data(),
@@ -224,7 +308,8 @@ final class StoryEngagementService: StoryEngagementServicing {
             storyURL: storyURL,
             likeCount: max(0, data["likeCount"] as? Int ?? 0),
             likedBy: Set(likedByArray),
-            commentCount: max(0, data["commentCount"] as? Int ?? 0))
+            commentCount: max(0, data["commentCount"] as? Int ?? 0),
+            viewCount: max(0, data["viewCount"] as? Int ?? 0))
     }
 }
 

@@ -42,19 +42,23 @@ struct InAppEngagementSummaryView: View {
     }
 
     private var hasCounts: Bool {
-        engagement.likeCount + engagement.commentCount > 0
+        engagement.viewCount + engagement.commentCount + engagement.likeCount > 0
     }
 
     var body: some View {
         if hasCounts {
             HStack(spacing: 12) {
                 HStack(spacing: 2) {
-                    Image(.like)
-                    Text(formatted(engagement.likeCount))
+                    Image(.views)
+                    Text(formatted(engagement.viewCount))
                 }
                 HStack(spacing: 2) {
                     Image(.comment)
                     Text(formatted(engagement.commentCount))
+                }
+                HStack(spacing: 2) {
+                    Image(.like)
+                    Text(formatted(engagement.likeCount))
                 }
             }
             .font(.caption2)

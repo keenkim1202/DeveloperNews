@@ -75,7 +75,8 @@ import Foundation
             storyURL: shown.url.absoluteString,
             likeCount: 3,
             likedBy: ["u1"],
-            commentCount: 2)
+            commentCount: 2,
+            viewCount: 7)
         let mock = MockStoryEngagementServicing()
         mock.fetchedEngagements = [shown.url.absoluteString: engagement]
 
@@ -87,7 +88,12 @@ import Foundation
 
         await vm.loadEngagements()
         #expect(vm.engagement(for: shown) == engagement)
-        #expect(vm.engagement(for: unknown) == nil)
+        // Items without a fetched document fall back to a zero-valued, non-nil
+        // engagement so Home always renders this app's metrics.
+        let unknownEngagement = vm.engagement(for: unknown)
+        #expect(unknownEngagement?.viewCount == 0)
+        #expect(unknownEngagement?.likeCount == 0)
+        #expect(unknownEngagement?.commentCount == 0)
 
         // A second fetch with a different key must not drop the first entry.
         let other = VMFixtures.makeItem(title: "Other", trendScore: 2)
@@ -96,12 +102,31 @@ import Foundation
             storyURL: other.url.absoluteString,
             likeCount: 1,
             likedBy: [],
-            commentCount: 0)
+            commentCount: 0,
+            viewCount: 0)
         mock.fetchedEngagements = [other.url.absoluteString: otherEngagement]
 
         await vm.loadEngagements()
         #expect(vm.engagement(for: shown) == engagement)
         #expect(vm.engagement(for: other) == otherEngagement)
+    }
+
+    @Test func engagementReturnsZeroNonNilForUnfetchedItem() async {
+        let item = VMFixtures.makeItem(title: "NoDoc", trendScore: 10)
+        let appState = VMFixtures.makeAppState(
+            storyEngagement: MockStoryEngagementServicing(),
+            contentSourceClient: StubContentSourceClient(items: [item]))
+        await appState.reload()
+        let vm = HomeViewModel(appState: appState)
+
+        let engagement = vm.engagement(for: item)
+        #expect(engagement != nil)
+        #expect(engagement?.storyURL == item.url.absoluteString)
+        #expect(engagement?.id == StoryEngagement.documentId(for: item.url.absoluteString))
+        #expect(engagement?.viewCount == 0)
+        #expect(engagement?.likeCount == 0)
+        #expect(engagement?.commentCount == 0)
+        #expect(engagement?.likedBy.isEmpty == true)
     }
 
     @Test func shouldShowTopStoryFalseWhenDismissedRecently() async {

@@ -14,6 +14,7 @@ final class MockStoryEngagementServicing: StoryEngagementServicing {
     private(set) var didStopListening = false
     private(set) var ensuredURLs: [String] = []
     private(set) var toggledLikes: [(storyURL: String, userId: String)] = []
+    private(set) var registeredViews: [String] = []
     private(set) var fetchedURLs: [String] = []
     private(set) var fetchedBatches: [[String]] = []
 
@@ -34,6 +35,10 @@ final class MockStoryEngagementServicing: StoryEngagementServicing {
         userId: String,
     ) async {
         toggledLikes.append((storyURL, userId))
+    }
+
+    func registerView(storyURL: String) async {
+        registeredViews.append(storyURL)
     }
 
     func fetchEngagement(storyURL: String) async -> StoryEngagement? {

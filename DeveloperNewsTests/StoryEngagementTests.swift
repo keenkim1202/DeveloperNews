@@ -35,7 +35,8 @@ import Foundation
             storyURL: url,
             likeCount: 0,
             likedBy: [],
-            commentCount: 0)
+            commentCount: 0,
+            viewCount: 0)
         #expect(engagement.id == StoryEngagement.documentId(for: url))
     }
 }

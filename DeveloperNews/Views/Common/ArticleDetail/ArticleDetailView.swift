@@ -208,6 +208,9 @@ struct ArticleDetailView: View {
         Task {
             await engagementViewModel.startListening()
         }
+        Task {
+            await engagementViewModel.registerView()
+        }
     }
 
     private func onDisappear() {

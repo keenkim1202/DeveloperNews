@@ -113,11 +113,11 @@ struct FeedItemRow<Destination: Hashable>: View {
                 }
 
                 HStack(spacing: 12) {
-                    if let engagement = item.engagement {
-                        EngagementSummaryView(engagement: engagement)
-                    }
                     if let storyEngagement {
                         InAppEngagementSummaryView(engagement: storyEngagement)
+                    }
+                    else if let engagement = item.engagement {
+                        EngagementSummaryView(engagement: engagement)
                     }
                 }
             }
