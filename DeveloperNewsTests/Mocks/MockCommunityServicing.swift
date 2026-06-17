@@ -2,7 +2,6 @@ import FirebaseAuth
 import Foundation
 @testable import DeveloperNews
 
-// Mock conformance to CommunityServicing returning canned values.
 @MainActor
 final class MockCommunityServicing: CommunityServicing {
     var posts: [CommunityPost] = []

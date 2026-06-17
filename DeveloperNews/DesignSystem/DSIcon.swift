@@ -6,7 +6,6 @@ import SwiftUI
 // Domain icon maps (Topic.symbolName, SourceCategory.symbolName,
 // ContentItem.Kind.symbolName) stay in the model layer and are not routed here.
 enum DSIcon: String {
-    // Actions
     case close = "xmark"
     case add = "plus"
     case edit = "pencil"
@@ -21,7 +20,6 @@ enum DSIcon: String {
     case externalLinkSquare = "arrow.up.forward.square"
     case externalLinkUpRight = "arrow.up.right.square"
 
-    // Toggles (filled / outline pairs)
     case like = "heart"
     case likeFilled = "heart.fill"
     case bookmark = "bookmark"
@@ -29,7 +27,6 @@ enum DSIcon: String {
     case checkboxChecked = "checkmark.square.fill"
     case checkboxUnchecked = "square"
 
-    // Content and status
     case translate = "translate"
     case photo = "photo"
     case newspaper = "newspaper"
@@ -44,7 +41,6 @@ enum DSIcon: String {
     case note = "note.text"
     case networkError = "wifi.exclamationmark"
 
-    // Navigation and settings
     case safari = "safari"
     case globe = "globe"
     case blockedUsers = "person.slash"

@@ -2,7 +2,6 @@ import FirebaseAuth
 import Foundation
 @testable import DeveloperNews
 
-// Mock conformance to CommentServicing returning canned values.
 @MainActor
 final class MockCommentServicing: CommentServicing {
     var comments: [CommunityComment] = []
