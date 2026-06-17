@@ -1,0 +1,209 @@
+import FirebaseAuth
+@preconcurrency import FirebaseFirestore
+import Foundation
+
+@Observable
+@MainActor
+final class FeedPostService: FeedPostServicing {
+    private(set) var errorMessage: String?
+
+    private let db = Firestore.firestore()
+
+    // Firestore caps `in` queries at 10 values per request, so author batches
+    // for the Following feed are chunked to stay within that limit.
+    private static let inQueryChunkSize = 10
+
+    private var feedPostsRef: CollectionReference {
+        db.collection("feedPosts")
+    }
+
+    func createPost(
+        comment: String,
+        story: FeedPostStory,
+        author: FirebaseAuth.User,
+        authorDisplayName: String,
+        authorEmoji: String?,
+    ) async {
+        errorMessage = nil
+
+        let data: [String: Any] = [
+            "authorId": author.uid,
+            "authorName": authorDisplayName,
+            "authorEmoji": authorEmoji ?? "",
+            "comment": comment,
+            "storyURL": story.url,
+            "storyTitle": story.title,
+            "storySourceName": story.sourceName,
+            "storySourceCategory": story.sourceCategory.rawValue,
+            "storyTopics": story.topics.map(\.rawValue),
+            "storyThumbnailURL": story.thumbnailURL ?? "",
+            "likeCount": 0,
+            "likedBy": [String](),
+            "commentCount": 0,
+            "createdAt": FieldValue.serverTimestamp(),
+        ]
+
+        do {
+            try await feedPostsRef.addDocument(data: data)
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func toggleLike(
+        _ post: FeedPost,
+        userId: String,
+    ) async {
+        let ref = feedPostsRef.document(post.id)
+        let isLiked = post.likedBy.contains(userId)
+
+        do {
+            if isLiked {
+                try await ref.updateData([
+                    "likedBy": FieldValue.arrayRemove([userId]),
+                    "likeCount": FieldValue.increment(Int64(-1)),
+                ])
+            }
+            else {
+                try await ref.updateData([
+                    "likedBy": FieldValue.arrayUnion([userId]),
+                    "likeCount": FieldValue.increment(Int64(1)),
+                ])
+            }
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func updatePost(
+        _ post: FeedPost,
+        comment: String,
+        editorId: String,
+    ) async {
+        errorMessage = nil
+
+        guard post.authorId == editorId else {
+            errorMessage = String(localized: .communityErrorNotAuthor)
+            return
+        }
+
+        do {
+            try await feedPostsRef.document(post.id).updateData([
+                "comment": comment,
+                "updatedAt": FieldValue.serverTimestamp(),
+            ])
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func deletePost(_ post: FeedPost) async {
+        do {
+            try await feedPostsRef.document(post.id).delete()
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func fetchRecentPosts(limit: Int) async -> [FeedPost] {
+        do {
+            let snapshot = try await feedPostsRef
+                .order(by: "createdAt", descending: true)
+                .limit(to: limit)
+                .getDocuments()
+            return snapshot.documents.compactMap { Self.parsePost($0) }
+        }
+        catch {
+            errorMessage = error.localizedDescription
+            return []
+        }
+    }
+
+    func fetchPosts(byAuthor authorId: String) async -> [FeedPost] {
+        do {
+            let snapshot = try await feedPostsRef
+                .whereField("authorId", isEqualTo: authorId)
+                .order(by: "createdAt", descending: true)
+                .getDocuments()
+            return snapshot.documents.compactMap { Self.parsePost($0) }
+        }
+        catch {
+            errorMessage = error.localizedDescription
+            return []
+        }
+    }
+
+    func fetchPosts(byAuthors authorIds: [String]) async -> [FeedPost] {
+        let uniqueIds = Array(Set(authorIds))
+        guard !uniqueIds.isEmpty else {
+            return []
+        }
+
+        var collected: [FeedPost] = []
+        do {
+            for chunk in uniqueIds.chunked(into: Self.inQueryChunkSize) {
+                let snapshot = try await feedPostsRef
+                    .whereField("authorId", in: chunk)
+                    .getDocuments()
+                collected.append(contentsOf: snapshot.documents.compactMap { Self.parsePost($0) })
+            }
+        }
+        catch {
+            errorMessage = error.localizedDescription
+            return []
+        }
+
+        return collected.sorted { $0.createdAt > $1.createdAt }
+    }
+
+    private static func parsePost(_ doc: QueryDocumentSnapshot) -> FeedPost? {
+        let data = doc.data()
+        guard let authorId = data["authorId"] as? String,
+              let comment = data["comment"] as? String,
+              let storyURL = data["storyURL"] as? String,
+              let storyTitle = data["storyTitle"] as? String
+        else { return nil }
+
+        let topicStrings = data["storyTopics"] as? [String] ?? []
+        let topics = topicStrings.compactMap(Topic.init(rawValue:))
+        let sourceCategory = (data["storySourceCategory"] as? String)
+            .flatMap(SourceCategory.init(rawValue:)) ?? .article
+        let likedByArray = data["likedBy"] as? [String] ?? []
+
+        let story = FeedPostStory(
+            url: storyURL,
+            title: storyTitle,
+            sourceName: data["storySourceName"] as? String ?? "",
+            sourceCategory: sourceCategory,
+            topics: topics,
+            thumbnailURL: (data["storyThumbnailURL"] as? String).flatMap { $0.isEmpty ? nil : $0 })
+
+        return FeedPost(
+            id: doc.documentID,
+            authorId: authorId,
+            authorName: data["authorName"] as? String ?? "",
+            authorEmoji: (data["authorEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 },
+            comment: comment,
+            story: story,
+            likeCount: max(0, data["likeCount"] as? Int ?? 0),
+            likedBy: Set(likedByArray),
+            commentCount: max(0, data["commentCount"] as? Int ?? 0),
+            createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
+            updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue())
+    }
+}
+
+private extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        guard size > 0 else {
+            return [self]
+        }
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0 ..< Swift.min($0 + size, count)])
+        }
+    }
+}

@@ -102,7 +102,8 @@ struct ContentView: View {
             translator: ContentTranslator(),
             authService: AuthService(),
             profileService: ProfileService(),
-            communityService: CommunityService()))
+            communityService: CommunityService(),
+            feedPostService: FeedPostService()))
 }
 
 
