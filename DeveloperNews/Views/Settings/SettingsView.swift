@@ -53,6 +53,9 @@ struct SettingsView: View {
                 message: "auth.deleteAccount.confirmMessage",
                 isPresented: $viewModel.showDeleteAccountConfirm,
                 buttons: deleteAccountConfirmDialogView)
+            .sheet(isPresented: $viewModel.showEditBio) {
+                bioEditorSheet
+            }
             .sheet(isPresented: $viewModel.showSignIn) {
                 SignInView(appState: appState, viewModel: signInViewModel)
             }
@@ -68,6 +71,27 @@ struct SettingsView: View {
             "auth.deleteAccount.confirmAction",
             role: .destructive,
             action: deleteAccount)
+    }
+
+    private var bioEditorSheet: some View {
+        NavigationStack {
+            LimitedTextEditor(
+                text: $viewModel.editingBio,
+                limit: 160,
+                placeholder: .profileBioPlaceholder)
+                .padding()
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .navigationTitle(.profileEditBio)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel", action: cancelBio)
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save", action: saveBio)
+                    }
+                }
+        }
     }
 
     @ViewBuilder
@@ -260,6 +284,17 @@ struct SettingsView: View {
                 Button(action: openNameEditor) {
                     Label(.profileChangeName, icon: .edit)
                 }
+                Button(action: openBioEditor) {
+                    if let bio = viewModel.profileBio, !bio.isEmpty {
+                        Text(bio)
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    else {
+                        Label(.profileAddBio, icon: .edit)
+                    }
+                }
                 Button(
                     .authSignOut,
                     role: .destructive,
@@ -348,6 +383,22 @@ struct SettingsView: View {
     private func openNameEditor() {
         viewModel.editingName = viewModel.displayName
         viewModel.showEditName = true
+    }
+
+    private func openBioEditor() {
+        viewModel.editingBio = viewModel.profileBio ?? ""
+        viewModel.showEditBio = true
+    }
+
+    private func saveBio() {
+        Task {
+            await viewModel.updateBio()
+        }
+        viewModel.showEditBio = false
+    }
+
+    private func cancelBio() {
+        viewModel.showEditBio = false
     }
 
     private func signOut() {

@@ -40,6 +40,14 @@ struct UserProfileView: View {
 
                     Text(authorName)
                         .font(.title3.bold())
+                    if let bio = viewModel.authorBio, !bio.isEmpty {
+                        Text(bio)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(4)
+                            .padding(.horizontal, 24)
+                    }
                     HStack(spacing: 20) {
                         VStack {
                             Text("\(viewModel.authorFeedPosts.count)")
@@ -122,6 +130,7 @@ struct UserProfileView: View {
         }
         .task(loadFollowCounts)
         .task(loadFeedPosts)
+        .task(loadBio)
         .alert(
             .communityBlockConfirmTitle,
             isPresented: $showBlockConfirm) {
@@ -145,6 +154,10 @@ struct UserProfileView: View {
 
     private func loadFeedPosts() async {
         await viewModel.loadFeedPosts()
+    }
+
+    private func loadBio() async {
+        await viewModel.loadBio()
     }
 
     private func toggleFollow() {

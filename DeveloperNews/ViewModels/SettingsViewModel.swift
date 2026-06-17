@@ -9,10 +9,12 @@ final class SettingsViewModel {
     var showSignIn = false
     var showEditName = false
     var showEmojiPicker = false
+    var showEditBio = false
     var showFeedback = false
     var showDeleteAccountConfirm = false
     var editingName = ""
     var editingEmoji = ""
+    var editingBio = ""
 
     init(appState: AppState) {
         self.appState = appState
@@ -32,6 +34,9 @@ final class SettingsViewModel {
     }
     var profileEmoji: String? {
         appState.profileService.profileEmoji
+    }
+    var profileBio: String? {
+        appState.profileService.profileBio
     }
     var selectedTopics: Set<Topic> {
         appState.selectedTopics
@@ -95,6 +100,11 @@ final class SettingsViewModel {
 
     func updateProfileEmoji(_ emoji: String) async {
         await appState.updateProfileEmoji(emoji)
+    }
+
+    func updateBio() async {
+        let trimmed = editingBio.trimmingCharacters(in: .whitespacesAndNewlines)
+        await appState.updateBio(trimmed)
     }
 
     func unblockUser(_ userId: String) {

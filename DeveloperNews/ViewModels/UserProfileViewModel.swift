@@ -10,6 +10,7 @@ final class UserProfileViewModel {
     var followerCount = 0
     var followingCount = 0
     var authorFeedPosts: [FeedPost] = []
+    var authorBio: String?
 
     init(
         appState: AppState,
@@ -34,6 +35,16 @@ final class UserProfileViewModel {
         authorFeedPosts = posts.sorted { $0.createdAt > $1.createdAt }
         if let message = appState.feedPostService.errorMessage {
             appState.presentError(message)
+        }
+    }
+
+    func loadBio() async {
+        if isOwnProfile {
+            authorBio = appState.profileService.profileBio
+        }
+        else {
+            let summaries = await appState.profileService.fetchUserSummaries(for: [authorId])
+            authorBio = summaries.first?.bio
         }
     }
 

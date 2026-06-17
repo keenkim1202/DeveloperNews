@@ -10,7 +10,10 @@ final class MockProfileServicing: ProfileServicing {
 
     var displayName = "Mock User"
     var profileEmoji: String?
+    var profileBio: String?
     var followedUserIds: Set<String> = []
+
+    private(set) var updatedBios: [String] = []
 
     var followerCount = 0
     var followingCount = 0
@@ -42,6 +45,11 @@ final class MockProfileServicing: ProfileServicing {
 
     func updateProfileEmoji(_ emoji: String) async {
         profileEmoji = emoji
+    }
+
+    func updateBio(_ bio: String) async {
+        updatedBios.append(bio)
+        profileBio = bio
     }
 
     func fetchFollowerCount(for userId: String) async -> Int {
