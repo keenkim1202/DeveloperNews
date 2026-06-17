@@ -221,7 +221,7 @@ struct CommunityPostDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
-        .scrollDismissesKeyboard(.interactively)
+        .scrollDismissesKeyboard(.immediately)
         .refreshable(action: refresh)
         .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
         .keenOnChange(of: visibleComments.count) {
@@ -229,7 +229,12 @@ struct CommunityPostDetailView: View {
         }
         .safeAreaInset(edge: .bottom) {
             if currentUserId != nil {
-                commentInputBar
+                CommentInputBar(
+                    text: $commentText,
+                    errorMessage: viewModel.commentErrorMessage,
+                    canSubmit: canSubmitComment,
+                    isFocused: $commentFieldFocused,
+                    onSubmit: submitComment)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -325,39 +330,6 @@ struct CommunityPostDetailView: View {
         }
     }
 
-    private var commentInputBar: some View {
-        VStack(spacing: 0) {
-            Divider()
-            if let error = viewModel.commentErrorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(DSColor.destructive)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-            }
-            HStack(alignment: .bottom, spacing: 8) {
-                TextField(
-                    .communityCommentPlaceholder,
-                    text: $commentText,
-                    axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(1...4)
-                    .focused($commentFieldFocused)
-                Button(action: submitComment) {
-                    Image(.sendFilled)
-                        .font(.title2)
-                }
-                .disabled(!canSubmitComment)
-                .accessibilityLabel(.communityCommentSubmit)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-        }
-        .background {
-            DSColor.scrim
-        }
-    }
 
     private func commentRow(_ comment: CommunityComment) -> some View {
         VStack(alignment: .leading, spacing: 4) {
