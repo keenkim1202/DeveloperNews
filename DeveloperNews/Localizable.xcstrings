@@ -3160,6 +3160,23 @@
         }
       }
     },
+    "settings.unknownUser" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown user"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "알 수 없는 사용자"
+          }
+        }
+      }
+    },
     "Sign-in is powered by Firebase Authentication, a service provided by Google. When you sign in, Firebase stores your email, display name, and account creation date. You can delete your account at any time from Settings, which removes your authentication data from Firebase." : {
       "extractionState" : "manual",
       "localizations" : {
