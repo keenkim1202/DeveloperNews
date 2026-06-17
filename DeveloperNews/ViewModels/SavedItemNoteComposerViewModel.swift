@@ -16,24 +16,31 @@ final class SavedItemNoteComposerViewModel {
     }
 
     func saveChanges(description: String) {
-        guard let saved = appState.savedItemSnapshots[item.url] else { return }
         let trimmed = description.trimmingCharacters(in: .whitespacesAndNewlines)
-        let updated = ContentItem(
-            id: saved.id,
-            kind: saved.kind,
-            title: saved.title,
+        // Editing an existing bookmark updates its note in place; saving a story
+        // that is not yet bookmarked creates it with the note in one step.
+        let base = appState.savedItemSnapshots[item.url] ?? item
+        let composed = ContentItem(
+            id: base.id,
+            kind: base.kind,
+            title: base.title,
             summary: trimmed,
-            sourceName: saved.sourceName,
-            sourceCategory: saved.sourceCategory,
-            authorName: saved.authorName,
-            url: saved.url,
-            publishedAt: saved.publishedAt,
-            topics: saved.topics,
-            trendScore: saved.trendScore,
-            thumbnailURL: saved.thumbnailURL,
-            engagement: saved.engagement,
-            isUserCreated: saved.isUserCreated,
+            sourceName: base.sourceName,
+            sourceCategory: base.sourceCategory,
+            authorName: base.authorName,
+            url: base.url,
+            publishedAt: base.publishedAt,
+            topics: base.topics,
+            trendScore: base.trendScore,
+            thumbnailURL: base.thumbnailURL,
+            engagement: base.engagement,
+            isUserCreated: base.isUserCreated,
             updatedAt: .now)
-        appState.updateSavedItem(updated)
+        if appState.savedItemSnapshots[item.url] == nil {
+            appState.addSavedItem(composed)
+        }
+        else {
+            appState.updateSavedItem(composed)
+        }
     }
 }

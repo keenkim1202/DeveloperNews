@@ -41,29 +41,25 @@ struct InAppEngagementSummaryView: View {
         self.engagement = engagement
     }
 
-    private var hasCounts: Bool {
-        engagement.viewCount + engagement.commentCount + engagement.likeCount > 0
-    }
-
     var body: some View {
-        if hasCounts {
-            HStack(spacing: 12) {
-                HStack(spacing: 2) {
-                    Image(.views)
-                    Text(formatted(engagement.viewCount))
-                }
-                HStack(spacing: 2) {
-                    Image(.comment)
-                    Text(formatted(engagement.commentCount))
-                }
-                HStack(spacing: 2) {
-                    Image(.like)
-                    Text(formatted(engagement.likeCount))
-                }
+        // Always shown (even at zero) so the metrics row stays present and the
+        // feed layout is consistent before a story has any activity.
+        HStack(spacing: 12) {
+            HStack(spacing: 2) {
+                Image(.views)
+                Text(formatted(engagement.viewCount))
             }
-            .font(.caption2)
-            .foregroundStyle(.secondary)
+            HStack(spacing: 2) {
+                Image(.comment)
+                Text(formatted(engagement.commentCount))
+            }
+            HStack(spacing: 2) {
+                Image(.like)
+                Text(formatted(engagement.likeCount))
+            }
         }
+        .font(.caption2)
+        .foregroundStyle(.secondary)
     }
 
     private func formatted(_ value: Int) -> String {

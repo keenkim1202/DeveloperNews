@@ -15,6 +15,7 @@ struct ArticleDetailView: View {
     @State private var webViewRef: WKWebView?
     @State private var pageTranslationTrigger = 0
     @State private var showEditNote = false
+    @State private var showSaveNote = false
     @State private var showPostComposer = false
     @State private var showComments = false
 
@@ -42,7 +43,6 @@ struct ArticleDetailView: View {
                 webViewRef: $webViewRef,
                 reloadTrigger: reloadTrigger)
             .opacity(loadError == nil ? 1 : 0)
-            .ignoresSafeArea(edges: .bottom)
 
             if isLoading && loadProgress < 1 {
                 ProgressView(value: max(loadProgress, 0.05))
@@ -129,6 +129,7 @@ struct ArticleDetailView: View {
         .onAppear(perform: onAppear)
         .onDisappear(perform: onDisappear)
         .sheet(isPresented: $showEditNote) { noteEditorSheet }
+        .sheet(isPresented: $showSaveNote) { saveNoteSheet }
         .sheet(isPresented: $showPostComposer) { postComposerSheet }
         .sheet(isPresented: $showComments) { commentsSheet }
     }
@@ -145,7 +146,6 @@ struct ArticleDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(engagementViewModel.currentUserId == nil)
-                .frame(maxWidth: .infinity)
                 Button(action: openComments) {
                     actionLabel(
                         icon: .comment,
@@ -153,8 +153,7 @@ struct ArticleDetailView: View {
                         tint: .primary)
                 }
                 .buttonStyle(.plain)
-                .frame(maxWidth: .infinity)
-                Button(action: toggleSaved) {
+                Button(action: handleBookmark) {
                     actionLabel(
                         icon: viewModel.isSaved ? .bookmarkFilled : .bookmark,
                         count: nil,
@@ -162,7 +161,6 @@ struct ArticleDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(viewModel.isSaved ? .removeFromSaved : .saveStory)
-                .frame(maxWidth: .infinity)
                 Button(action: openPostComposer) {
                     actionLabel(
                         icon: .quote,
@@ -172,10 +170,8 @@ struct ArticleDetailView: View {
                 .buttonStyle(.plain)
                 .disabled(engagementViewModel.currentUserId == nil)
                 .accessibilityLabel(.feedPostShareAsPost)
-                .frame(maxWidth: .infinity)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
         }
         .background {
             DSColor.background
@@ -195,7 +191,10 @@ struct ArticleDetailView: View {
                     .foregroundStyle(.primary)
             }
         }
-        .font(.subheadline)
+        .font(.title3)
+        .frame(maxWidth: .infinity)
+        .frame(height: 52)
+        .contentShape(Rectangle())
     }
 
     @ViewBuilder
@@ -232,8 +231,13 @@ struct ArticleDetailView: View {
         reloadTrigger &+= 1
     }
 
-    private func toggleSaved() {
-        viewModel.toggleSaved()
+    private func handleBookmark() {
+        if viewModel.isSaved {
+            viewModel.toggleSaved()
+        }
+        else {
+            showSaveNote = true
+        }
     }
 
     private func openNoteEditor() {
@@ -260,6 +264,11 @@ struct ArticleDetailView: View {
     @ViewBuilder
     private var noteEditorSheet: some View {
         SavedItemNoteComposerView(appState: appState, item: viewModel.noteEditorItem)
+    }
+
+    @ViewBuilder
+    private var saveNoteSheet: some View {
+        SavedItemNoteComposerView(appState: appState, item: item)
     }
 
     @ViewBuilder

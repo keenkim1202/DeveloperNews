@@ -39,14 +39,19 @@ struct StoryCommentsSheet: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .contentShape(Rectangle())
                 }
-                .scrollDismissesKeyboard(.interactively)
+                .scrollDismissesKeyboard(.immediately)
                 .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
                 .keenOnChange(of: visibleComments.count) {
                     scrollToLatestComment(proxy)
                 }
                 .safeAreaInset(edge: .bottom) {
                     if currentUserId != nil {
-                        commentInputBar
+                        CommentInputBar(
+                            text: $commentText,
+                            errorMessage: viewModel.commentErrorMessage,
+                            canSubmit: canSubmitComment,
+                            isFocused: $commentFieldFocused,
+                            onSubmit: submitComment)
                     }
                 }
                 .navigationTitle(Text(.communityComments))
@@ -67,7 +72,11 @@ struct StoryCommentsSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        // A single large detent keeps the sheet from resizing when the keyboard
+        // appears, so the comment input tracks the keyboard smoothly (the pushed
+        // post detail screen behaves this way). A medium detent would fight the
+        // keyboard animation as the sheet grows to fit it.
+        .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
 
@@ -88,40 +97,6 @@ struct StoryCommentsSheet: View {
                         .id(comment.id)
                 }
             }
-        }
-    }
-
-    private var commentInputBar: some View {
-        VStack(spacing: 0) {
-            Divider()
-            if let error = viewModel.commentErrorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(DSColor.destructive)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-            }
-            HStack(alignment: .bottom, spacing: 8) {
-                TextField(
-                    .communityCommentPlaceholder,
-                    text: $commentText,
-                    axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(1...4)
-                    .focused($commentFieldFocused)
-                Button(action: submitComment) {
-                    Image(.sendFilled)
-                        .font(.title2)
-                }
-                .disabled(!canSubmitComment)
-                .accessibilityLabel(.communityCommentSubmit)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-        }
-        .background {
-            DSColor.scrim
         }
     }
 

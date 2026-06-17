@@ -30,17 +30,16 @@ struct FeedPostComposerView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     quoteCard
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(.feedPostCommentPlaceholder)
-                            .font(.dsLabel)
-                            .foregroundStyle(.secondary)
-                        LimitedTextEditor(
-                            text: $comment,
-                            limit: Self.commentLimit)
-                    }
+                    LimitedTextEditor(
+                        text: $comment,
+                        limit: Self.commentLimit,
+                        placeholder: .feedPostCommentPlaceholder)
                 }
                 .padding(20)
+                .contentShape(Rectangle())
+                .onTapGesture(perform: dismissKeyboard)
             }
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(.feedPostComposeTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -82,6 +81,14 @@ struct FeedPostComposerView: View {
 
     private func cancel() {
         dismiss()
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil)
     }
 
     private func post() {
