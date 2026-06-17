@@ -72,10 +72,12 @@ struct Community2View: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         else if viewModel.hasNoPosts {
-            ContentUnavailableView {
-                Label(.discoverEmpty, icon: .community)
-            } description: {
-                Text(.discoverEmptyDescription)
+            refreshableEmptyState(refresh: refresh) {
+                ContentUnavailableView {
+                    Label(.discoverEmpty, icon: .community)
+                } description: {
+                    Text(.discoverEmptyDescription)
+                }
             }
         }
         else {
@@ -97,10 +99,12 @@ struct Community2View: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         else if viewModel.hasNoFollowingPosts {
-            ContentUnavailableView {
-                Label(.followingEmpty, icon: .community)
-            } description: {
-                Text(.followingEmptyDescription)
+            refreshableEmptyState(refresh: refreshFollowing) {
+                ContentUnavailableView {
+                    Label(.followingEmpty, icon: .community)
+                } description: {
+                    Text(.followingEmptyDescription)
+                }
             }
         }
         else {
@@ -122,6 +126,20 @@ struct Community2View: View {
             }
         }
         .listStyle(.plain)
+        .refreshable(action: refresh)
+    }
+
+    // Empty-state content has no scrollable list to host pull-to-refresh, so
+    // wrap it in a viewport-filling ScrollView that can still be pulled down.
+    private func refreshableEmptyState(
+        refresh: @escaping @Sendable () async -> Void,
+        @ViewBuilder content: () -> some View,
+    ) -> some View {
+        ScrollView {
+            content()
+                .frame(maxWidth: .infinity)
+                .containerRelativeFrame(.vertical)
+        }
         .refreshable(action: refresh)
     }
 
@@ -181,11 +199,8 @@ struct Community2View: View {
     }
 
     private func onAppear() {
-        guard !viewModel.hasLoaded else {
-            return
-        }
         Task {
-            await viewModel.load()
+            await viewModel.loadIfNeeded()
         }
     }
 

@@ -230,4 +230,30 @@ import Foundation
         #expect(updated?.likeCount == 4)
         #expect(updated?.likedBy.contains("me") == true)
     }
+
+    @Test func loadIfNeededSkipsRefetchWhenNoPostCreated() async {
+        let feedPost = MockFeedPostServicing()
+        feedPost.recentPosts = [VMFixtures.makeFeedPost(id: "p1")]
+        let appState = VMFixtures.makeAppState(feedPost: feedPost)
+        let vm = Community2ViewModel(appState: appState)
+
+        await vm.loadIfNeeded()
+        await vm.loadIfNeeded()
+
+        #expect(feedPost.fetchedRecentLimits == [200])
+    }
+
+    @Test func loadIfNeededRefetchesAfterPostCreated() async {
+        let feedPost = MockFeedPostServicing()
+        feedPost.recentPosts = [VMFixtures.makeFeedPost(id: "p1")]
+        let appState = VMFixtures.makeAppState(feedPost: feedPost)
+        let vm = Community2ViewModel(appState: appState)
+        await vm.loadIfNeeded()
+
+        // Simulate a post created from another screen, bumping the token.
+        feedPost.creationToken += 1
+        await vm.loadIfNeeded()
+
+        #expect(feedPost.fetchedRecentLimits == [200, 200])
+    }
 }
