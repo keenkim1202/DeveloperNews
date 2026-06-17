@@ -6,6 +6,10 @@ struct UserProfileView: View {
     private let authorEmoji: String?
 
     @State private var viewModel: UserProfileViewModel
+    @State private var followListKind: FollowListKind?
+    @State private var showBlockConfirm = false
+
+    @Environment(\.dismiss) private var dismiss
 
     init(
         appState: AppState,
@@ -45,28 +49,26 @@ struct UserProfileView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                        VStack {
-                            Text("\(viewModel.followerCount)")
-                                .font(.headline)
-                            Text(.profileFollowers)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                        Button(action: showFollowers) {
+                            VStack {
+                                Text("\(viewModel.followerCount)")
+                                    .font(.headline)
+                                Text(.profileFollowers)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
-                        VStack {
-                            Text("\(viewModel.followingCount)")
-                                .font(.headline)
-                            Text(.communityFollowing)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                        .buttonStyle(.plain)
+                        Button(action: showFollowing) {
+                            VStack {
+                                Text("\(viewModel.followingCount)")
+                                    .font(.headline)
+                                Text(.communityFollowing)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
-                        VStack {
-                            let totalLikes = viewModel.authorPosts.reduce(0) { $0 + $1.likeCount }
-                            Text("\(totalLikes)")
-                                .font(.headline)
-                            Text(.profileLikes)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+                        .buttonStyle(.plain)
                     }
 
                     if !viewModel.isOwnProfile, viewModel.currentUserId != nil {
@@ -125,7 +127,33 @@ struct UserProfileView: View {
         .navigationTitle(authorName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .toolbar {
+            if !viewModel.isOwnProfile, viewModel.currentUserId != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(.communityBlockUser, action: confirmBlockUser)
+                        .foregroundStyle(DSColor.destructive)
+                }
+            }
+        }
         .task(loadFollowCounts)
+        .dialog(
+            .communityBlockConfirmTitle,
+            message: .communityBlockConfirmMessage,
+            isPresented: $showBlockConfirm,
+            buttons: blockConfirmDialogView)
+        .sheet(item: $followListKind) { kind in
+            FollowListView(
+                appState: appState,
+                userId: viewModel.authorId,
+                kind: kind)
+        }
+    }
+
+    private var blockConfirmDialogView: some View {
+        Button(
+            .communityBlockConfirmAction,
+            role: .destructive,
+            action: blockUser)
     }
 
     private func loadFollowCounts() async {
@@ -136,6 +164,23 @@ struct UserProfileView: View {
         Task {
             await viewModel.toggleFollow()
         }
+    }
+
+    private func showFollowers() {
+        followListKind = .followers
+    }
+
+    private func showFollowing() {
+        followListKind = .following
+    }
+
+    private func confirmBlockUser() {
+        showBlockConfirm = true
+    }
+
+    private func blockUser() {
+        viewModel.blockAuthor()
+        dismiss()
     }
 }
 

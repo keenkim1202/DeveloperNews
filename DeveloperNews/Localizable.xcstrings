@@ -1063,6 +1063,23 @@
         }
       }
     },
+    "common.done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "완료"
+          }
+        }
+      }
+    },
     "community.alreadyReported" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2510,6 +2527,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1개의 이모지만 입력이 가능해요"
+          }
+        }
+      }
+    },
+    "profile.followList.empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No one here yet"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아직 아무도 없습니다"
           }
         }
       }

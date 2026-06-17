@@ -5,7 +5,7 @@ import Observation
 @MainActor
 final class UserProfileViewModel {
     private let appState: AppState
-    private let authorId: String
+    let authorId: String
 
     var followerCount = 0
     var followingCount = 0
@@ -46,5 +46,9 @@ final class UserProfileViewModel {
             appState.presentError(message)
         }
         followerCount = await appState.profileService.fetchFollowerCount(for: authorId)
+    }
+
+    func blockAuthor() {
+        appState.blockUser(authorId)
     }
 }
