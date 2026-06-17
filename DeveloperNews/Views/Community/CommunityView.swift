@@ -1,5 +1,6 @@
 import SwiftUI
 
+@available(*, deprecated, message: "Replaced by Community2View")
 struct CommunityView: View {
     private let appState: AppState
 
@@ -78,6 +79,13 @@ struct CommunityView: View {
                 appState: appState,
                 userId: target.userId,
                 kind: target.kind)
+        case let .storyDetail(story):
+            if let item = story.contentItem {
+                ArticleDetailView(appState: appState, item: item)
+            }
+            else {
+                UnavailableDestinationView(reason: .itemNotFound)
+            }
         }
     }
 
@@ -132,6 +140,7 @@ struct CommunityView: View {
 }
 
 
+@available(*, deprecated, message: "Replaced by Community2View")
 struct CommunityPostRow: View {
     private let currentUserId: String?
     private let isRead: Bool

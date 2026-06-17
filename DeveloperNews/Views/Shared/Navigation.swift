@@ -13,6 +13,7 @@ enum CommunityTabDestination: Hashable {
     case userProfile(AuthorInfo)
     case postLinkDetail(CommunityPost.ID)
     case followList(FollowListTarget)
+    case storyDetail(FeedPostStory)
 }
 
 struct FollowListTarget: Hashable {

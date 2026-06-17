@@ -112,7 +112,7 @@ struct MainTabView: View {
     private let navigation: Navigation
 
     @State private var homeViewModel: HomeViewModel
-    @State private var communityViewModel: CommunityViewModel
+    @State private var community2ViewModel: Community2ViewModel
     @State private var savedViewModel: SavedViewModel
     @State private var settingsViewModel: SettingsViewModel
 
@@ -123,7 +123,7 @@ struct MainTabView: View {
         self.appState = appState
         self.navigation = navigation
         _homeViewModel = State(initialValue: HomeViewModel(appState: appState))
-        _communityViewModel = State(initialValue: CommunityViewModel(appState: appState))
+        _community2ViewModel = State(initialValue: Community2ViewModel(appState: appState))
         _savedViewModel = State(initialValue: SavedViewModel(appState: appState))
         _settingsViewModel = State(initialValue: SettingsViewModel(appState: appState))
     }
@@ -147,9 +147,9 @@ struct MainTabView: View {
                 }
                 .tag(AppTab.home)
 
-            CommunityView(
+            Community2View(
                 appState: appState,
-                viewModel: communityViewModel,
+                viewModel: community2ViewModel,
                 navigation: navigation)
                 .tabItem {
                     Label(.community, systemImage: "person.2")

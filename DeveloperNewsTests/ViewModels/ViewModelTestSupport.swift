@@ -52,6 +52,38 @@ enum VMFixtures {
             trendScore: trendScore)
     }
 
+    static func makeFeedPost(
+        id: String = UUID().uuidString,
+        authorId: String = "author-1",
+        authorName: String = "Author",
+        authorEmoji: String? = nil,
+        comment: String = "Worth a read",
+        title: String = "Story Title",
+        likeCount: Int = 0,
+        likedBy: Set<String> = [],
+        commentCount: Int = 0,
+        createdAt: Date = .now,
+    ) -> FeedPost {
+        FeedPost(
+            id: id,
+            authorId: authorId,
+            authorName: authorName,
+            authorEmoji: authorEmoji,
+            comment: comment,
+            story: FeedPostStory(
+                url: "https://example.com/\(id)",
+                title: title,
+                sourceName: "Source",
+                sourceCategory: .article,
+                topics: [.ios],
+                thumbnailURL: nil),
+            likeCount: likeCount,
+            likedBy: likedBy,
+            commentCount: commentCount,
+            createdAt: createdAt,
+            updatedAt: nil)
+    }
+
     static func makePost(
         id: String = UUID().uuidString,
         authorId: String = "author-1",
