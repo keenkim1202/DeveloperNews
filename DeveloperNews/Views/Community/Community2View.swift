@@ -19,13 +19,38 @@ struct Community2View: View {
     var body: some View {
         NavigationStack(path: $navigation.community) {
             VStack(spacing: 0) {
-                modePicker
-                content
+                tabPicker
+                tabContent
             }
             .navigationTitle(.community)
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: CommunityTabDestination.self, destination: destination)
+            .keenOnChange(of: viewModel.tab, perform: onTabChange)
             .onAppear(perform: onAppear)
+        }
+    }
+
+    private var tabPicker: some View {
+        Picker(.community, selection: $viewModel.tab) {
+            Text(.communityDiscover).tag(Community2ViewModel.Tab.discover)
+            Text(.communityFollowing).tag(Community2ViewModel.Tab.following)
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch viewModel.tab {
+        case .discover:
+            VStack(spacing: 0) {
+                modePicker
+                discoverContent
+            }
+        case .following:
+            followingContent
         }
     }
 
@@ -41,7 +66,7 @@ struct Community2View: View {
     }
 
     @ViewBuilder
-    private var content: some View {
+    private var discoverContent: some View {
         if viewModel.isLoading && viewModel.hasNoPosts {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -54,18 +79,50 @@ struct Community2View: View {
             }
         }
         else {
-            List {
-                ForEach(viewModel.displayedPosts) { post in
-                    FeedPostRow(
-                        post: post,
-                        currentUserId: appState.authService.userId,
-                        onAuthorTap: { navigateToProfile(post) },
-                        onLike: { toggleLike(post) })
-                }
-            }
-            .listStyle(.plain)
-            .refreshable(action: refresh)
+            feedList(viewModel.displayedPosts, refresh: refresh)
         }
+    }
+
+    @ViewBuilder
+    private var followingContent: some View {
+        if !viewModel.isSignedIn {
+            ContentUnavailableView {
+                Label(.followingSignIn, icon: .account)
+            } description: {
+                Text(.followingSignInDescription)
+            }
+        }
+        else if viewModel.isLoadingFollowing && viewModel.hasNoFollowingPosts {
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        else if viewModel.hasNoFollowingPosts {
+            ContentUnavailableView {
+                Label(.followingEmpty, icon: .community)
+            } description: {
+                Text(.followingEmptyDescription)
+            }
+        }
+        else {
+            feedList(viewModel.followingPosts, refresh: refreshFollowing)
+        }
+    }
+
+    private func feedList(
+        _ posts: [FeedPost],
+        refresh: @escaping @Sendable () async -> Void,
+    ) -> some View {
+        List {
+            ForEach(posts) { post in
+                FeedPostRow(
+                    post: post,
+                    currentUserId: appState.authService.userId,
+                    onAuthorTap: { navigateToProfile(post) },
+                    onLike: { toggleLike(post) })
+            }
+        }
+        .listStyle(.plain)
+        .refreshable(action: refresh)
     }
 
     @ViewBuilder
@@ -130,7 +187,20 @@ struct Community2View: View {
         }
     }
 
+    private func onTabChange(_ tab: Community2ViewModel.Tab) {
+        guard tab == .following, viewModel.isSignedIn, !viewModel.hasLoadedFollowing else {
+            return
+        }
+        Task {
+            await viewModel.loadFollowing()
+        }
+    }
+
     private func refresh() async {
         await viewModel.load()
+    }
+
+    private func refreshFollowing() async {
+        await viewModel.loadFollowing()
     }
 }
