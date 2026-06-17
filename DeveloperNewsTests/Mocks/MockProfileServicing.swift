@@ -14,6 +14,9 @@ final class MockProfileServicing: ProfileServicing {
 
     var followerCount = 0
     var followingCount = 0
+    var userSummaries: [UserSummary] = []
+    var followers: [UserSummary] = []
+    var following: [UserSummary] = []
 
     private(set) var didStopListening = false
 
@@ -45,6 +48,18 @@ final class MockProfileServicing: ProfileServicing {
 
     func fetchFollowingCount(for userId: String) async -> Int {
         followingCount
+    }
+
+    func fetchUserSummaries(for userIds: [String]) async -> [UserSummary] {
+        userSummaries
+    }
+
+    func fetchFollowers(of userId: String) async -> [UserSummary] {
+        followers
+    }
+
+    func fetchFollowing(of userId: String) async -> [UserSummary] {
+        following
     }
 
     func toggleFollow(_ targetUserId: String) async {
