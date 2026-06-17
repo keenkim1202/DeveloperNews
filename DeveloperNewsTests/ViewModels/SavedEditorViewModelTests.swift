@@ -1,11 +1,12 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
 @MainActor
-final class SavedEditorViewModelTests: XCTestCase {
+@Suite struct SavedEditorViewModelTests {
     // MARK: - AddSavedItemViewModel
 
-    func testAddSavedItemUsesProvidedLink() async {
+    @Test func addSavedItemUsesProvidedLink() async {
         let appState = VMFixtures.makeAppState()
         let vm = AddSavedItemViewModel(appState: appState)
 
@@ -15,15 +16,15 @@ final class SavedEditorViewModelTests: XCTestCase {
             link: "https://example.com/post",
             selectedTopics: [.ios])
 
-        XCTAssertEqual(appState.savedItems.count, 1)
+        #expect(appState.savedItems.count == 1)
         let saved = appState.savedItems.first
-        XCTAssertEqual(saved?.url.absoluteString, "https://example.com/post")
-        XCTAssertEqual(saved?.title, "Hello")
-        XCTAssertEqual(saved?.topics, [.ios])
-        XCTAssertTrue(saved?.isUserCreated == true)
+        #expect(saved?.url.absoluteString == "https://example.com/post")
+        #expect(saved?.title == "Hello")
+        #expect(saved?.topics == [.ios])
+        #expect(saved?.isUserCreated == true)
     }
 
-    func testAddSavedItemSynthesizesURLWhenLinkEmpty() async {
+    @Test func addSavedItemSynthesizesURLWhenLinkEmpty() async {
         let appState = VMFixtures.makeAppState()
         let vm = AddSavedItemViewModel(appState: appState)
 
@@ -33,13 +34,13 @@ final class SavedEditorViewModelTests: XCTestCase {
             link: "   ",
             selectedTopics: [])
 
-        XCTAssertEqual(appState.savedItems.count, 1)
+        #expect(appState.savedItems.count == 1)
         let saved = appState.savedItems.first
-        XCTAssertEqual(saved?.url.scheme, "devnews")
-        XCTAssertFalse(saved?.hasExternalLink == true)
+        #expect(saved?.url.scheme == "devnews")
+        #expect(!(saved?.hasExternalLink == true))
     }
 
-    func testAddSavedItemUsesDisplayNameAsSource() async {
+    @Test func addSavedItemUsesDisplayNameAsSource() async {
         let profile = MockProfileServicing()
         profile.displayName = "Jane Dev"
         let appState = VMFixtures.makeAppState(profile: profile)
@@ -51,10 +52,10 @@ final class SavedEditorViewModelTests: XCTestCase {
             link: "https://example.com/x",
             selectedTopics: [])
 
-        XCTAssertEqual(appState.savedItems.first?.sourceName, "Jane Dev")
+        #expect(appState.savedItems.first?.sourceName == "Jane Dev")
     }
 
-    func testAddSavedItemFallsBackToLocalizedSourceWhenNoDisplayName() async {
+    @Test func addSavedItemFallsBackToLocalizedSourceWhenNoDisplayName() async {
         let profile = MockProfileServicing()
         profile.displayName = ""
         let appState = VMFixtures.makeAppState(profile: profile)
@@ -67,11 +68,11 @@ final class SavedEditorViewModelTests: XCTestCase {
             selectedTopics: [])
 
         let saved = appState.savedItems.first
-        XCTAssertEqual(saved?.sourceName, String(localized: .saveMyBookmark))
-        XCTAssertFalse(saved?.sourceName.isEmpty == true)
+        #expect(saved?.sourceName == String(localized: .saveMyBookmark))
+        #expect(!(saved?.sourceName.isEmpty == true))
     }
 
-    func testAddSavedItemTrimsTitleAndDescription() async {
+    @Test func addSavedItemTrimsTitleAndDescription() async {
         let appState = VMFixtures.makeAppState()
         let vm = AddSavedItemViewModel(appState: appState)
 
@@ -82,13 +83,13 @@ final class SavedEditorViewModelTests: XCTestCase {
             selectedTopics: [])
 
         let saved = appState.savedItems.first
-        XCTAssertEqual(saved?.title, "Trimmed")
-        XCTAssertEqual(saved?.summary, "Body")
+        #expect(saved?.title == "Trimmed")
+        #expect(saved?.summary == "Body")
     }
 
     // MARK: - EditBookmarkViewModel
 
-    func testEditUpdatesInPlaceWhenURLUnchanged() async {
+    @Test func editUpdatesInPlaceWhenURLUnchanged() async {
         let appState = VMFixtures.makeAppState()
         let original = VMFixtures.makeItem(
             title: "Old",
@@ -102,15 +103,15 @@ final class SavedEditorViewModelTests: XCTestCase {
             link: original.url.absoluteString,
             selectedTopics: [.web])
 
-        XCTAssertEqual(appState.savedItems.count, 1)
+        #expect(appState.savedItems.count == 1)
         let saved = appState.savedItems.first
-        XCTAssertEqual(saved?.url, original.url)
-        XCTAssertEqual(saved?.title, "New Title")
-        XCTAssertEqual(saved?.summary, "New Body")
-        XCTAssertEqual(saved?.topics, [.web])
+        #expect(saved?.url == original.url)
+        #expect(saved?.title == "New Title")
+        #expect(saved?.summary == "New Body")
+        #expect(saved?.topics == [.web])
     }
 
-    func testEditChangingURLRemovesOldAndAddsNew() async {
+    @Test func editChangingURLRemovesOldAndAddsNew() async {
         let appState = VMFixtures.makeAppState()
         let original = VMFixtures.makeItem(
             title: "Old",
@@ -124,14 +125,14 @@ final class SavedEditorViewModelTests: XCTestCase {
             link: "https://example.com/new",
             selectedTopics: [])
 
-        XCTAssertEqual(appState.savedItems.count, 1)
+        #expect(appState.savedItems.count == 1)
         let saved = appState.savedItems.first
-        XCTAssertEqual(saved?.url.absoluteString, "https://example.com/new")
-        XCTAssertEqual(saved?.title, "Moved")
-        XCTAssertNil(appState.savedItems.first { $0.url == original.url })
+        #expect(saved?.url.absoluteString == "https://example.com/new")
+        #expect(saved?.title == "Moved")
+        #expect(appState.savedItems.first { $0.url == original.url } == nil)
     }
 
-    func testEditClearingLinkOnExternalItemSynthesizesURL() async {
+    @Test func editClearingLinkOnExternalItemSynthesizesURL() async {
         let appState = VMFixtures.makeAppState()
         let original = VMFixtures.makeItem(
             title: "Old",
@@ -145,9 +146,9 @@ final class SavedEditorViewModelTests: XCTestCase {
             link: "",
             selectedTopics: [])
 
-        XCTAssertEqual(appState.savedItems.count, 1)
+        #expect(appState.savedItems.count == 1)
         let saved = appState.savedItems.first
-        XCTAssertEqual(saved?.url.scheme, "devnews")
-        XCTAssertTrue(saved?.url.absoluteString.contains(original.id.uuidString) == true)
+        #expect(saved?.url.scheme == "devnews")
+        #expect(saved?.url.absoluteString.contains(original.id.uuidString) == true)
     }
 }

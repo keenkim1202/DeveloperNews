@@ -1,4 +1,13 @@
 import Foundation
+import Testing
+
+// Serialized parent suite for every source-client test that registers stubs on
+// the process-wide StubURLProtocol. Nesting the per-client suites under it makes
+// them run one at a time relative to each other, so one suite's reset never
+// wipes stubs another suite is mid-request on (Swift Testing parallelizes
+// suites by default; .serialized applies to the whole subtree).
+@Suite(.serialized) enum StubbedSourceClientTests {
+}
 
 // A URLProtocol that serves canned responses keyed by request URL string, so
 // source clients can be tested without hitting the network. Register it on an

@@ -1,8 +1,9 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
 @MainActor
-final class SavedViewModelTests: XCTestCase {
+@Suite struct SavedViewModelTests {
     // Seeds saved items directly through AppState so the VM reads real store state.
     private func seed(
         _ appState: AppState,
@@ -13,7 +14,7 @@ final class SavedViewModelTests: XCTestCase {
         }
     }
 
-    func testAvailableTopicsReflectsUnionOfSavedItemTopics() async {
+    @Test func availableTopicsReflectsUnionOfSavedItemTopics() async {
         let appState = VMFixtures.makeAppState()
         seed(appState, [
             VMFixtures.makeItem(topics: [.ios]),
@@ -22,13 +23,13 @@ final class SavedViewModelTests: XCTestCase {
         let vm = SavedViewModel(appState: appState)
 
         let topics = vm.availableTopics
-        XCTAssertTrue(topics.contains(.ios))
-        XCTAssertTrue(topics.contains(.web))
-        XCTAssertTrue(topics.contains(.ai))
-        XCTAssertFalse(topics.contains(.android))
+        #expect(topics.contains(.ios))
+        #expect(topics.contains(.web))
+        #expect(topics.contains(.ai))
+        #expect(!topics.contains(.android))
     }
 
-    func testSearchFilterMatchesTitleSummaryAndSource() async {
+    @Test func searchFilterMatchesTitleSummaryAndSource() async {
         let appState = VMFixtures.makeAppState()
         seed(appState, [
             VMFixtures.makeItem(title: "SwiftUI Layout", summary: "x", sourceName: "Blog"),
@@ -38,19 +39,19 @@ final class SavedViewModelTests: XCTestCase {
         let vm = SavedViewModel(appState: appState)
 
         vm.searchQuery = "swiftui"
-        XCTAssertEqual(vm.matchingArticleItems.count, 1)
+        #expect(vm.matchingArticleItems.count == 1)
 
         vm.searchQuery = "coroutines"
-        XCTAssertEqual(vm.matchingArticleItems.count, 1)
+        #expect(vm.matchingArticleItems.count == 1)
 
         vm.searchQuery = "mozilla"
-        XCTAssertEqual(vm.matchingArticleItems.count, 1)
+        #expect(vm.matchingArticleItems.count == 1)
 
         vm.searchQuery = "nomatch"
-        XCTAssertTrue(vm.matchingArticleItems.isEmpty)
+        #expect(vm.matchingArticleItems.isEmpty)
     }
 
-    func testTopicAndSearchFiltersCombine() async {
+    @Test func topicAndSearchFiltersCombine() async {
         let appState = VMFixtures.makeAppState()
         seed(appState, [
             VMFixtures.makeItem(title: "iOS Alpha", topics: [.ios]),
@@ -60,15 +61,15 @@ final class SavedViewModelTests: XCTestCase {
         let vm = SavedViewModel(appState: appState)
 
         vm.topicFilters = [.ios]
-        XCTAssertEqual(vm.matchingArticleItems.count, 2)
+        #expect(vm.matchingArticleItems.count == 2)
 
         vm.searchQuery = "alpha"
         // Topic gate keeps iOS-only, search gate keeps "Alpha"-titled -> 1 result.
-        XCTAssertEqual(vm.matchingArticleItems.count, 1)
-        XCTAssertEqual(vm.matchingArticleItems.first?.title, "iOS Alpha")
+        #expect(vm.matchingArticleItems.count == 1)
+        #expect(vm.matchingArticleItems.first?.title == "iOS Alpha")
     }
 
-    func testEmptyFiltersReturnAllSavedArticles() async {
+    @Test func emptyFiltersReturnAllSavedArticles() async {
         let appState = VMFixtures.makeAppState()
         seed(appState, [
             VMFixtures.makeItem(),
@@ -76,7 +77,7 @@ final class SavedViewModelTests: XCTestCase {
         ])
         let vm = SavedViewModel(appState: appState)
 
-        XCTAssertEqual(vm.matchingArticleItems.count, 2)
-        XCTAssertTrue(vm.hasAnyMatches)
+        #expect(vm.matchingArticleItems.count == 2)
+        #expect(vm.hasAnyMatches)
     }
 }

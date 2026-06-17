@@ -1,20 +1,18 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
+extension StubbedSourceClientTests {
 @MainActor
-final class GitHubTrendingSourceClientTests: XCTestCase {
-    override func setUp() async throws {
-        try await super.setUp()
-        await GitHubTrendingSourceClient.resetCacheForTesting()
-    }
-
-    override func tearDown() async throws {
+@Suite struct GitHubTrendingSourceClientTests {
+    // Reset the process-wide search cache and any stubs a prior test registered
+    // before each test, mirroring the original per-test setup/teardown resets.
+    init() async {
         await GitHubTrendingSourceClient.resetCacheForTesting()
         StubURLProtocol.reset()
-        try await super.tearDown()
     }
 
-    func testMapsSearchResultsIntoContentItems() async throws {
+    @Test func mapsSearchResultsIntoContentItems() async throws {
         StubURLProtocol.register(
             urlPrefix: "https://api.github.com/search/repositories",
             json: """
@@ -39,20 +37,20 @@ final class GitHubTrendingSourceClientTests: XCTestCase {
             session: StubURLProtocol.makeSession())
         let items = try await client.fetchItems(selectedTopics: [])
 
-        XCTAssertEqual(items.count, 1)
-        let item = try XCTUnwrap(items.first)
-        XCTAssertEqual(item.title, "owner/cool-swift")
-        XCTAssertEqual(item.summary, "A SwiftUI toolkit")
-        XCTAssertEqual(item.sourceName, "GitHub Trending")
-        XCTAssertEqual(item.sourceCategory, .github)
-        XCTAssertEqual(item.authorName, "owner")
-        XCTAssertEqual(item.url.absoluteString, "https://github.com/owner/cool-swift")
-        XCTAssertEqual(item.engagement?.reactionCount, 4000)
-        XCTAssertEqual(item.engagement?.commentCount, 120)
-        XCTAssertTrue(item.topics.contains(.ios))
+        #expect(items.count == 1)
+        let item = try #require(items.first)
+        #expect(item.title == "owner/cool-swift")
+        #expect(item.summary == "A SwiftUI toolkit")
+        #expect(item.sourceName == "GitHub Trending")
+        #expect(item.sourceCategory == .github)
+        #expect(item.authorName == "owner")
+        #expect(item.url.absoluteString == "https://github.com/owner/cool-swift")
+        #expect(item.engagement?.reactionCount == 4000)
+        #expect(item.engagement?.commentCount == 120)
+        #expect(item.topics.contains(.ios))
     }
 
-    func testDeduplicatesReposBySameURL() async throws {
+    @Test func deduplicatesReposBySameURL() async throws {
         StubURLProtocol.register(
             urlPrefix: "https://api.github.com/search/repositories",
             json: """
@@ -88,7 +86,8 @@ final class GitHubTrendingSourceClientTests: XCTestCase {
             session: StubURLProtocol.makeSession())
         let items = try await client.fetchItems(selectedTopics: [])
 
-        XCTAssertEqual(items.count, 1)
-        XCTAssertTrue(items[0].topics.contains(.backend))
+        #expect(items.count == 1)
+        #expect(items[0].topics.contains(.backend))
     }
+}
 }

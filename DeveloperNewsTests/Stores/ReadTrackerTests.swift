@@ -1,42 +1,43 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
 // Constructs ReadTracker directly with a no-op persist closure and exercises the
 // read-marking queries plus the bounded eviction at the 5000-item cap.
 @MainActor
-final class ReadTrackerTests: XCTestCase {
+@Suite struct ReadTrackerTests {
     private func makeTracker() -> ReadTracker {
         ReadTracker(inputs: ReadTracker.Inputs(persistReadItems: { _, _ in }))
     }
 
-    func testMarkAsReadThenIsRead() async {
+    @Test func markAsReadThenIsRead() async {
         let tracker = makeTracker()
         let item = StoreTestSupport.makeItem(urlString: "https://example.com/a")
 
-        XCTAssertFalse(tracker.isRead(item))
+        #expect(!tracker.isRead(item))
         tracker.markAsRead(item)
-        XCTAssertTrue(tracker.isRead(item))
+        #expect(tracker.isRead(item))
     }
 
-    func testMarkURLAsReadMatchesContentItemHash() async {
+    @Test func markURLAsReadMatchesContentItemHash() async {
         let tracker = makeTracker()
         let item = StoreTestSupport.makeItem(urlString: "https://example.com/a")
 
         tracker.markURLAsRead(item.url.absoluteString)
 
-        XCTAssertTrue(tracker.isRead(item))
+        #expect(tracker.isRead(item))
     }
 
-    func testMarkPostAsReadThenIsPostRead() async {
+    @Test func markPostAsReadThenIsPostRead() async {
         let tracker = makeTracker()
 
-        XCTAssertFalse(tracker.isPostRead("post-1"))
+        #expect(!tracker.isPostRead("post-1"))
         tracker.markPostAsRead("post-1")
-        XCTAssertTrue(tracker.isPostRead("post-1"))
-        XCTAssertFalse(tracker.isPostRead("post-2"))
+        #expect(tracker.isPostRead("post-1"))
+        #expect(!tracker.isPostRead("post-2"))
     }
 
-    func testTrimReadItemsEvictsAboveCap() async {
+    @Test func trimReadItemsEvictsAboveCap() async {
         let tracker = makeTracker()
 
         // Seed just over the cap; marking one more must trigger the trim.
@@ -45,15 +46,15 @@ final class ReadTrackerTests: XCTestCase {
             seeded.insert(HashUtil.shortHash("https://example.com/seed/\(index)"))
         }
         tracker.seedInitialState(readItemURLs: seeded, readPostIds: [])
-        XCTAssertEqual(tracker.readItemURLs.count, 5000)
+        #expect(tracker.readItemURLs.count == 5000)
 
         tracker.markURLAsRead("https://example.com/overflow")
 
         // Cap holds at 5000 after the new insert triggers eviction.
-        XCTAssertEqual(tracker.readItemURLs.count, 5000)
+        #expect(tracker.readItemURLs.count == 5000)
     }
 
-    func testTrimReadPostIdsEvictsAboveCap() async {
+    @Test func trimReadPostIdsEvictsAboveCap() async {
         let tracker = makeTracker()
 
         var seeded: Set<String> = []
@@ -61,10 +62,10 @@ final class ReadTrackerTests: XCTestCase {
             seeded.insert(HashUtil.shortHash("post/\(index)"))
         }
         tracker.seedInitialState(readItemURLs: [], readPostIds: seeded)
-        XCTAssertEqual(tracker.readPostIds.count, 5001)
+        #expect(tracker.readPostIds.count == 5001)
 
         tracker.markPostAsRead("trigger-trim")
 
-        XCTAssertEqual(tracker.readPostIds.count, 5000)
+        #expect(tracker.readPostIds.count == 5000)
     }
 }

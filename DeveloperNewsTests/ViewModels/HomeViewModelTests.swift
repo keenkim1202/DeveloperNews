@@ -1,8 +1,9 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
 @MainActor
-final class HomeViewModelTests: XCTestCase {
+@Suite struct HomeViewModelTests {
     // Seeds the feed via a stub content source + reload so feed-derived state
     // (personalizedItems, paged items) is populated.
     private func makeSeededAppState(_ items: [ContentItem]) async -> AppState {
@@ -13,47 +14,47 @@ final class HomeViewModelTests: XCTestCase {
         return appState
     }
 
-    func testShouldShowTopStoryFalseWhenFeedEmpty() async {
+    @Test func shouldShowTopStoryFalseWhenFeedEmpty() async {
         let appState = await makeSeededAppState([])
         let vm = HomeViewModel(appState: appState)
 
-        XCTAssertFalse(vm.shouldShowTopStory)
-        XCTAssertNil(vm.topItem)
+        #expect(!vm.shouldShowTopStory)
+        #expect(vm.topItem == nil)
     }
 
-    func testTopItemIsFirstPersonalizedWhenNoSearch() async {
+    @Test func topItemIsFirstPersonalizedWhenNoSearch() async {
         let high = VMFixtures.makeItem(title: "Top", trendScore: 100)
         let low = VMFixtures.makeItem(title: "Low", trendScore: 1)
         let appState = await makeSeededAppState([low, high])
         let vm = HomeViewModel(appState: appState)
 
-        XCTAssertTrue(vm.shouldShowTopStory)
-        XCTAssertEqual(vm.topItem?.title, "Top")
+        #expect(vm.shouldShowTopStory)
+        #expect(vm.topItem?.title == "Top")
     }
 
-    func testTopItemSuppressedDuringSearch() async {
+    @Test func topItemSuppressedDuringSearch() async {
         let appState = await makeSeededAppState([
             VMFixtures.makeItem(title: "Top", trendScore: 100)
         ])
         let vm = HomeViewModel(appState: appState)
 
         vm.searchQuery = "Top"
-        XCTAssertNil(vm.topItem)
+        #expect(vm.topItem == nil)
     }
 
-    func testArticlesExcludingTopStoryDropsTheTopItem() async {
+    @Test func articlesExcludingTopStoryDropsTheTopItem() async {
         let top = VMFixtures.makeItem(title: "Top", trendScore: 100)
         let other = VMFixtures.makeItem(title: "Other", trendScore: 50)
         let appState = await makeSeededAppState([top, other])
         let vm = HomeViewModel(appState: appState)
 
-        XCTAssertEqual(vm.topItem?.title, "Top")
+        #expect(vm.topItem?.title == "Top")
         let remaining = vm.articlesExcludingTopStory.map(\.title)
-        XCTAssertFalse(remaining.contains("Top"))
-        XCTAssertTrue(remaining.contains("Other"))
+        #expect(!remaining.contains("Top"))
+        #expect(remaining.contains("Other"))
     }
 
-    func testSearchFiltersArticles() async {
+    @Test func searchFiltersArticles() async {
         let appState = await makeSeededAppState([
             VMFixtures.makeItem(title: "SwiftUI", trendScore: 10),
             VMFixtures.makeItem(title: "Kotlin", trendScore: 9)
@@ -62,17 +63,17 @@ final class HomeViewModelTests: XCTestCase {
 
         vm.searchQuery = "swiftui"
         let titles = vm.filteredArticleItems.map(\.title)
-        XCTAssertEqual(titles, ["SwiftUI"])
+        #expect(titles == ["SwiftUI"])
     }
 
-    func testShouldShowTopStoryFalseWhenDismissedRecently() async {
+    @Test func shouldShowTopStoryFalseWhenDismissedRecently() async {
         let appState = await makeSeededAppState([
             VMFixtures.makeItem(title: "Top", trendScore: 100)
         ])
         appState.topStoryDismissedAt = .now
         let vm = HomeViewModel(appState: appState)
 
-        XCTAssertTrue(appState.isTopStoryHidden)
-        XCTAssertFalse(vm.shouldShowTopStory)
+        #expect(appState.isTopStoryHidden)
+        #expect(!vm.shouldShowTopStory)
     }
 }

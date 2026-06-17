@@ -1,10 +1,11 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
 // Constructs FeedStore directly with a fixed content source and test input
 // closures, then exercises reload, personalization/ranking, and pagination.
 @MainActor
-final class FeedStoreTests: XCTestCase {
+@Suite struct FeedStoreTests {
     private struct InputState {
         var selectedTopics: Set<Topic> = []
         var focusedTopic: Topic?
@@ -39,7 +40,7 @@ final class FeedStoreTests: XCTestCase {
                 showSourcesUnavailableToast: {}))
     }
 
-    func testReloadPopulatesAllItems() async {
+    @Test func reloadPopulatesAllItems() async {
         let items = [
             StoreTestSupport.makeItem(urlString: "https://example.com/a"),
             StoreTestSupport.makeItem(urlString: "https://example.com/b")
@@ -48,13 +49,13 @@ final class FeedStoreTests: XCTestCase {
 
         await store.reload()
 
-        XCTAssertEqual(store.allItems.count, 2)
-        XCTAssertFalse(store.isLoading)
-        XCTAssertNotNil(store.lastUpdatedAt)
-        XCTAssertTrue(store.hasLoadedContent)
+        #expect(store.allItems.count == 2)
+        #expect(!store.isLoading)
+        #expect(store.lastUpdatedAt != nil)
+        #expect(store.hasLoadedContent)
     }
 
-    func testPersonalizedItemsRankedByScoreThenRecency() async {
+    @Test func personalizedItemsRankedByScoreThenRecency() async {
         let high = StoreTestSupport.makeItem(
             urlString: "https://example.com/high",
             trendScore: 80,
@@ -72,12 +73,10 @@ final class FeedStoreTests: XCTestCase {
         await store.reload()
 
         // Highest score first; ties broken by newer publishedAt.
-        XCTAssertEqual(
-            store.personalizedItems.map(\.url),
-            [high.url, lowNew.url, lowOld.url])
+        #expect(store.personalizedItems.map(\.url) == [high.url, lowNew.url, lowOld.url])
     }
 
-    func testSavedSourceBonusRaisesRanking() async {
+    @Test func savedSourceBonusRaisesRanking() async {
         // Two items with equal base score; the one whose source is heavily saved
         // gets a save bonus and should rank ahead.
         let plain = StoreTestSupport.makeItem(
@@ -100,10 +99,10 @@ final class FeedStoreTests: XCTestCase {
 
         await store.reload()
 
-        XCTAssertEqual(store.personalizedItems.first?.url, boosted.url)
+        #expect(store.personalizedItems.first?.url == boosted.url)
     }
 
-    func testDisabledSourceCategoryFiltersItems() async {
+    @Test func disabledSourceCategoryFiltersItems() async {
         let article = StoreTestSupport.makeItem(
             urlString: "https://example.com/article",
             sourceCategory: .article)
@@ -117,10 +116,10 @@ final class FeedStoreTests: XCTestCase {
 
         await store.reload()
 
-        XCTAssertEqual(store.personalizedItems.map(\.url), [article.url])
+        #expect(store.personalizedItems.map(\.url) == [article.url])
     }
 
-    func testSelectedTopicFiltersItems() async {
+    @Test func selectedTopicFiltersItems() async {
         let iosItem = StoreTestSupport.makeItem(urlString: "https://example.com/ios", topics: [.ios])
         let aiItem = StoreTestSupport.makeItem(urlString: "https://example.com/ai", topics: [.ai])
 
@@ -130,10 +129,10 @@ final class FeedStoreTests: XCTestCase {
 
         await store.reload()
 
-        XCTAssertEqual(store.personalizedItems.map(\.url), [iosItem.url])
+        #expect(store.personalizedItems.map(\.url) == [iosItem.url])
     }
 
-    func testPaginationLimitsAndLoadMore() async {
+    @Test func paginationLimitsAndLoadMore() async {
         let items = (0..<(FeedStore.pageSize + 10)).map { index in
             StoreTestSupport.makeItem(
                 urlString: "https://example.com/item-\(index)",
@@ -143,16 +142,16 @@ final class FeedStoreTests: XCTestCase {
 
         await store.reload()
 
-        XCTAssertEqual(store.pagedPersonalizedItems.count, FeedStore.pageSize)
-        XCTAssertTrue(store.hasMorePages)
+        #expect(store.pagedPersonalizedItems.count == FeedStore.pageSize)
+        #expect(store.hasMorePages)
 
         store.loadMore()
 
-        XCTAssertEqual(store.pagedPersonalizedItems.count, items.count)
-        XCTAssertFalse(store.hasMorePages)
+        #expect(store.pagedPersonalizedItems.count == items.count)
+        #expect(!store.hasMorePages)
     }
 
-    func testReloadResetsPagination() async {
+    @Test func reloadResetsPagination() async {
         let items = (0..<(FeedStore.pageSize + 5)).map { index in
             StoreTestSupport.makeItem(urlString: "https://example.com/item-\(index)")
         }
@@ -160,13 +159,13 @@ final class FeedStoreTests: XCTestCase {
 
         await store.reload()
         store.loadMore()
-        XCTAssertGreaterThan(store.visibleItemLimit, FeedStore.pageSize)
+        #expect(store.visibleItemLimit > FeedStore.pageSize)
 
         await store.reload()
-        XCTAssertEqual(store.visibleItemLimit, FeedStore.pageSize)
+        #expect(store.visibleItemLimit == FeedStore.pageSize)
     }
 
-    func testOverlappingReloadsApplyResultExactlyOnce() async {
+    @Test func overlappingReloadsApplyResultExactlyOnce() async {
         // Two reloads overlap on the same store. The generation guard must cause
         // the stale (first) reload to bail without re-applying its result, so a
         // persist side effect fires once per winning reload, not once per call.
@@ -194,9 +193,9 @@ final class FeedStoreTests: XCTestCase {
         async let second: Void = store.reload()
         _ = await (first, second)
 
-        XCTAssertEqual(store.allItems.map(\.url), items.map(\.url))
-        XCTAssertFalse(store.isLoading)
+        #expect(store.allItems.map(\.url) == items.map(\.url))
+        #expect(!store.isLoading)
         // Stale reload bailed at the generation guard; only one persist happened.
-        XCTAssertEqual(persistCount, 1)
+        #expect(persistCount == 1)
     }
 }

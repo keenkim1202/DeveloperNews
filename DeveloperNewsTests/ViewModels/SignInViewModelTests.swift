@@ -1,84 +1,85 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
 @MainActor
-final class SignInViewModelTests: XCTestCase {
+@Suite struct SignInViewModelTests {
     private func makeViewModel(auth: MockAuthServicing = MockAuthServicing()) -> SignInViewModel {
         SignInViewModel(appState: VMFixtures.makeAppState(auth: auth))
     }
 
-    func testEmailFormatValidForWellFormedAddress() async {
+    @Test func emailFormatValidForWellFormedAddress() async {
         let vm = makeViewModel()
         vm.email = "user@example.com"
-        XCTAssertTrue(vm.isEmailFormatValid)
-        XCTAssertFalse(vm.showEmailFormatError)
+        #expect(vm.isEmailFormatValid)
+        #expect(!vm.showEmailFormatError)
     }
 
-    func testEmailFormatInvalidForMalformedAddress() async {
+    @Test func emailFormatInvalidForMalformedAddress() async {
         let vm = makeViewModel()
         vm.email = "user@@example"
-        XCTAssertFalse(vm.isEmailFormatValid)
-        XCTAssertTrue(vm.showEmailFormatError)
+        #expect(!vm.isEmailFormatValid)
+        #expect(vm.showEmailFormatError)
     }
 
-    func testShowEmailFormatErrorFalseWhenEmpty() async {
+    @Test func showEmailFormatErrorFalseWhenEmpty() async {
         let vm = makeViewModel()
         vm.email = ""
-        XCTAssertFalse(vm.showEmailFormatError)
+        #expect(!vm.showEmailFormatError)
     }
 
-    func testCannotSubmitWithoutPassword() async {
+    @Test func cannotSubmitWithoutPassword() async {
         let vm = makeViewModel()
         vm.email = "user@example.com"
         vm.password = ""
-        XCTAssertFalse(vm.canSubmitEmailForm)
+        #expect(!vm.canSubmitEmailForm)
     }
 
-    func testCannotSubmitWithInvalidEmail() async {
+    @Test func cannotSubmitWithInvalidEmail() async {
         let vm = makeViewModel()
         vm.email = "not-an-email"
         vm.password = "secret123"
-        XCTAssertFalse(vm.canSubmitEmailForm)
+        #expect(!vm.canSubmitEmailForm)
     }
 
-    func testCanSubmitSignInWithValidCredentials() async {
+    @Test func canSubmitSignInWithValidCredentials() async {
         let vm = makeViewModel()
         vm.email = "user@example.com"
         vm.password = "secret123"
         vm.isSignUp = false
-        XCTAssertTrue(vm.canSubmitEmailForm)
+        #expect(vm.canSubmitEmailForm)
     }
 
-    func testSignUpRequiresTermsAgreement() async {
+    @Test func signUpRequiresTermsAgreement() async {
         let vm = makeViewModel()
         vm.email = "user@example.com"
         vm.password = "secret123"
         vm.isSignUp = true
         vm.hasAgreedToTerms = false
-        XCTAssertFalse(vm.canSubmitEmailForm)
+        #expect(!vm.canSubmitEmailForm)
 
         vm.hasAgreedToTerms = true
-        XCTAssertTrue(vm.canSubmitEmailForm)
+        #expect(vm.canSubmitEmailForm)
     }
 
-    func testToggleModeFlipsSignUpAndClearsError() async {
+    @Test func toggleModeFlipsSignUpAndClearsError() async {
         let auth = MockAuthServicing()
         auth.errorMessage = "boom"
         let vm = makeViewModel(auth: auth)
 
-        XCTAssertFalse(vm.isSignUp)
+        #expect(!vm.isSignUp)
         vm.toggleMode()
-        XCTAssertTrue(vm.isSignUp)
-        XCTAssertNil(vm.errorMessage)
+        #expect(vm.isSignUp)
+        #expect(vm.errorMessage == nil)
     }
 
-    func testOpenPasswordResetClearsErrorAndShowsSheet() async {
+    @Test func openPasswordResetClearsErrorAndShowsSheet() async {
         let auth = MockAuthServicing()
         auth.errorMessage = "boom"
         let vm = makeViewModel(auth: auth)
 
         vm.openPasswordReset()
-        XCTAssertTrue(vm.showPasswordReset)
-        XCTAssertNil(vm.errorMessage)
+        #expect(vm.showPasswordReset)
+        #expect(vm.errorMessage == nil)
     }
 }

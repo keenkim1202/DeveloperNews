@@ -1,10 +1,11 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
 // Constructs SavedItemsStore directly with no-op persist closures and exercises
 // the CRUD/toggle operations plus the two savedItems sort orders.
 @MainActor
-final class SavedItemsStoreTests: XCTestCase {
+@Suite struct SavedItemsStoreTests {
     private func makeStore(allItems: [ContentItem] = []) -> SavedItemsStore {
         SavedItemsStore(
             inputs: SavedItemsStore.Inputs(
@@ -14,18 +15,18 @@ final class SavedItemsStoreTests: XCTestCase {
                 persistSortOrder: { _ in }))
     }
 
-    func testAddSavedItemMarksItemSaved() async {
+    @Test func addSavedItemMarksItemSaved() async {
         let store = makeStore()
         let item = StoreTestSupport.makeItem(urlString: "https://example.com/a")
 
         store.addSavedItem(item)
 
-        XCTAssertTrue(store.isSaved(item))
-        XCTAssertEqual(store.savedItems.count, 1)
-        XCTAssertTrue(store.savedURLs.contains(item.url))
+        #expect(store.isSaved(item))
+        #expect(store.savedItems.count == 1)
+        #expect(store.savedURLs.contains(item.url))
     }
 
-    func testUpdateSavedItemReplacesSnapshotOnlyWhenPresent() async {
+    @Test func updateSavedItemReplacesSnapshotOnlyWhenPresent() async {
         let store = makeStore()
         let item = StoreTestSupport.makeItem(urlString: "https://example.com/a", trendScore: 1)
         store.addSavedItem(item)
@@ -33,47 +34,47 @@ final class SavedItemsStoreTests: XCTestCase {
         let updated = StoreTestSupport.makeItem(urlString: "https://example.com/a", trendScore: 99)
         store.updateSavedItem(updated)
 
-        XCTAssertEqual(store.savedItemSnapshots[item.url]?.trendScore, 99)
+        #expect(store.savedItemSnapshots[item.url]?.trendScore == 99)
 
         // Updating an item that is not saved must be a no-op.
         let absent = StoreTestSupport.makeItem(urlString: "https://example.com/b", trendScore: 5)
         store.updateSavedItem(absent)
-        XCTAssertNil(store.savedItemSnapshots[absent.url])
+        #expect(store.savedItemSnapshots[absent.url] == nil)
     }
 
-    func testRemoveSavedItemClearsSnapshotAndTimestamp() async {
+    @Test func removeSavedItemClearsSnapshotAndTimestamp() async {
         let store = makeStore()
         let item = StoreTestSupport.makeItem(urlString: "https://example.com/a")
         store.addSavedItem(item)
 
         store.removeSavedItem(at: item.url)
 
-        XCTAssertFalse(store.isSaved(item))
-        XCTAssertNil(store.savedItemTimestampsByURL[item.url])
-        XCTAssertTrue(store.savedItems.isEmpty)
+        #expect(!store.isSaved(item))
+        #expect(store.savedItemTimestampsByURL[item.url] == nil)
+        #expect(store.savedItems.isEmpty)
     }
 
-    func testToggleSavedAddsThenRemoves() async {
+    @Test func toggleSavedAddsThenRemoves() async {
         let store = makeStore()
         let item = StoreTestSupport.makeItem(urlString: "https://example.com/a")
 
         store.toggleSaved(item)
-        XCTAssertTrue(store.isSaved(item))
+        #expect(store.isSaved(item))
 
         store.toggleSaved(item)
-        XCTAssertFalse(store.isSaved(item))
-        XCTAssertNil(store.savedItemTimestampsByURL[item.url])
+        #expect(!store.isSaved(item))
+        #expect(store.savedItemTimestampsByURL[item.url] == nil)
     }
 
-    func testSavedItemIDsResolvesThroughAllItems() async {
+    @Test func savedItemIDsResolvesThroughAllItems() async {
         let item = StoreTestSupport.makeItem(urlString: "https://example.com/a")
         let store = makeStore(allItems: [item])
         store.addSavedItem(item)
 
-        XCTAssertEqual(store.savedItemIDs, Set([item.id]))
+        #expect(store.savedItemIDs == Set([item.id]))
     }
 
-    func testSavedItemsSortedByRecentlySaved() async {
+    @Test func savedItemsSortedByRecentlySaved() async {
         let store = makeStore()
         let older = StoreTestSupport.makeItem(urlString: "https://example.com/older")
         let newer = StoreTestSupport.makeItem(urlString: "https://example.com/newer")
@@ -86,10 +87,10 @@ final class SavedItemsStoreTests: XCTestCase {
 
         store.setSavedSortOrder(.recentlySaved)
 
-        XCTAssertEqual(store.savedItems.map(\.url), [newer.url, older.url])
+        #expect(store.savedItems.map(\.url) == [newer.url, older.url])
     }
 
-    func testSavedItemsSortedByTrendingThenPublishedAt() async {
+    @Test func savedItemsSortedByTrendingThenPublishedAt() async {
         let store = makeStore()
         let low = StoreTestSupport.makeItem(
             urlString: "https://example.com/low",
@@ -111,8 +112,6 @@ final class SavedItemsStoreTests: XCTestCase {
         store.setSavedSortOrder(.trending)
 
         // Higher trendScore first; within equal scores, newer publishedAt first.
-        XCTAssertEqual(
-            store.savedItems.map(\.url),
-            [highNew.url, highOld.url, low.url])
+        #expect(store.savedItems.map(\.url) == [highNew.url, highOld.url, low.url])
     }
 }

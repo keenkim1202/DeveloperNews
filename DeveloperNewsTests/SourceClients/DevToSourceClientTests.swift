@@ -1,14 +1,17 @@
-import XCTest
+import Testing
+import Foundation
 @testable import DeveloperNews
 
+extension StubbedSourceClientTests {
 @MainActor
-final class DevToSourceClientTests: XCTestCase {
-    override func tearDown() {
+@Suite struct DevToSourceClientTests {
+    // Clear any stubs a prior test registered on the shared protocol before each
+    // test, mirroring the original per-test teardown reset.
+    init() {
         StubURLProtocol.reset()
-        super.tearDown()
     }
 
-    func testMapsArticlesIntoContentItems() async throws {
+    @Test func mapsArticlesIntoContentItems() async throws {
         StubURLProtocol.register(
             urlPrefix: "https://dev.to/api/articles",
             json: """
@@ -43,23 +46,23 @@ final class DevToSourceClientTests: XCTestCase {
         let client = DevToSourceClient(session: StubURLProtocol.makeSession())
         let items = try await client.fetchItems(selectedTopics: [])
 
-        XCTAssertEqual(items.count, 2)
+        #expect(items.count == 2)
 
-        let react = try XCTUnwrap(items.first { $0.title == "Building with React" })
-        XCTAssertEqual(react.sourceName, "DEV.to")
-        XCTAssertEqual(react.sourceCategory, .article)
-        XCTAssertEqual(react.kind, .article)
-        XCTAssertEqual(react.url.absoluteString, "https://dev.to/a/react")
-        XCTAssertEqual(react.authorName, "Jane")
-        XCTAssertEqual(react.thumbnailURL?.absoluteString, "https://dev.to/img/react.png")
-        XCTAssertTrue(react.topics.contains(.web))
+        let react = try #require(items.first { $0.title == "Building with React" })
+        #expect(react.sourceName == "DEV.to")
+        #expect(react.sourceCategory == .article)
+        #expect(react.kind == .article)
+        #expect(react.url.absoluteString == "https://dev.to/a/react")
+        #expect(react.authorName == "Jane")
+        #expect(react.thumbnailURL?.absoluteString == "https://dev.to/img/react.png")
+        #expect(react.topics.contains(.web))
 
-        let rust = try XCTUnwrap(items.first { $0.title == "Rust services" })
-        XCTAssertNil(rust.thumbnailURL)
-        XCTAssertTrue(rust.topics.contains(.backend))
+        let rust = try #require(items.first { $0.title == "Rust services" })
+        #expect(rust.thumbnailURL == nil)
+        #expect(rust.topics.contains(.backend))
     }
 
-    func testEmptyResponseProducesNoItems() async throws {
+    @Test func emptyResponseProducesNoItems() async throws {
         StubURLProtocol.register(
             urlPrefix: "https://dev.to/api/articles",
             json: "[]")
@@ -67,6 +70,7 @@ final class DevToSourceClientTests: XCTestCase {
         let client = DevToSourceClient(session: StubURLProtocol.makeSession())
         let items = try await client.fetchItems(selectedTopics: [.ios])
 
-        XCTAssertTrue(items.isEmpty)
+        #expect(items.isEmpty)
     }
+}
 }
