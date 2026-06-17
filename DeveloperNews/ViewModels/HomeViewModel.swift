@@ -112,8 +112,21 @@ final class HomeViewModel {
         }
     }
 
+    // Home always renders this app's metrics, so an item without a fetched
+    // document falls back to a zero-valued engagement. The summary view hides
+    // itself when every count is zero, so blank items show nothing.
     func engagement(for item: ContentItem) -> StoryEngagement? {
-        storyEngagements[item.url.absoluteString]
+        let key = item.url.absoluteString
+        if let fetched = storyEngagements[key] {
+            return fetched
+        }
+        return StoryEngagement(
+            id: StoryEngagement.documentId(for: key),
+            storyURL: key,
+            likeCount: 0,
+            likedBy: [],
+            commentCount: 0,
+            viewCount: 0)
     }
 
     func toggleFocusedTopic(_ topic: Topic) {

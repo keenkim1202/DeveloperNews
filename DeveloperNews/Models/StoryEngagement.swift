@@ -9,6 +9,7 @@ struct StoryEngagement: Identifiable, Hashable, Sendable {
     let likeCount: Int
     let likedBy: Set<String>
     let commentCount: Int
+    let viewCount: Int
 
     nonisolated static func documentId(for storyURL: String) -> String {
         HashUtil.shortHash(storyURL)

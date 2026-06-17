@@ -132,7 +132,9 @@ service cloud.firestore {
         && request.resource.data.likeCount == request.resource.data.likedBy.size()
         && request.resource.data.likeCount <= 1
         && request.resource.data.commentCount >= 0
-        && request.resource.data.commentCount <= 1;
+        && request.resource.data.commentCount <= 1
+        && request.resource.data.viewCount >= 0
+        && request.resource.data.viewCount <= 1;
 
       allow update: if request.auth != null && (
         (
@@ -163,6 +165,11 @@ service cloud.firestore {
               && request.resource.data.commentCount == 0
             )
           )
+        )
+        || (
+          request.resource.data.diff(resource.data)
+            .affectedKeys().hasOnly(['viewCount'])
+          && request.resource.data.viewCount == resource.data.get('viewCount', 0) + 1
         )
       );
 

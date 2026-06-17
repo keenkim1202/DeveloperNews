@@ -27,13 +27,15 @@ import Foundation
         likeCount: Int,
         likedBy: Set<String>,
         commentCount: Int = 0,
+        viewCount: Int = 0,
     ) -> StoryEngagement {
         StoryEngagement(
             id: StoryEngagement.documentId(for: storyURL),
             storyURL: storyURL,
             likeCount: likeCount,
             likedBy: likedBy,
-            commentCount: commentCount)
+            commentCount: commentCount,
+            viewCount: viewCount)
     }
 
     @Test func toggleLikeWhileSignedOutIsNoOp() async {
@@ -99,6 +101,49 @@ import Foundation
 
         #expect(vm.isLiked == false)
         #expect(vm.likeCount == 1)
+    }
+
+    @Test func viewCountReflectsSeededEngagement() async {
+        let storyEngagement = MockStoryEngagementServicing()
+        storyEngagement.engagement = makeEngagement(likeCount: 0, likedBy: [], viewCount: 42)
+        let appState = VMFixtures.makeAppState(storyEngagement: storyEngagement)
+
+        let vm = StoryEngagementViewModel(
+            appState: appState,
+            storyURL: storyURL,
+            commentService: MockCommentServicing())
+
+        #expect(vm.viewCount == 42)
+    }
+
+    @Test func registerViewWhileSignedOutIsNoOp() async {
+        let storyEngagement = MockStoryEngagementServicing()
+        let appState = VMFixtures.makeAppState(
+            auth: MockAuthServicing(),
+            storyEngagement: storyEngagement)
+
+        let vm = StoryEngagementViewModel(
+            appState: appState,
+            storyURL: storyURL,
+            commentService: MockCommentServicing())
+        await vm.registerView()
+
+        #expect(storyEngagement.registeredViews.isEmpty)
+    }
+
+    @Test func registerViewSignedInRecordsView() async {
+        let storyEngagement = MockStoryEngagementServicing()
+        let appState = VMFixtures.makeAppState(
+            auth: MockAuthServicing(userId: "me"),
+            storyEngagement: storyEngagement)
+
+        let vm = StoryEngagementViewModel(
+            appState: appState,
+            storyURL: storyURL,
+            commentService: MockCommentServicing())
+        await vm.registerView()
+
+        #expect(storyEngagement.registeredViews == [storyURL])
     }
 
     @Test func commentCountReflectsSeededEngagement() async {

@@ -55,6 +55,10 @@ final class StoryEngagementViewModel {
         engagement?.commentCount ?? 0
     }
 
+    var viewCount: Int {
+        engagement?.viewCount ?? 0
+    }
+
     var commentErrorMessage: String? {
         commentService.errorMessage
     }
@@ -78,6 +82,17 @@ final class StoryEngagementViewModel {
     func stopListening() {
         storyEngagementService.stopListening()
         commentService.stopListening()
+    }
+
+    func registerView() async {
+        // Writes require auth; the service still dedupes locally per day.
+        guard currentUserId != nil else {
+            return
+        }
+        await storyEngagementService.registerView(storyURL: storyURL)
+        if let message = storyEngagementService.errorMessage {
+            appState.presentError(message)
+        }
     }
 
     func toggleLike() async {

@@ -20,6 +20,10 @@ protocol StoryEngagementServicing {
         userId: String,
     ) async
 
+    // Counts a view at most once per device per calendar day. Local dedup state
+    // is persisted so repeat opens within the same day do not re-increment.
+    func registerView(storyURL: String) async
+
     func fetchEngagement(storyURL: String) async -> StoryEngagement?
 
     func fetchEngagements(storyURLs: [String]) async -> [String: StoryEngagement]

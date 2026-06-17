@@ -32,6 +32,7 @@ enum DSIcon: String {
     case newspaper = "newspaper"
     case comment = "bubble.right"
     case commentAlt = "bubble.left"
+    case views = "eye"
     case upvote = "arrow.up"
     case sparkles = "sparkles"
     case checkmarkCircleFill = "checkmark.circle.fill"
