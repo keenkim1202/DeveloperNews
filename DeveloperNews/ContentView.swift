@@ -103,7 +103,8 @@ struct ContentView: View {
             authService: AuthService(),
             profileService: ProfileService(),
             communityService: CommunityService(),
-            feedPostService: FeedPostService()))
+            feedPostService: FeedPostService(),
+            storyEngagementService: StoryEngagementService()))
 }
 
 
