@@ -72,22 +72,9 @@ struct UserProfileView: View {
                     }
 
                     if !viewModel.isOwnProfile, viewModel.currentUserId != nil {
-                        Button(action: toggleFollow) {
-                            Text(viewModel.isFollowingAuthor ? .communityFollowing : .communityFollow)
-                                .font(.dsCardTitle)
-                                .frame(width: 120, height: 34)
-                                .background {
-                                    viewModel.isFollowingAuthor
-                                        ? DSColor.accent
-                                        : DSColor.surface
-                                }
-                                .foregroundStyle(
-                                    viewModel.isFollowingAuthor
-                                        ? DSColor.onAccent
-                                        : Color.primary)
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
+                        FollowButton(
+                            isFollowing: viewModel.isFollowingAuthor,
+                            action: toggleFollow)
                     }
                 }
                 .padding(.top, 20)
@@ -136,24 +123,23 @@ struct UserProfileView: View {
             }
         }
         .task(loadFollowCounts)
-        .dialog(
+        .alert(
             .communityBlockConfirmTitle,
-            message: .communityBlockConfirmMessage,
-            isPresented: $showBlockConfirm,
-            buttons: blockConfirmDialogView)
+            isPresented: $showBlockConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button(
+                .communityBlockConfirmAction,
+                role: .destructive,
+                action: blockUser)
+        } message: {
+            Text(.communityBlockConfirmMessage)
+        }
         .sheet(item: $followListKind) { kind in
             FollowListView(
                 appState: appState,
                 userId: viewModel.authorId,
                 kind: kind)
         }
-    }
-
-    private var blockConfirmDialogView: some View {
-        Button(
-            .communityBlockConfirmAction,
-            role: .destructive,
-            action: blockUser)
     }
 
     private func loadFollowCounts() async {

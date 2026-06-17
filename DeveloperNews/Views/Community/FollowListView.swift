@@ -50,6 +50,13 @@ struct FollowListView: View {
             }
             .navigationTitle(Text(title))
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: UserSummary.self) { summary in
+                UserProfileView(
+                    appState: appState,
+                    authorId: summary.id,
+                    authorName: summary.displayName,
+                    authorEmoji: summary.emoji)
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(.commonDone, action: close)
@@ -62,49 +69,41 @@ struct FollowListView: View {
     @ViewBuilder
     private func row(for summary: UserSummary) -> some View {
         HStack(spacing: 12) {
-            icon(for: summary)
-            Text(summary.displayName)
-                .font(.body)
+            NavigationLink(value: summary) {
+                HStack(spacing: 12) {
+                    avatar(for: summary)
+                    Text(summary.displayName)
+                        .font(.dsCardTitle)
+                        .lineLimit(1)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
             Spacer()
             if summary.id != viewModel.currentUserId {
-                followControl(for: summary)
+                FollowButton(
+                    isFollowing: viewModel.isFollowing(summary.id),
+                    action: { toggleFollow(summary) })
             }
         }
     }
 
     @ViewBuilder
-    private func icon(for summary: UserSummary) -> some View {
-        if let emoji = summary.emoji {
-            Text(emoji)
-                .font(.title3)
+    private func avatar(for summary: UserSummary) -> some View {
+        Group {
+            if let emoji = summary.emoji {
+                Text(emoji)
+                    .font(.title3)
+            }
+            else {
+                Image(.unknown)
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
+            }
         }
-        else {
-            Image(.unknown)
-                .font(.title3)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private func followControl(for summary: UserSummary) -> some View {
-        let isFollowing = viewModel.isFollowing(summary.id)
-        return Button {
-            toggleFollow(summary)
-        } label: {
-            Text(isFollowing ? .communityFollowing : .communityFollow)
-                .font(.dsCardTitle)
-                .frame(width: 100, height: 30)
-                .background {
-                    isFollowing
-                        ? DSColor.accent
-                        : DSColor.surface
-                }
-                .foregroundStyle(
-                    isFollowing
-                        ? DSColor.onAccent
-                        : Color.primary)
-                .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
+        .frame(width: 44, height: 44)
+        .background(DSColor.surface)
+        .clipShape(Circle())
     }
 
     private func load() async {
