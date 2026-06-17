@@ -6,6 +6,7 @@ import Foundation
 @MainActor
 final class FeedPostService: FeedPostServicing {
     private(set) var errorMessage: String?
+    private(set) var creationToken = 0
 
     private let db = Firestore.firestore()
 
@@ -45,6 +46,7 @@ final class FeedPostService: FeedPostServicing {
 
         do {
             try await feedPostsRef.addDocument(data: data)
+            creationToken += 1
         }
         catch {
             errorMessage = error.localizedDescription

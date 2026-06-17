@@ -42,21 +42,25 @@ struct FeedPostRow: View {
         VStack(alignment: .leading, spacing: 8) {
             header
             if !post.comment.isEmpty {
-                NavigationLink(value: CommunityTabDestination.feedPostDetail(post)) {
-                    Text(post.comment)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .buttonStyle(.plain)
+                Text(post.comment)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             NavigationLink(value: CommunityTabDestination.storyDetail(post.story)) {
                 quoteCard
             }
             .buttonStyle(.plain)
+            .padding(.top, 6)
             engagementBar
         }
         .padding(.vertical, 4)
+        .background {
+            NavigationLink(value: CommunityTabDestination.feedPostDetail(post)) {
+                Color.clear
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var header: some View {
@@ -122,14 +126,11 @@ struct FeedPostRow: View {
             .buttonStyle(.plain)
             .disabled(onLike == nil)
 
-            NavigationLink(value: CommunityTabDestination.feedPostDetail(post)) {
-                HStack(spacing: 4) {
-                    Image(.comment)
-                    Text("\(post.commentCount)")
-                }
-                .foregroundStyle(.secondary)
+            HStack(spacing: 4) {
+                Image(.comment)
+                Text("\(post.commentCount)")
             }
-            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
         }
         .font(.caption)
     }

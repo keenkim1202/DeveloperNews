@@ -22,6 +22,7 @@ final class Community2ViewModel {
     private(set) var isLoadingFollowing = false
     private(set) var hasLoaded = false
     private(set) var hasLoadedFollowing = false
+    private var loadedCreationToken = 0
 
     var tab: Tab = .discover
     var mode: Mode = .trending
@@ -90,11 +91,22 @@ final class Community2ViewModel {
         return (engagement + 1) / pow(max(0, ageHours) + 2, 1.5)
     }
 
+    // Reload only when the discover feed has never loaded, or when a post was
+    // created since the last load (possibly from another screen). Keeps tab
+    // re-entry cheap while still surfacing a just-published post.
+    func loadIfNeeded() async {
+        if hasLoaded, loadedCreationToken == appState.feedPostService.creationToken {
+            return
+        }
+        await load()
+    }
+
     func load() async {
         guard !isLoading else {
             return
         }
         isLoading = true
+        loadedCreationToken = appState.feedPostService.creationToken
         posts = await appState.feedPostService.fetchRecentPosts(limit: Self.fetchLimit)
         isLoading = false
         hasLoaded = true

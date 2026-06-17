@@ -90,6 +90,20 @@ final class FeedPostDetailViewModel {
         currentPost = Self.applyLikeToggle(currentPost, userId: uid)
     }
 
+    func updateComment(_ text: String) async {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let uid = currentUserId,
+              isAuthor
+        else { return }
+        await feedPostService.updatePost(currentPost, comment: trimmed, editorId: uid)
+        if let message = feedPostService.errorMessage {
+            appState.presentError(message)
+            return
+        }
+        currentPost = Self.applyComment(currentPost, comment: trimmed)
+    }
+
     func submitReport(_ reason: ReportReason) async {
         guard let uid = currentUserId else {
             return
@@ -102,6 +116,24 @@ final class FeedPostDetailViewModel {
 
     func blockAuthor() {
         appState.blockUser(currentPost.authorId)
+    }
+
+    private static func applyComment(
+        _ post: FeedPost,
+        comment: String,
+    ) -> FeedPost {
+        FeedPost(
+            id: post.id,
+            authorId: post.authorId,
+            authorName: post.authorName,
+            authorEmoji: post.authorEmoji,
+            comment: comment,
+            story: post.story,
+            likeCount: post.likeCount,
+            likedBy: post.likedBy,
+            commentCount: post.commentCount,
+            createdAt: post.createdAt,
+            updatedAt: Date())
     }
 
     private static func applyLikeToggle(

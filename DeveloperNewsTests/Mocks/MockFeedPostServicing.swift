@@ -5,6 +5,7 @@ import Foundation
 @MainActor
 final class MockFeedPostServicing: FeedPostServicing {
     var errorMessage: String?
+    var creationToken = 0
 
     var recentPosts: [FeedPost] = []
     var authorPosts: [FeedPost] = []
@@ -27,6 +28,7 @@ final class MockFeedPostServicing: FeedPostServicing {
         authorEmoji: String?,
     ) async {
         createdComments.append(comment)
+        creationToken += 1
     }
 
     func toggleLike(
