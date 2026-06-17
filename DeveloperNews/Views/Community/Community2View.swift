@@ -24,6 +24,13 @@ struct Community2View: View {
             }
             .navigationTitle(.community)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: openUserSearch) {
+                        Image(systemName: "magnifyingglass")
+                    }
+                }
+            }
             .navigationDestination(for: CommunityTabDestination.self, destination: destination)
             .keenOnChange(of: viewModel.tab, perform: onTabChange)
             .onAppear(perform: onAppear)
@@ -185,7 +192,13 @@ struct Community2View: View {
                 appState: appState,
                 userId: target.userId,
                 kind: target.kind)
+        case .userSearch:
+            UserSearchView(appState: appState)
         }
+    }
+
+    private func openUserSearch() {
+        navigation(.community(.userSearch))
     }
 
     private func navigateToProfile(_ post: FeedPost) {

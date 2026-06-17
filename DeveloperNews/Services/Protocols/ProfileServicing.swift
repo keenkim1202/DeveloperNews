@@ -28,6 +28,8 @@ protocol ProfileServicing {
     func fetchFollowers(of userId: String) async -> [UserSummary]
     func fetchFollowing(of userId: String) async -> [UserSummary]
 
+    func searchUsers(matching query: String) async -> [UserSummary]
+
     func toggleFollow(_ targetUserId: String) async
 
     func deleteOwnProfile(uid: String) async throws
