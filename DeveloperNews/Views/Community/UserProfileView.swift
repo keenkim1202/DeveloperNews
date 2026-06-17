@@ -30,7 +30,7 @@ struct UserProfileView: View {
                             .font(.system(size: 60))
                     }
                     else {
-                        Image(systemName: "questionmark.circle.dashed")
+                        Image(.unknown)
                             .font(.system(size: 50))
                             .foregroundStyle(.secondary)
                     }
@@ -72,16 +72,16 @@ struct UserProfileView: View {
                     if !viewModel.isOwnProfile, viewModel.currentUserId != nil {
                         Button(action: toggleFollow) {
                             Text(viewModel.isFollowingAuthor ? .communityFollowing : .communityFollow)
-                                .font(.subheadline.weight(.semibold))
+                                .font(.dsCardTitle)
                                 .frame(width: 120, height: 34)
                                 .background {
                                     viewModel.isFollowingAuthor
-                                        ? Color.accentColor
-                                        : Color(.secondarySystemBackground)
+                                        ? DSColor.accent
+                                        : DSColor.surface
                                 }
                                 .foregroundStyle(
                                     viewModel.isFollowingAuthor
-                                        ? Color.white
+                                        ? DSColor.onAccent
                                         : Color.primary)
                                 .clipShape(Capsule())
                         }

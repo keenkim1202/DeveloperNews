@@ -24,19 +24,19 @@ struct SignInView: View {
                     VStack(spacing: 12) {
                         Button(action: signInWithApple) {
                             HStack(spacing: 8) {
-                                Image("apple_logo")
+                                Image(.appleLogo)
                                     .resizable()
                                     .frame(width: 20, height: 20)
                                 Text(.authSignInWithApple)
-                                    .font(.body.weight(.medium))
-                                    .foregroundStyle(.black)
+                                    .font(.dsButton)
+                                    .foregroundStyle(DSColor.scrim)
                             }
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)
                             .background {
                                 RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.white)
-                                    .stroke(Color.accentColor, lineWidth: 1)
+                                    .fill(DSColor.onAccent)
+                                    .stroke(DSColor.accent, lineWidth: 1)
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
@@ -46,19 +46,19 @@ struct SignInView: View {
 
                         Button(action: signInWithGoogle) {
                             HStack(spacing: 8) {
-                                Image("google_logo")
+                                Image(.googleLogo)
                                     .resizable()
                                     .frame(width: 20, height: 20)
                                 Text(.authSignInWithGoogle)
-                                    .font(.body.weight(.medium))
-                                    .foregroundStyle(.black)
+                                    .font(.dsButton)
+                                    .foregroundStyle(DSColor.scrim)
                             }
                             .frame(maxWidth: .infinity)
                             .frame(height: 50)
                             .background {
                                 RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.white)
-                                    .stroke(Color.accentColor, lineWidth: 1)
+                                    .fill(DSColor.onAccent)
+                                    .stroke(DSColor.accent, lineWidth: 1)
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
@@ -77,14 +77,14 @@ struct SignInView: View {
                             .textInputAutocapitalization(.never)
                             .padding(12)
                             .background {
-                                Color(.secondarySystemBackground)
+                                DSColor.surface
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 8))
 
                         if viewModel.showEmailFormatError {
                             Text("auth.error.invalidEmail")
                                 .font(.footnote)
-                                .foregroundStyle(.red)
+                                .foregroundStyle(DSColor.destructive)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
 
@@ -92,17 +92,17 @@ struct SignInView: View {
                             .textContentType(viewModel.isSignUp ? .newPassword : .password)
                             .padding(12)
                             .background {
-                                Color(.secondarySystemBackground)
+                                DSColor.surface
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                         Button(action: submitEmailForm) {
                             Text(viewModel.isSignUp ? .authCreateAccount : .authSignInWithEmail)
-                                .font(.body.weight(.medium))
+                                .font(.dsButton)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 50)
-                                .foregroundStyle(.white)
+                                .foregroundStyle(DSColor.onAccent)
                                 .background {
-                                    Color.accentColor
+                                    DSColor.accent
                                 }
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
@@ -126,7 +126,7 @@ struct SignInView: View {
                     if let error = viewModel.errorMessage {
                         Text(error)
                             .font(.footnote)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(DSColor.destructive)
                             .multilineTextAlignment(.center)
                     }
                 }
@@ -134,7 +134,7 @@ struct SignInView: View {
             }
             .overlay {
                 if viewModel.isLoading {
-                    Color.black.opacity(0.2)
+                    DSColor.scrim.opacity(0.2)
                         .ignoresSafeArea()
                     ProgressView()
                 }
@@ -168,15 +168,15 @@ struct SignInView: View {
     private var termsCheckbox: some View {
         HStack(alignment: .top, spacing: 12) {
             Button(action: toggleTermsAgreement) {
-                Image(systemName: viewModel.hasAgreedToTerms ? "checkmark.square.fill" : "square")
+                Image(viewModel.hasAgreedToTerms ? .checkboxChecked : .checkboxUnchecked)
                     .font(.title3)
-                    .foregroundStyle(viewModel.hasAgreedToTerms ? Color.accentColor : .secondary)
+                    .foregroundStyle(viewModel.hasAgreedToTerms ? DSColor.accent : .secondary)
             }
             .buttonStyle(.plain)
             Text(termsAgreementAttributed)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-                .tint(Color.accentColor)
+                .tint(DSColor.accent)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .environment(\.openURL, OpenURLAction { url in
                     if url.scheme == "devnews" {
@@ -285,18 +285,18 @@ struct PasswordResetView: View {
                     .textInputAutocapitalization(.never)
                     .padding(12)
                     .background {
-                        Color(.secondarySystemBackground)
+                        DSColor.surface
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 8))
 
                 Button(action: sendPasswordReset) {
                     Text("auth.passwordReset.send")
-                        .font(.body.weight(.medium))
+                        .font(.dsButton)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(DSColor.onAccent)
                         .background {
-                            Color.accentColor
+                            DSColor.accent
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
@@ -312,7 +312,7 @@ struct PasswordResetView: View {
                 if let error = viewModel.errorMessage {
                     Text(error)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(DSColor.destructive)
                         .multilineTextAlignment(.leading)
                 }
 
@@ -335,7 +335,7 @@ struct PasswordResetView: View {
             }
             .overlay {
                 if viewModel.isLoading {
-                    Color.black.opacity(0.2)
+                    DSColor.scrim.opacity(0.2)
                         .ignoresSafeArea()
                     ProgressView()
                 }

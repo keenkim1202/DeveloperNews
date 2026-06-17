@@ -32,7 +32,7 @@ struct SavedItemNoteComposerView: View {
                     }
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Link")
-                            .font(.caption.weight(.semibold))
+                            .font(.dsLabel)
                             .foregroundStyle(.secondary)
 
                         Text(item.url.absoluteString)
@@ -41,18 +41,18 @@ struct SavedItemNoteComposerView: View {
                             .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background {
-                                Color(.secondarySystemBackground)
+                                DSColor.surface
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                         Button(action: copyLink) {
-                            Label("Copy link", systemImage: "doc.on.doc")
-                                .font(.subheadline.weight(.semibold))
+                            Label("Copy link", systemImage: DSIcon.copy.rawValue)
+                                .font(.dsCardTitle)
                         }
                         .buttonStyle(.bordered)
                     }
                     VStack(alignment: .leading, spacing: 12) {
                         Text(.saveDescription)
-                            .font(.caption.weight(.semibold))
+                            .font(.dsLabel)
                             .foregroundStyle(.secondary)
                         LimitedTextEditor(text: $description, limit: 2000)
                     }

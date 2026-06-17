@@ -25,13 +25,13 @@ struct FocusChip: View {
             } icon: {
                 Image(systemName: systemImage)
             }
-            .font(.caption.weight(.semibold))
+            .font(.dsLabel)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background {
-                isSelected ? Color.accentColor.opacity(0.2) : Color(.secondarySystemBackground)
+                isSelected ? DSColor.accent.opacity(0.2) : DSColor.surface
             }
-            .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+            .foregroundStyle(isSelected ? DSColor.accent : Color.primary)
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)

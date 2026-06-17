@@ -12,7 +12,7 @@ struct BlockedUsersView: View {
             if appState.blockedUserIds.isEmpty {
                 ContentUnavailableView(
                     .settingsNoBlockedUsers,
-                    systemImage: "person.slash")
+                    systemImage: DSIcon.blockedUsers.rawValue)
             }
             else {
                 List {

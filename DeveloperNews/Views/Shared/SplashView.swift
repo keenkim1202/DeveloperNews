@@ -14,12 +14,12 @@ struct SplashView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Image("LaunchIcon")
+            Image(.launchIcon)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 140, height: 140)
                 .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
-                .shadow(color: .black.opacity(0.18), radius: 16, y: 8)
+                .shadow(color: DSColor.scrim.opacity(0.18), radius: 16, y: 8)
 
             Text("DeveloperNews")
                 .font(.keenPixelTitle)
@@ -27,7 +27,7 @@ struct SplashView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
-            Color(.systemBackground).ignoresSafeArea()
+            DSColor.background.ignoresSafeArea()
         }
         .task(loadContent)
         .task(runSplash)

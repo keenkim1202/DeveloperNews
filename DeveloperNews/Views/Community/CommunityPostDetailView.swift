@@ -78,7 +78,7 @@ struct CommunityPostDetailView: View {
                                 Text(authorEmoji)
                             }
                             Text(currentPost.authorName)
-                                .font(.caption.weight(.semibold))
+                                .font(.dsLabel)
                                 .underline()
                         }
                     }
@@ -93,12 +93,12 @@ struct CommunityPostDetailView: View {
                                 .padding(.vertical, 3)
                                 .background {
                                     isFollowingAuthor
-                                        ? Color.accentColor
-                                        : Color(.secondarySystemBackground)
+                                        ? DSColor.accent
+                                        : DSColor.surface
                                 }
                                 .foregroundStyle(
                                     isFollowingAuthor
-                                        ? Color.white
+                                        ? DSColor.onAccent
                                         : Color.primary)
                                 .clipShape(Capsule())
                         }
@@ -119,11 +119,11 @@ struct CommunityPostDetailView: View {
                             } icon: {
                                 Image(systemName: topic.symbolName)
                             }
-                            .font(.caption2.weight(.medium))
+                            .font(.dsTag)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background {
-                                Color(.secondarySystemBackground)
+                                DSColor.surface
                             }
                             .clipShape(Capsule())
                         }
@@ -140,15 +140,15 @@ struct CommunityPostDetailView: View {
                     Divider()
                     NavigationLink(value: CommunityTabDestination.postLinkDetail(currentPost.id)) {
                         HStack {
-                            Label(.bookmarkOpenLink, systemImage: "safari")
+                            Label(.bookmarkOpenLink, icon: .safari)
                             Spacer()
-                            Image(systemName: "chevron.right")
+                            Image(.chevronForward)
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
                         .padding(12)
                         .background {
-                            Color(.secondarySystemBackground)
+                            DSColor.surface
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
@@ -173,7 +173,7 @@ struct CommunityPostDetailView: View {
                 HStack(spacing: 16) {
                     Button(action: toggleLike) {
                         HStack(spacing: 4) {
-                            Image(systemName: isLiked ? "heart.fill" : "heart")
+                            Image(isLiked ? .likeFilled : .like)
                                 .foregroundStyle(isLiked ? .red : .secondary)
                             Text("\(currentPost.likeCount)")
                         }
@@ -182,7 +182,7 @@ struct CommunityPostDetailView: View {
                     .buttonStyle(.plain)
                     .disabled(currentUserId == nil)
                     HStack(spacing: 4) {
-                        Image(systemName: "bubble.right")
+                        Image(.comment)
                         Text("\(currentPost.commentCount)")
                     }
                     .font(.subheadline)
@@ -201,9 +201,9 @@ struct CommunityPostDetailView: View {
                     HStack(spacing: 16) {
                         Button(.communityReport, action: confirmReport)
                             .disabled(alreadyReported)
-                            .foregroundStyle(alreadyReported ? Color.secondary : Color.red)
+                            .foregroundStyle(alreadyReported ? Color.secondary : DSColor.destructive)
                         Button(.communityBlockUser, action: confirmBlockUser)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(DSColor.destructive)
                     }
                     .font(.footnote)
 
@@ -238,7 +238,7 @@ struct CommunityPostDetailView: View {
             if isAuthor {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: openEditPost) {
-                        Image(systemName: "pencil")
+                        Image(.edit)
                     }
                     .accessibilityLabel(.communityEditPost)
                 }
@@ -331,7 +331,7 @@ struct CommunityPostDetailView: View {
             if let error = viewModel.commentErrorMessage {
                 Text(error)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(DSColor.destructive)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
@@ -345,7 +345,7 @@ struct CommunityPostDetailView: View {
                     .lineLimit(1...4)
                     .focused($commentFieldFocused)
                 Button(action: submitComment) {
-                    Image(systemName: "arrow.up.circle.fill")
+                    Image(.sendFilled)
                         .font(.title2)
                 }
                 .disabled(!canSubmitComment)
@@ -355,7 +355,7 @@ struct CommunityPostDetailView: View {
             .padding(.vertical, 8)
         }
         .background {
-            Color.black
+            DSColor.scrim
         }
     }
 
@@ -367,7 +367,7 @@ struct CommunityPostDetailView: View {
                         .font(.caption)
                 }
                 Text(comment.authorName)
-                    .font(.caption.weight(.semibold))
+                    .font(.dsLabel)
                 Text("·")
                     .foregroundStyle(.tertiary)
                 Text(comment.createdAt, style: .date)
@@ -383,7 +383,7 @@ struct CommunityPostDetailView: View {
                             Label("Delete", systemImage: "trash")
                         }
                     } label: {
-                        Image(systemName: "ellipsis")
+                        Image(.more)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
@@ -396,7 +396,7 @@ struct CommunityPostDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background {
-            Color(.secondarySystemBackground)
+            DSColor.surface
         }
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }

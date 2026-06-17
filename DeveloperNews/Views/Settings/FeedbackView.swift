@@ -34,16 +34,16 @@ struct FeedbackView: View {
 
                     Link(destination: instagramURL) {
                         HStack {
-                            Image(systemName: "camera.circle.fill")
+                            Image(.camera)
                             Text("@developernews.zizic")
                                 .font(.body.weight(.semibold))
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
                         .background {
-                            Color.accentColor
+                            DSColor.accent
                         }
-                        .foregroundStyle(.white)
+                        .foregroundStyle(DSColor.onAccent)
                         .clipShape(Capsule())
                     }
 

@@ -41,14 +41,14 @@ struct ArticleDetailView: View {
             if isLoading && loadProgress < 1 {
                 ProgressView(value: max(loadProgress, 0.05))
                     .progressViewStyle(.linear)
-                    .tint(.accentColor)
+                    .tint(DSColor.accent)
                     .frame(height: 2)
                     .transition(.opacity)
             }
 
             if let message = loadError {
                 ContentUnavailableView {
-                    Label(.couldNotLoadArticle, systemImage: "wifi.exclamationmark")
+                    Label(.couldNotLoadArticle, icon: .networkError)
                 } description: {
                     Text(message)
                 } actions: {
@@ -63,7 +63,7 @@ struct ArticleDetailView: View {
                     }
                 }
                 .background {
-                    Color(.systemBackground)
+                    DSColor.background
                 }
             }
         }
@@ -80,15 +80,15 @@ struct ArticleDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: toggleSaved) {
-                    Image(systemName: viewModel.isSaved ? "bookmark.fill" : "bookmark")
+                    Image(viewModel.isSaved ? .bookmarkFilled : .bookmark)
                 }
                 .accessibilityLabel(viewModel.isSaved ? .removeFromSaved : .saveStory)
             }
             if viewModel.isSaved {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: openNoteEditor) {
-                        Image(systemName: viewModel.currentNote.isEmpty ? "note.text.badge.plus" : "note.text")
-                            .foregroundStyle(viewModel.currentNote.isEmpty ? Color.primary : Color.accentColor)
+                        Image(viewModel.currentNote.isEmpty ? .noteAdd : .note)
+                            .foregroundStyle(viewModel.currentNote.isEmpty ? Color.primary : DSColor.accent)
                     }
                 }
             }
@@ -100,8 +100,8 @@ struct ArticleDetailView: View {
                                 .controlSize(.small)
                         }
                         else {
-                            Image(systemName: "translate")
-                                .foregroundStyle(viewModel.isPageTranslated ? Color.accentColor : Color.primary)
+                            Image(.translate)
+                                .foregroundStyle(viewModel.isPageTranslated ? DSColor.accent : Color.primary)
                         }
                     }
                     .disabled(isLoading || viewModel.isTranslatingPage)
@@ -110,14 +110,14 @@ struct ArticleDetailView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: reload) {
-                    Image(systemName: "arrow.clockwise")
+                    Image(.refresh)
                 }
                 .disabled(isLoading)
                 .accessibilityLabel(.reloadArticle)
             }
             ToolbarItem(placement: .topBarTrailing) {
                 ShareLink(item: item.url, subject: Text(item.title)) {
-                    Image(systemName: "square.and.arrow.up")
+                    Image(.share)
                 }
             }
         }

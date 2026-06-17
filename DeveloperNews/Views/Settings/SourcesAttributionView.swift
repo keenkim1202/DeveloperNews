@@ -61,7 +61,7 @@ struct SourcesAttributionView: View {
                 HStack {
                     Text(name)
                     Spacer()
-                    Image(systemName: "arrow.up.right.square")
+                    Image(.externalLinkUpRight)
                         .foregroundStyle(.secondary)
                 }
             }

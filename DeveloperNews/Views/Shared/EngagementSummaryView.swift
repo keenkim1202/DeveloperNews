@@ -10,11 +10,11 @@ struct EngagementSummaryView: View {
     var body: some View {
         HStack(spacing: 12) {
             HStack(spacing: 2) {
-                Image(systemName: "arrow.up")
+                Image(.upvote)
                 Text(formatted(engagement.reactionCount))
             }
             HStack(spacing: 2) {
-                Image(systemName: "bubble.left")
+                Image(.commentAlt)
                 Text(formatted(engagement.commentCount))
             }
         }

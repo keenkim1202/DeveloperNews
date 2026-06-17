@@ -82,12 +82,12 @@ struct FeedItemRow<Destination: Hashable>: View {
                         HStack(spacing: 3) {
                             ForEach(item.topics) { topic in
                                 Text(topic.title)
-                                    .font(.caption2.weight(.medium))
-                                    .foregroundStyle(Color.accentColor)
+                                    .font(.dsTag)
+                                    .foregroundStyle(DSColor.accent)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
                                     .background {
-                                        Color.accentColor.opacity(0.15)
+                                        DSColor.accent.opacity(0.15)
                                     }
                                     .clipShape(Capsule())
                             }
@@ -100,11 +100,11 @@ struct FeedItemRow<Destination: Hashable>: View {
                 if translator.canTranslate {
                     Button(action: toggleTranslation) {
                         HStack(spacing: 2) {
-                            Image(systemName: "translate")
+                            Image(.translate)
                             Text(showingTranslation ? .translationShowOriginal : .translationShowTranslated)
                         }
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(showingTranslation ? Color.accentColor : Color.primary)
+                        .font(.dsTag)
+                        .foregroundStyle(showingTranslation ? DSColor.accent : Color.primary)
                     }
                     .buttonStyle(.plain)
                 }
@@ -153,16 +153,16 @@ struct FeedItemThumbnailView: View {
                     .resizable()
                     .scaledToFill()
             case .failure:
-                Color(.tertiarySystemFill)
+                DSColor.fill
                     .overlay {
-                        Image(systemName: "photo")
+                        Image(.photo)
                             .foregroundStyle(.secondary)
                     }
             case .empty:
-                Color(.tertiarySystemFill)
+                DSColor.fill
                     .overlay { ProgressView().controlSize(.small) }
             @unknown default:
-                Color(.tertiarySystemFill)
+                DSColor.fill
             }
         }
         .frame(width: 56, height: 56)
@@ -204,13 +204,13 @@ struct FeedItemMetaView: View {
                                     .font(.caption)
                             }
                             else {
-                                Image(systemName: "questionmark.circle.dashed")
+                                Image(.unknown)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
                             Text(item.sourceName)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(Color.accentColor)
+                                .font(.dsLabel)
+                                .foregroundStyle(DSColor.accent)
                                 .underline()
                                 .lineLimit(1)
                                 .truncationMode(.tail)
@@ -220,7 +220,7 @@ struct FeedItemMetaView: View {
                 }
                 else {
                     Text(item.sourceName)
-                        .font(.caption.weight(.semibold))
+                        .font(.dsLabel)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.tail)

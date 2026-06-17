@@ -20,16 +20,16 @@ struct TopicSelectionView: View {
 
                     HStack(spacing: 12) {
                         Text(.selected)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.dsCardTitle)
                             .foregroundStyle(.secondary)
                         Spacer()
                         Text("\(viewModel.selectedCount) / \(viewModel.maxSelectedTopics)")
                             .font(.subheadline.monospacedDigit().weight(.semibold))
-                            .foregroundStyle(viewModel.selectedTopics.isEmpty ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.accentColor))
+                            .foregroundStyle(viewModel.selectedTopics.isEmpty ? AnyShapeStyle(.secondary) : AnyShapeStyle(DSColor.accent))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background {
-                                Color(.secondarySystemBackground)
+                                DSColor.surface
                             }
                             .clipShape(Capsule())
                     }
@@ -48,9 +48,9 @@ struct TopicSelectionView: View {
                                 .frame(maxWidth: .infinity, minHeight: 56)
                                 .padding(.horizontal, 12)
                                 .background {
-                                    isSelected ? Color.accentColor.opacity(0.18) : Color(.secondarySystemBackground)
+                                    isSelected ? DSColor.accent.opacity(0.18) : DSColor.surface
                                 }
-                                .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+                                .foregroundStyle(isSelected ? DSColor.accent : Color.primary)
                                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                                 .opacity(isDisabled ? 0.4 : 1)
                             }
