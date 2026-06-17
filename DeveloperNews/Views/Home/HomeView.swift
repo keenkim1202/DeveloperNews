@@ -34,8 +34,21 @@ struct HomeView: View {
                 text: $viewModel.searchQuery,
                 placement: .navigationBarDrawer(displayMode: .automatic),
                 prompt: "Search stories")
-            .refreshable(action: reload)
             .navigationDestination(for: HomeTabDestination.self, destination: destination)
+            .refreshable(action: reload)
+            .keenOnChange(of: viewModel.personalizedItems.count, perform: onFeedItemsChange)
+            .task(loadEngagements)
+        }
+    }
+
+    @Sendable
+    private func loadEngagements() async {
+        await viewModel.loadEngagements()
+    }
+
+    private func onFeedItemsChange() {
+        Task {
+            await viewModel.loadEngagements()
         }
     }
 
@@ -139,6 +152,7 @@ struct HomeView: View {
                 discussionItems: viewModel.discussionsExcludingTopStory,
                 destinationFor: destinationFor,
                 onAuthorTap: navigateToProfile,
+                inAppEngagement: viewModel.engagement(for:),
                 hasMore: viewModel.hasMorePages,
                 onLoadMore: { viewModel.loadMore() },
                 scrollToTopTrigger: viewModel.scrollToTopTrigger,
@@ -148,7 +162,8 @@ struct HomeView: View {
                             translator: appState.translator,
                             item: item,
                             destination: destinationFor(item),
-                            onHide: { appState.dismissTopStory() })
+                            onHide: { appState.dismissTopStory() },
+                            storyEngagement: viewModel.engagement(for: item))
                             .padding(.horizontal, 2)
                             .padding(.vertical, 4))
                 })
