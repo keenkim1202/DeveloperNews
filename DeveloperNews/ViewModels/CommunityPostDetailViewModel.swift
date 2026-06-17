@@ -97,6 +97,23 @@ final class CommunityPostDetailViewModel {
         await commentService.deleteComment(comment)
     }
 
+    func reportComment(
+        _ comment: CommunityComment,
+        reason: ReportReason,
+    ) async {
+        guard let uid = currentUserId else {
+            return
+        }
+        await commentService.reportComment(comment, reporterId: uid, reason: reason.storageValue)
+        if let message = commentService.errorMessage {
+            appState.presentError(message)
+        }
+    }
+
+    func blockCommentAuthor(_ comment: CommunityComment) {
+        appState.blockUser(comment.authorId)
+    }
+
     func toggleFollow() async {
         await appState.profileService.toggleFollow(currentPost.authorId)
         if let message = appState.profileService.errorMessage {
