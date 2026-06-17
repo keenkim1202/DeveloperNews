@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-enum FollowListKind: Identifiable {
+enum FollowListKind: Identifiable, Hashable {
     case followers
     case following
 

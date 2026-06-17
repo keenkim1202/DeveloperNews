@@ -73,6 +73,11 @@ struct CommunityView: View {
             else {
                 UnavailableDestinationView(reason: .itemNotFound)
             }
+        case let .followList(target):
+            FollowListView(
+                appState: appState,
+                userId: target.userId,
+                kind: target.kind)
         }
     }
 

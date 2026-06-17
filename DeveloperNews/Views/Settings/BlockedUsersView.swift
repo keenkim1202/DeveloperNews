@@ -4,6 +4,8 @@ struct BlockedUsersView: View {
     private let appState: AppState
 
     @State private var summaries: [String: UserSummary] = [:]
+    @State private var unblockTarget: String?
+    @State private var showUnblockConfirm = false
 
     init(appState: AppState) {
         self.appState = appState
@@ -28,6 +30,15 @@ struct BlockedUsersView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .task(loadSummaries)
+        .alert(
+            .settingsUnblockConfirmTitle,
+            isPresented: $showUnblockConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button(
+                .settingsUnblock,
+                role: .destructive,
+                action: confirmUnblock)
+        }
     }
 
     @ViewBuilder
@@ -41,7 +52,7 @@ struct BlockedUsersView: View {
             Button(
                 .settingsUnblock,
                 role: .destructive) {
-                unblockUser(userId)
+                requestUnblock(userId)
             }
             .font(.footnote)
         }
@@ -74,7 +85,14 @@ struct BlockedUsersView: View {
             uniqueKeysWithValues: fetched.map { ($0.id, $0) })
     }
 
-    private func unblockUser(_ userId: String) {
+    private func requestUnblock(_ userId: String) {
+        unblockTarget = userId
+        showUnblockConfirm = true
+    }
+
+    private func confirmUnblock() {
+        guard let userId = unblockTarget else { return }
+        unblockTarget = nil
         appState.unblockUser(userId)
     }
 }

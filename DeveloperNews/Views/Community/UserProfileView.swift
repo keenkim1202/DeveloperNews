@@ -6,7 +6,6 @@ struct UserProfileView: View {
     private let authorEmoji: String?
 
     @State private var viewModel: UserProfileViewModel
-    @State private var followListKind: FollowListKind?
     @State private var showBlockConfirm = false
 
     @Environment(\.dismiss) private var dismiss
@@ -49,7 +48,7 @@ struct UserProfileView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                        Button(action: showFollowers) {
+                        NavigationLink(value: followListDestination(.followers)) {
                             VStack {
                                 Text("\(viewModel.followerCount)")
                                     .font(.headline)
@@ -59,7 +58,7 @@ struct UserProfileView: View {
                             }
                         }
                         .buttonStyle(.plain)
-                        Button(action: showFollowing) {
+                        NavigationLink(value: followListDestination(.following)) {
                             VStack {
                                 Text("\(viewModel.followingCount)")
                                     .font(.headline)
@@ -117,8 +116,14 @@ struct UserProfileView: View {
         .toolbar {
             if !viewModel.isOwnProfile, viewModel.currentUserId != nil {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(.communityBlockUser, action: confirmBlockUser)
-                        .foregroundStyle(DSColor.destructive)
+                    Menu {
+                        Button(
+                            .communityBlockUser,
+                            role: .destructive,
+                            action: confirmBlockUser)
+                    } label: {
+                        Image(.more)
+                    }
                 }
             }
         }
@@ -134,12 +139,10 @@ struct UserProfileView: View {
         } message: {
             Text(.communityBlockConfirmMessage)
         }
-        .sheet(item: $followListKind) { kind in
-            FollowListView(
-                appState: appState,
-                userId: viewModel.authorId,
-                kind: kind)
-        }
+    }
+
+    private func followListDestination(_ kind: FollowListKind) -> CommunityTabDestination {
+        .followList(FollowListTarget(userId: viewModel.authorId, kind: kind))
     }
 
     private func loadFollowCounts() async {
@@ -150,14 +153,6 @@ struct UserProfileView: View {
         Task {
             await viewModel.toggleFollow()
         }
-    }
-
-    private func showFollowers() {
-        followListKind = .followers
-    }
-
-    private func showFollowing() {
-        followListKind = .following
     }
 
     private func confirmBlockUser() {

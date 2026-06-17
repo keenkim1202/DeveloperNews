@@ -5,8 +5,6 @@ struct FollowListView: View {
 
     @State private var viewModel: FollowListViewModel
 
-    @Environment(\.dismiss) private var dismiss
-
     init(
         appState: AppState,
         userId: String,
@@ -29,47 +27,45 @@ struct FollowListView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if viewModel.isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                else if viewModel.summaries.isEmpty {
-                    Text(.profileFollowListEmpty)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-                else {
-                    List(viewModel.summaries) { summary in
-                        row(for: summary)
+        Group {
+            if viewModel.isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            else if viewModel.summaries.isEmpty {
+                Text(.profileFollowListEmpty)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            else {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(viewModel.summaries) { summary in
+                            row(for: summary)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                        }
                     }
-                    .listStyle(.plain)
                 }
             }
-            .navigationTitle(Text(title))
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(for: UserSummary.self) { summary in
-                UserProfileView(
-                    appState: appState,
-                    authorId: summary.id,
-                    authorName: summary.displayName,
-                    authorEmoji: summary.emoji)
-            }
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(.commonDone, action: close)
-                }
-            }
-            .task(load)
         }
+        .navigationTitle(Text(title))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
+        .task(load)
     }
 
     @ViewBuilder
     private func row(for summary: UserSummary) -> some View {
         HStack(spacing: 12) {
-            NavigationLink(value: summary) {
+            NavigationLink(
+                value: CommunityTabDestination.userProfile(
+                    AuthorInfo(
+                        id: summary.id,
+                        name: summary.displayName,
+                        emoji: summary.emoji))
+            ) {
                 HStack(spacing: 12) {
                     avatar(for: summary)
                     Text(summary.displayName)
@@ -114,9 +110,5 @@ struct FollowListView: View {
         Task {
             await viewModel.toggleFollow(summary.id)
         }
-    }
-
-    private func close() {
-        dismiss()
     }
 }

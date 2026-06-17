@@ -3194,6 +3194,23 @@
         }
       }
     },
+    "settings.unblockConfirmTitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unblock this user?"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 사용자의 차단을 해제할까요?"
+          }
+        }
+      }
+    },
     "settings.unknownUser" : {
       "extractionState" : "manual",
       "localizations" : {
