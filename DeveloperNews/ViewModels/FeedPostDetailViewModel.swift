@@ -95,6 +95,16 @@ final class FeedPostDetailViewModel {
         appState.blockUser(comment.authorId)
     }
 
+    func toggleCommentLike(_ comment: CommunityComment) async {
+        guard let uid = currentUserId else {
+            return
+        }
+        await commentService.toggleCommentLike(comment, userId: uid)
+        if let message = commentService.errorMessage {
+            appState.presentError(message)
+        }
+    }
+
     func toggleLike() async {
         guard let uid = currentUserId else {
             return

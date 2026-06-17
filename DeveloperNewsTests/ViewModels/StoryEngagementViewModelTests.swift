@@ -12,6 +12,8 @@ import Foundation
     private func makeComment(
         id: String,
         authorId: String,
+        likeCount: Int = 0,
+        likedBy: Set<String> = [],
     ) -> CommunityComment {
         CommunityComment(
             id: id,
@@ -20,7 +22,9 @@ import Foundation
             authorName: "Author",
             authorEmoji: nil,
             text: "Body",
-            createdAt: .now)
+            createdAt: .now,
+            likeCount: likeCount,
+            likedBy: likedBy)
     }
 
     private func makeEngagement(
@@ -256,5 +260,32 @@ import Foundation
         vm.blockCommentAuthor(makeComment(id: "c1", authorId: "author"))
 
         #expect(appState.blockedUserIds.contains("author"))
+    }
+
+    @Test func toggleCommentLikeWhileSignedOutIsNoOp() async {
+        let comments = MockCommentServicing()
+        let appState = VMFixtures.makeAppState(auth: MockAuthServicing())
+
+        let vm = StoryEngagementViewModel(
+            appState: appState,
+            storyURL: storyURL,
+            commentService: comments)
+        await vm.toggleCommentLike(makeComment(id: "c1", authorId: "author"))
+
+        #expect(comments.toggledCommentLikes.isEmpty)
+    }
+
+    @Test func toggleCommentLikeSignedInDelegatesToService() async {
+        let comments = MockCommentServicing()
+        let appState = VMFixtures.makeAppState(auth: MockAuthServicing(userId: "me"))
+
+        let vm = StoryEngagementViewModel(
+            appState: appState,
+            storyURL: storyURL,
+            commentService: comments)
+        await vm.toggleCommentLike(makeComment(id: "c1", authorId: "author"))
+
+        #expect(comments.toggledCommentLikes.map(\.commentId) == ["c1"])
+        #expect(comments.toggledCommentLikes.first?.userId == "me")
     }
 }

@@ -10,6 +10,8 @@ import Foundation
     private func makeComment(
         id: String,
         authorId: String,
+        likeCount: Int = 0,
+        likedBy: Set<String> = [],
     ) -> CommunityComment {
         CommunityComment(
             id: id,
@@ -18,7 +20,9 @@ import Foundation
             authorName: "Author",
             authorEmoji: nil,
             text: "Body",
-            createdAt: .now)
+            createdAt: .now,
+            likeCount: likeCount,
+            likedBy: likedBy)
     }
 
     @Test func visibleCommentsFiltersBlockedAuthorsFromInjectedService() async {
@@ -166,6 +170,39 @@ import Foundation
         vm.blockCommentAuthor(makeComment(id: "c1", authorId: "author"))
 
         #expect(appState.blockedUserIds.contains("author"))
+
+        await Task.yield()
+    }
+
+    @Test func toggleCommentLikeWhileSignedOutIsNoOp() async {
+        let comments = MockCommentServicing()
+        let appState = VMFixtures.makeAppState(auth: MockAuthServicing())
+        let post = VMFixtures.makeFeedPost(id: "post-1")
+
+        let vm = FeedPostDetailViewModel(
+            appState: appState,
+            post: post,
+            commentService: comments)
+        await vm.toggleCommentLike(makeComment(id: "c1", authorId: "author"))
+
+        #expect(comments.toggledCommentLikes.isEmpty)
+
+        await Task.yield()
+    }
+
+    @Test func toggleCommentLikeSignedInDelegatesToService() async {
+        let comments = MockCommentServicing()
+        let appState = VMFixtures.makeAppState(auth: MockAuthServicing(userId: "me"))
+        let post = VMFixtures.makeFeedPost(id: "post-1")
+
+        let vm = FeedPostDetailViewModel(
+            appState: appState,
+            post: post,
+            commentService: comments)
+        await vm.toggleCommentLike(makeComment(id: "c1", authorId: "author"))
+
+        #expect(comments.toggledCommentLikes.map(\.commentId) == ["c1"])
+        #expect(comments.toggledCommentLikes.first?.userId == "me")
 
         await Task.yield()
     }

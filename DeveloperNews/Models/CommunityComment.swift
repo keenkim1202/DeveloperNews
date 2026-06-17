@@ -8,4 +8,6 @@ struct CommunityComment: Identifiable, Hashable, Sendable {
     let authorEmoji: String?
     let text: String
     let createdAt: Date
+    let likeCount: Int
+    let likedBy: Set<String>
 }

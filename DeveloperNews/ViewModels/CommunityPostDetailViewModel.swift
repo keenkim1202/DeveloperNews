@@ -114,6 +114,16 @@ final class CommunityPostDetailViewModel {
         appState.blockUser(comment.authorId)
     }
 
+    func toggleCommentLike(_ comment: CommunityComment) async {
+        guard let uid = currentUserId else {
+            return
+        }
+        await commentService.toggleCommentLike(comment, userId: uid)
+        if let message = commentService.errorMessage {
+            appState.presentError(message)
+        }
+    }
+
     func toggleFollow() async {
         await appState.profileService.toggleFollow(currentPost.authorId)
         if let message = appState.profileService.errorMessage {

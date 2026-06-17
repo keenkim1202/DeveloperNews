@@ -68,6 +68,8 @@ final class CommentService: CommentServicing {
             "authorName": authorDisplayName,
             "authorEmoji": authorEmoji ?? "",
             "text": text,
+            "likeCount": 0,
+            "likedBy": [String](),
             "createdAt": FieldValue.serverTimestamp(),
         ]
 
@@ -94,6 +96,24 @@ final class CommentService: CommentServicing {
                 db,
                 parentCollection: parentCollection,
                 postId: comment.postId)
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func toggleCommentLike(
+        _ comment: CommunityComment,
+        userId: String,
+    ) async {
+        errorMessage = nil
+        do {
+            try await Self.runCommentLikeTransaction(
+                db,
+                parentCollection: parentCollection,
+                postId: comment.postId,
+                commentId: comment.id,
+                userId: userId)
         }
         catch {
             errorMessage = error.localizedDescription
@@ -146,6 +166,52 @@ final class CommentService: CommentServicing {
         }
     }
 
+    // nonisolated so the transaction closure captures only the local Firestore
+    // handle and comment ids rather than MainActor-isolated `self`. Mirrors the
+    // post-level membership-tied +-1 toggle on likedBy/likeCount.
+    nonisolated private static func runCommentLikeTransaction(
+        _ db: Firestore,
+        parentCollection: String,
+        postId: String,
+        commentId: String,
+        userId: String,
+    ) async throws {
+        let commentRef = db.collection(parentCollection)
+            .document(postId)
+            .collection("comments")
+            .document(commentId)
+        _ = try await db.runTransaction { transaction, errorPointer in
+            let snapshot: DocumentSnapshot
+            do {
+                snapshot = try transaction.getDocument(commentRef)
+            }
+            catch let error as NSError {
+                errorPointer?.pointee = error
+                return nil
+            }
+            let data = snapshot.data()
+            let likedBy = data?["likedBy"] as? [String] ?? []
+            let current = data?["likeCount"] as? Int ?? 0
+            if likedBy.contains(userId) {
+                transaction.updateData(
+                    [
+                        "likedBy": FieldValue.arrayRemove([userId]),
+                        "likeCount": max(0, current - 1),
+                    ],
+                    forDocument: commentRef)
+            }
+            else {
+                transaction.updateData(
+                    [
+                        "likedBy": FieldValue.arrayUnion([userId]),
+                        "likeCount": max(0, current) + 1,
+                    ],
+                    forDocument: commentRef)
+            }
+            return nil
+        }
+    }
+
     private static func parseComment(
         _ doc: QueryDocumentSnapshot,
         postId: String,
@@ -162,6 +228,8 @@ final class CommentService: CommentServicing {
             authorName: data["authorName"] as? String ?? "",
             authorEmoji: (data["authorEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 },
             text: text,
-            createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date())
+            createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
+            likeCount: max(0, data["likeCount"] as? Int ?? 0),
+            likedBy: Set(data["likedBy"] as? [String] ?? []))
     }
 }

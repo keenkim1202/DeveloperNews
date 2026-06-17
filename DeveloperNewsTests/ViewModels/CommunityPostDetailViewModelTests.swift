@@ -18,7 +18,9 @@ import Foundation
             authorName: "Author",
             authorEmoji: nil,
             text: "Body",
-            createdAt: .now)
+            createdAt: .now,
+            likeCount: 0,
+            likedBy: [])
     }
 
     @Test func visibleCommentsFiltersBlockedAuthorsFromInjectedService() async {

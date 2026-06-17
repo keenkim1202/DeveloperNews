@@ -11,6 +11,7 @@ struct CommentRow: View {
     private let onDelete: (() -> Void)?
     private let onReport: ((ReportReason) -> Void)?
     private let onBlock: (() -> Void)?
+    private let onLike: (() -> Void)?
 
     @State private var showDeleteConfirm = false
     @State private var showReportConfirm = false
@@ -25,12 +26,14 @@ struct CommentRow: View {
         onDelete: (() -> Void)?,
         onReport: ((ReportReason) -> Void)?,
         onBlock: (() -> Void)?,
+        onLike: (() -> Void)?,
     ) {
         self.comment = comment
         self.currentUserId = currentUserId
         self.onDelete = onDelete
         self.onReport = onReport
         self.onBlock = onBlock
+        self.onLike = onLike
     }
 
     private var isOwnComment: Bool {
@@ -41,6 +44,9 @@ struct CommentRow: View {
     }
     private var canModerate: Bool {
         !isOwnComment && currentUserId != nil && onReport != nil && onBlock != nil
+    }
+    private var isLiked: Bool {
+        currentUserId.map { comment.likedBy.contains($0) } ?? false
     }
 
     var body: some View {
@@ -70,6 +76,7 @@ struct CommentRow: View {
             }
             Text(comment.text)
                 .font(.subheadline)
+            likeControl
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -116,6 +123,19 @@ struct CommentRow: View {
         }
     }
 
+    private var likeControl: some View {
+        Button(action: performLike) {
+            HStack(spacing: 4) {
+                Image(isLiked ? .likeFilled : .like)
+                    .foregroundStyle(isLiked ? .red : .secondary)
+                Text("\(comment.likeCount)")
+            }
+            .font(.caption)
+        }
+        .buttonStyle(.plain)
+        .disabled(onLike == nil)
+    }
+
     private var deleteMenu: some View {
         Menu {
             Button(role: .destructive, action: confirmDelete) {
@@ -150,6 +170,10 @@ struct CommentRow: View {
         Image(.more)
             .font(.caption2)
             .foregroundStyle(.secondary)
+    }
+
+    private func performLike() {
+        onLike?()
     }
 
     private func confirmDelete() {

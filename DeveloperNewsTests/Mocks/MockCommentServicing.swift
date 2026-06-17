@@ -10,6 +10,7 @@ final class MockCommentServicing: CommentServicing {
     private(set) var listeningPostId: String?
     private(set) var didStopListening = false
     private(set) var reportedComments: [(commentId: String, reporterId: String, reason: String)] = []
+    private(set) var toggledCommentLikes: [(commentId: String, userId: String)] = []
 
     func startListening(postId: String) {
         listeningPostId = postId
@@ -30,6 +31,13 @@ final class MockCommentServicing: CommentServicing {
 
     func deleteComment(_ comment: CommunityComment) async {
         comments.removeAll { $0.id == comment.id }
+    }
+
+    func toggleCommentLike(
+        _ comment: CommunityComment,
+        userId: String,
+    ) async {
+        toggledCommentLikes.append((commentId: comment.id, userId: userId))
     }
 
     func reportComment(
