@@ -82,7 +82,7 @@ struct FeedPostDetailView: View {
                 if currentUserId != nil {
                     ToolbarItem(placement: .topBarTrailing) {
                         if isAuthor {
-                            authorEditButton
+                            authorMenu
                         }
                         else {
                             moderationMenu
@@ -137,11 +137,12 @@ struct FeedPostDetailView: View {
         }
     }
 
-    private var authorEditButton: some View {
-        Button(action: openEdit) {
-            Image(.edit)
+    private var authorMenu: some View {
+        Menu {
+            Button(.communityEditPost, action: openEdit)
+        } label: {
+            Image(.more)
         }
-        .accessibilityLabel(.communityEditPost)
     }
 
     private var moderationMenu: some View {
@@ -204,9 +205,6 @@ struct FeedPostDetailView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
-                Image(.chevronForward)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
             }
             .padding(12)
             .background {
