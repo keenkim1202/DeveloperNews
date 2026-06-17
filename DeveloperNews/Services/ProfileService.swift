@@ -196,6 +196,42 @@ final class ProfileService: ProfileServicing {
         }
     }
 
+    func searchUsers(matching query: String) async -> [UserSummary] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return []
+        }
+
+        // Firestore has no substring search, so match a display-name prefix range:
+        // [trimmed, trimmed + \u{f8ff}). The high private-use code point caps the
+        // range just past any string starting with `trimmed`. Case-sensitive.
+        let upperBound = trimmed + "\u{f8ff}"
+        let currentUid = Auth.auth().currentUser?.uid
+
+        do {
+            let snapshot = try await db.collection("users")
+                .order(by: "displayName")
+                .whereField("displayName", isGreaterThanOrEqualTo: trimmed)
+                .whereField("displayName", isLessThan: upperBound)
+                .limit(to: 20)
+                .getDocuments()
+            return snapshot.documents.compactMap { doc in
+                if let currentUid, doc.documentID == currentUid {
+                    return nil
+                }
+                let data = doc.data()
+                return UserSummary(
+                    id: doc.documentID,
+                    displayName: data["displayName"] as? String ?? "",
+                    emoji: (data["profileEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 })
+            }
+        }
+        catch {
+            errorMessage = error.localizedDescription
+            return []
+        }
+    }
+
     private func updateAuthorFieldInPosts(
         uid: String,
         field: String,

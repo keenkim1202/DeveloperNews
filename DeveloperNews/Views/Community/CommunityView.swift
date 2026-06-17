@@ -88,6 +88,8 @@ struct CommunityView: View {
             }
         case let .feedPostDetail(post):
             FeedPostDetailView(appState: appState, post: post)
+        case .userSearch:
+            UserSearchView(appState: appState)
         }
     }
 

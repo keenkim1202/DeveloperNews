@@ -17,8 +17,10 @@ final class MockProfileServicing: ProfileServicing {
     var userSummaries: [UserSummary] = []
     var followers: [UserSummary] = []
     var following: [UserSummary] = []
+    var searchResults: [UserSummary] = []
 
     private(set) var didStopListening = false
+    private(set) var searchedQueries: [String] = []
 
     func isFollowing(_ userId: String) -> Bool {
         followedUserIds.contains(userId)
@@ -60,6 +62,15 @@ final class MockProfileServicing: ProfileServicing {
 
     func fetchFollowing(of userId: String) async -> [UserSummary] {
         following
+    }
+
+    func searchUsers(matching query: String) async -> [UserSummary] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return []
+        }
+        searchedQueries.append(trimmed)
+        return searchResults
     }
 
     func toggleFollow(_ targetUserId: String) async {
