@@ -25,6 +25,10 @@ final class ProfileService: ProfileServicing {
         profile?.profileEmoji
     }
 
+    var profileBio: String? {
+        profile?.bio
+    }
+
     var followedUserIds: Set<String> {
         profile?.followedUserIds ?? []
     }
@@ -51,6 +55,7 @@ final class ProfileService: ProfileServicing {
                     displayName: data["displayName"] as? String ?? "",
                     photoURL: data["photoURL"] as? String,
                     profileEmoji: data["profileEmoji"] as? String,
+                    bio: data["bio"] as? String,
                     followedUserIds: Set(followedArray),
                     createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
                     updatedAt: (data["updatedAt"] as? Timestamp)?.dateValue() ?? Date())
@@ -125,6 +130,22 @@ final class ProfileService: ProfileServicing {
         }
     }
 
+    func updateBio(_ bio: String) async {
+        guard let uid = currentUser?.uid else { return }
+        let trimmed = String(
+            bio.trimmingCharacters(in: .whitespacesAndNewlines).prefix(160))
+
+        do {
+            try await db.collection("users").document(uid).setData([
+                "bio": trimmed,
+                "updatedAt": FieldValue.serverTimestamp(),
+            ], merge: true)
+        }
+        catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     func fetchFollowerCount(for userId: String) async -> Int {
         do {
             let snapshot = try await db.collection("users")
@@ -158,7 +179,8 @@ final class ProfileService: ProfileServicing {
                 summaries.append(UserSummary(
                     id: id,
                     displayName: data["displayName"] as? String ?? "",
-                    emoji: (data["profileEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 }))
+                    emoji: (data["profileEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 },
+                    bio: (data["bio"] as? String).flatMap { $0.isEmpty ? nil : $0 }))
             }
             catch {
                 continue
@@ -177,7 +199,8 @@ final class ProfileService: ProfileServicing {
                 return UserSummary(
                     id: doc.documentID,
                     displayName: data["displayName"] as? String ?? "",
-                    emoji: (data["profileEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 })
+                    emoji: (data["profileEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 },
+                    bio: (data["bio"] as? String).flatMap { $0.isEmpty ? nil : $0 })
             }
         }
         catch {
@@ -223,7 +246,8 @@ final class ProfileService: ProfileServicing {
                 return UserSummary(
                     id: doc.documentID,
                     displayName: data["displayName"] as? String ?? "",
-                    emoji: (data["profileEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 })
+                    emoji: (data["profileEmoji"] as? String).flatMap { $0.isEmpty ? nil : $0 },
+                    bio: (data["bio"] as? String).flatMap { $0.isEmpty ? nil : $0 })
             }
         }
         catch {

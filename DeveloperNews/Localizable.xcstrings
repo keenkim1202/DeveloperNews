@@ -3311,6 +3311,40 @@
         }
       }
     },
+    "profile.addBio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a bio"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "소개 추가"
+          }
+        }
+      }
+    },
+    "profile.bioPlaceholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tell people about yourself"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "자신을 소개해보세요"
+          }
+        }
+      }
+    },
     "profile.changeEmoji": {
       "extractionState": "manual",
       "localizations": {
@@ -3341,6 +3375,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "닉네임 변경"
+          }
+        }
+      }
+    },
+    "profile.editBio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit bio"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "소개 편집"
           }
         }
       }

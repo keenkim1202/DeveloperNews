@@ -9,6 +9,7 @@ protocol ProfileServicing {
 
     var displayName: String { get }
     var profileEmoji: String? { get }
+    var profileBio: String? { get }
     var followedUserIds: Set<String> { get }
 
     func isFollowing(_ userId: String) -> Bool
@@ -20,6 +21,7 @@ protocol ProfileServicing {
 
     func updateDisplayName(_ name: String) async
     func updateProfileEmoji(_ emoji: String) async
+    func updateBio(_ bio: String) async
 
     func fetchFollowerCount(for userId: String) async -> Int
     func fetchFollowingCount(for userId: String) async -> Int

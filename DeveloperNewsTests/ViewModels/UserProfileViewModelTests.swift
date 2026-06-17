@@ -49,4 +49,35 @@ import Foundation
 
         #expect(appState.toastMessage == "Failed to load posts")
     }
+
+    @Test func loadBioUsesOwnProfileBioWhenOwnProfile() async {
+        let auth = MockAuthServicing(userId: "author-1")
+        let profile = MockProfileServicing()
+        profile.profileBio = "My own bio"
+        // A summary is seeded too to prove the own-profile path is preferred.
+        profile.userSummaries = [
+            UserSummary(id: "author-1", displayName: "Me", emoji: nil, bio: "Fetched bio"),
+        ]
+        let appState = VMFixtures.makeAppState(auth: auth, profile: profile)
+        let viewModel = UserProfileViewModel(appState: appState, authorId: "author-1")
+
+        await viewModel.loadBio()
+
+        #expect(viewModel.authorBio == "My own bio")
+    }
+
+    @Test func loadBioUsesFetchedSummaryBioForOtherUser() async {
+        let auth = MockAuthServicing(userId: "viewer")
+        let profile = MockProfileServicing()
+        profile.profileBio = "Viewer bio"
+        profile.userSummaries = [
+            UserSummary(id: "author-1", displayName: "Ada", emoji: nil, bio: "Ada's bio"),
+        ]
+        let appState = VMFixtures.makeAppState(auth: auth, profile: profile)
+        let viewModel = UserProfileViewModel(appState: appState, authorId: "author-1")
+
+        await viewModel.loadBio()
+
+        #expect(viewModel.authorBio == "Ada's bio")
+    }
 }

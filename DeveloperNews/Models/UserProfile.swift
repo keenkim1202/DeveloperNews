@@ -5,6 +5,7 @@ struct UserProfile: Codable, Sendable {
     var displayName: String
     var photoURL: String?
     var profileEmoji: String?
+    var bio: String?
     var followedUserIds: Set<String>
     var createdAt: Date
     var updatedAt: Date

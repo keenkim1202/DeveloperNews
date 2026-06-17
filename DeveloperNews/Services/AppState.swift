@@ -368,6 +368,14 @@ final class AppState {
         await profileService.updateProfileEmoji(emoji)
     }
 
+    func updateBio(_ bio: String) async {
+        await profileService.updateBio(bio)
+    }
+
+    var profileBio: String? {
+        profileService.profileBio
+    }
+
     func signOut() {
         profileService.stopListening()
         authService.signOut()
