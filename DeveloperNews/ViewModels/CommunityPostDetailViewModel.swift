@@ -50,6 +50,10 @@ final class CommunityPostDetailViewModel {
         commentService.comments.filter { !appState.blockedUserIds.contains($0.authorId) }
     }
 
+    var commentThreads: [CommentThread] {
+        CommentThread.build(from: visibleComments)
+    }
+
     func canSubmitComment(commentText: String) -> Bool {
         currentUserId != nil && !commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -80,7 +84,10 @@ final class CommunityPostDetailViewModel {
         await community.refresh()
     }
 
-    func addComment(text: String) async {
+    func addComment(
+        text: String,
+        parentCommentId: String? = nil,
+    ) async {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,
               let user = appState.authService.user
@@ -90,7 +97,8 @@ final class CommunityPostDetailViewModel {
             text: trimmed,
             author: user,
             authorDisplayName: appState.profileService.displayName,
-            authorEmoji: appState.profileService.profileEmoji)
+            authorEmoji: appState.profileService.profileEmoji,
+            parentCommentId: parentCommentId)
     }
 
     func deleteComment(_ comment: CommunityComment) async {

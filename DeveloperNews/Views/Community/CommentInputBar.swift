@@ -8,6 +8,8 @@ struct CommentInputBar: View {
     private let canSubmit: Bool
     private var isFocused: FocusState<Bool>.Binding
     private let onSubmit: () -> Void
+    private let replyingToName: String?
+    private let onCancelReply: (() -> Void)?
 
     init(
         text: Binding<String>,
@@ -15,17 +17,24 @@ struct CommentInputBar: View {
         canSubmit: Bool,
         isFocused: FocusState<Bool>.Binding,
         onSubmit: @escaping () -> Void,
+        replyingToName: String? = nil,
+        onCancelReply: (() -> Void)? = nil,
     ) {
         self.text = text
         self.errorMessage = errorMessage
         self.canSubmit = canSubmit
         self.isFocused = isFocused
         self.onSubmit = onSubmit
+        self.replyingToName = replyingToName
+        self.onCancelReply = onCancelReply
     }
 
     var body: some View {
         VStack(spacing: 0) {
             Divider()
+            if let replyingToName {
+                replyContextHeader(replyingToName)
+            }
             if let errorMessage {
                 Text(errorMessage)
                     .font(.caption)
@@ -59,5 +68,26 @@ struct CommentInputBar: View {
             DSColor.background
                 .ignoresSafeArea(.container, edges: .bottom)
         }
+    }
+
+    private func replyContextHeader(_ name: String) -> some View {
+        HStack(spacing: 8) {
+            Text(.communityReplyingTo(name))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Spacer()
+            Button(action: cancelReply) {
+                Image(.close)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
+    private func cancelReply() {
+        onCancelReply?()
     }
 }

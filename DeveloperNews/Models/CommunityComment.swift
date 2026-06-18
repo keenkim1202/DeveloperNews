@@ -10,4 +10,5 @@ struct CommunityComment: Identifiable, Hashable, Sendable {
     let createdAt: Date
     let likeCount: Int
     let likedBy: Set<String>
+    let parentCommentId: String?
 }

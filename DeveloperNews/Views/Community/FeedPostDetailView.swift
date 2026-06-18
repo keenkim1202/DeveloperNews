@@ -13,6 +13,7 @@ struct FeedPostDetailView: View {
     @State private var commentText = ""
     @State private var shouldScrollToLatestComment = false
     @State private var showEditSheet = false
+    @State private var replyingTo: CommunityComment?
     @FocusState private var commentFieldFocused: Bool
 
     @Environment(\.dismiss) private var dismiss
@@ -41,6 +42,9 @@ struct FeedPostDetailView: View {
     }
     private var visibleComments: [CommunityComment] {
         viewModel.visibleComments
+    }
+    private var commentThreads: [CommentThread] {
+        viewModel.commentThreads
     }
     private var canSubmitComment: Bool {
         viewModel.canSubmitComment(commentText: commentText)
@@ -76,7 +80,9 @@ struct FeedPostDetailView: View {
                         errorMessage: viewModel.commentErrorMessage,
                         canSubmit: canSubmitComment,
                         isFocused: $commentFieldFocused,
-                        onSubmit: submitComment)
+                        onSubmit: submitComment,
+                        replyingToName: replyingTo?.authorName,
+                        onCancelReply: cancelReply)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -243,15 +249,27 @@ struct FeedPostDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             else {
-                ForEach(visibleComments) { comment in
+                ForEach(commentThreads) { thread in
                     CommentRow(
-                        comment: comment,
+                        comment: thread.parent,
                         currentUserId: currentUserId,
-                        onDelete: { deleteComment(comment) },
-                        onReport: { reportComment(comment, reason: $0) },
-                        onBlock: { blockCommentAuthor(comment) },
-                        onLike: currentUserId == nil ? nil : { likeComment(comment) })
-                        .id(comment.id)
+                        onDelete: { deleteComment(thread.parent) },
+                        onReport: { reportComment(thread.parent, reason: $0) },
+                        onBlock: { blockCommentAuthor(thread.parent) },
+                        onLike: currentUserId == nil ? nil : { likeComment(thread.parent) },
+                        onReply: currentUserId == nil ? nil : { startReply(thread.parent) })
+                        .id(thread.parent.id)
+                    ForEach(thread.replies) { reply in
+                        CommentRow(
+                            comment: reply,
+                            currentUserId: currentUserId,
+                            onDelete: { deleteComment(reply) },
+                            onReport: { reportComment(reply, reason: $0) },
+                            onBlock: { blockCommentAuthor(reply) },
+                            onLike: currentUserId == nil ? nil : { likeComment(reply) })
+                            .padding(.leading, 32)
+                            .id(reply.id)
+                    }
                 }
             }
         }
@@ -284,11 +302,22 @@ struct FeedPostDetailView: View {
         guard !trimmed.isEmpty,
               viewModel.hasAuthenticatedUser
         else { return }
+        let parentCommentId = replyingTo?.id
         commentText = ""
+        replyingTo = nil
         shouldScrollToLatestComment = true
         Task {
-            await viewModel.addComment(text: trimmed)
+            await viewModel.addComment(text: trimmed, parentCommentId: parentCommentId)
         }
+    }
+
+    private func startReply(_ comment: CommunityComment) {
+        replyingTo = comment
+        commentFieldFocused = true
+    }
+
+    private func cancelReply() {
+        replyingTo = nil
     }
 
     private func deleteComment(_ comment: CommunityComment) {

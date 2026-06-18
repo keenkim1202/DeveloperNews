@@ -15,6 +15,7 @@ protocol CommentServicing {
         author: FirebaseAuth.User,
         authorDisplayName: String,
         authorEmoji: String?,
+        parentCommentId: String?,
     ) async
 
     func deleteComment(_ comment: CommunityComment) async
