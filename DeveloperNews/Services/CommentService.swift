@@ -60,10 +60,11 @@ final class CommentService: CommentServicing {
         author: FirebaseAuth.User,
         authorDisplayName: String,
         authorEmoji: String?,
+        parentCommentId: String? = nil,
     ) async {
         errorMessage = nil
 
-        let data: [String: Any] = [
+        var data: [String: Any] = [
             "authorId": author.uid,
             "authorName": authorDisplayName,
             "authorEmoji": authorEmoji ?? "",
@@ -72,6 +73,9 @@ final class CommentService: CommentServicing {
             "likedBy": [String](),
             "createdAt": FieldValue.serverTimestamp(),
         ]
+        if let parentCommentId {
+            data["parentCommentId"] = parentCommentId
+        }
 
         do {
             try await commentsRef(postId).addDocument(data: data)
@@ -230,6 +234,7 @@ final class CommentService: CommentServicing {
             text: text,
             createdAt: (data["createdAt"] as? Timestamp)?.dateValue() ?? Date(),
             likeCount: max(0, data["likeCount"] as? Int ?? 0),
-            likedBy: Set(data["likedBy"] as? [String] ?? []))
+            likedBy: Set(data["likedBy"] as? [String] ?? []),
+            parentCommentId: data["parentCommentId"] as? String)
     }
 }

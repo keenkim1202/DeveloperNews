@@ -14,6 +14,7 @@ import Foundation
         authorId: String,
         likeCount: Int = 0,
         likedBy: Set<String> = [],
+        parentCommentId: String? = nil,
     ) -> CommunityComment {
         CommunityComment(
             id: id,
@@ -24,7 +25,8 @@ import Foundation
             text: "Body",
             createdAt: .now,
             likeCount: likeCount,
-            likedBy: likedBy)
+            likedBy: likedBy,
+            parentCommentId: parentCommentId)
     }
 
     private func makeEngagement(

@@ -10,6 +10,7 @@ import Foundation
     private func makeComment(
         id: String,
         authorId: String,
+        parentCommentId: String? = nil,
     ) -> CommunityComment {
         CommunityComment(
             id: id,
@@ -20,7 +21,8 @@ import Foundation
             text: "Body",
             createdAt: .now,
             likeCount: 0,
-            likedBy: [])
+            likedBy: [],
+            parentCommentId: parentCommentId)
     }
 
     @Test func visibleCommentsFiltersBlockedAuthorsFromInjectedService() async {

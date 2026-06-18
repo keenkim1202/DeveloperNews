@@ -12,6 +12,7 @@ struct CommentRow: View {
     private let onReport: ((ReportReason) -> Void)?
     private let onBlock: (() -> Void)?
     private let onLike: (() -> Void)?
+    private let onReply: (() -> Void)?
 
     @State private var showDeleteConfirm = false
     @State private var showReportConfirm = false
@@ -27,6 +28,7 @@ struct CommentRow: View {
         onReport: ((ReportReason) -> Void)?,
         onBlock: (() -> Void)?,
         onLike: (() -> Void)?,
+        onReply: (() -> Void)? = nil,
     ) {
         self.comment = comment
         self.currentUserId = currentUserId
@@ -34,6 +36,7 @@ struct CommentRow: View {
         self.onReport = onReport
         self.onBlock = onBlock
         self.onLike = onLike
+        self.onReply = onReply
     }
 
     private var isOwnComment: Bool {
@@ -76,7 +79,12 @@ struct CommentRow: View {
             }
             Text(comment.text)
                 .font(.subheadline)
-            likeControl
+            HStack(spacing: 12) {
+                likeControl
+                if onReply != nil {
+                    replyButton
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
@@ -136,6 +144,15 @@ struct CommentRow: View {
         .disabled(onLike == nil)
     }
 
+    private var replyButton: some View {
+        Button(action: performReply) {
+            Text(.communityReply)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+    }
+
     private var deleteMenu: some View {
         Menu {
             Button(role: .destructive, action: confirmDelete) {
@@ -174,6 +191,10 @@ struct CommentRow: View {
 
     private func performLike() {
         onLike?()
+    }
+
+    private func performReply() {
+        onReply?()
     }
 
     private func confirmDelete() {
