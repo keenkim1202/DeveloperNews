@@ -84,12 +84,8 @@ struct SavedView: View {
             else {
                 UnavailableDestinationView(reason: .postDeleted)
             }
-        case let .userProfile(author):
-            UserProfileView(
-                appState: appState,
-                authorId: author.id,
-                authorName: author.name,
-                authorEmoji: author.emoji)
+        case let .userProfile(userId):
+            UserProfileView(appState: appState, authorId: userId)
         }
     }
 
@@ -105,7 +101,7 @@ struct SavedView: View {
     }
 
     private func navigateToProfile(_ author: AuthorInfo) {
-        navigation(.saved(.userProfile(author)))
+        navigation(.saved(.userProfile(userId: author.id)))
     }
 
     @ViewBuilder

@@ -72,10 +72,7 @@ struct CommunityPostDetailView: View {
                 HStack(spacing: 8) {
                     NavigationLink(
                         value: CommunityTabDestination.userProfile(
-                            AuthorInfo(
-                                id: currentPost.authorId,
-                                name: currentPost.authorName,
-                                emoji: authorEmoji))) {
+                            userId: currentPost.authorId)) {
                         HStack(spacing: 4) {
                             if let authorEmoji {
                                 Text(authorEmoji)
