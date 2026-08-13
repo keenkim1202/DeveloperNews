@@ -2,6 +2,11 @@ import FirebaseAuth
 @preconcurrency import FirebaseFirestore
 import Foundation
 
+enum FeedPostServiceError: Error {
+    /// The document exists but does not decode into a `FeedPost`.
+    case malformedDocument(id: FeedPost.ID)
+}
+
 @Observable
 @MainActor
 final class FeedPostService: FeedPostServicing {
@@ -141,7 +146,16 @@ final class FeedPostService: FeedPostServicing {
     /// post is gone every time the network drops.
     func post(id: FeedPost.ID) async throws -> FeedPost? {
         let snapshot = try await feedPostsRef.document(id).getDocument()
-        return Self.parsePost(snapshot)
+        guard snapshot.exists else {
+            return nil
+        }
+        guard let post = Self.parsePost(snapshot) else {
+            // The document is there but will not decode — a legacy shape, or a
+            // required field gone. Returning nil here would report it as a
+            // deletion, which is the one thing this signature exists to avoid.
+            throw FeedPostServiceError.malformedDocument(id: id)
+        }
+        return post
     }
 
     func fetchRecentPosts(limit: Int) async -> [FeedPost] {
