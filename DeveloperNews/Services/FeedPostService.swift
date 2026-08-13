@@ -132,6 +132,20 @@ final class FeedPostService: FeedPostServicing {
         }
     }
 
+    /// Reads the single feed post document for `id`.
+    /// A missing document means the post was deleted, which is a normal
+    /// outcome here, so it yields nil without reporting an error.
+    func post(id: FeedPost.ID) async -> FeedPost? {
+        do {
+            let snapshot = try await feedPostsRef.document(id).getDocument()
+            return Self.parsePost(snapshot)
+        }
+        catch {
+            errorMessage = error.localizedDescription
+            return nil
+        }
+    }
+
     func fetchRecentPosts(limit: Int) async -> [FeedPost] {
         do {
             let snapshot = try await feedPostsRef
@@ -183,8 +197,13 @@ final class FeedPostService: FeedPostServicing {
         return collected.sorted { $0.createdAt > $1.createdAt }
     }
 
-    private static func parsePost(_ doc: QueryDocumentSnapshot) -> FeedPost? {
-        let data = doc.data()
+    // Takes a `DocumentSnapshot` so both collection queries and single-document
+    // reads decode through here; a missing document has no data and yields nil.
+    private static func parsePost(_ doc: DocumentSnapshot) -> FeedPost? {
+        guard let data = doc.data() else {
+            return nil
+        }
+
         guard let authorId = data["authorId"] as? String,
               let comment = data["comment"] as? String,
               let storyURL = data["storyURL"] as? String,

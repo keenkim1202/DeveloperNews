@@ -36,6 +36,10 @@ protocol FeedPostServicing {
         reason: String,
     ) async
 
+    // Resolves an id back into a post, e.g. when a navigation destination
+    // carries only the id. Returns nil once the post is gone.
+    func post(id: FeedPost.ID) async -> FeedPost?
+
     func fetchRecentPosts(limit: Int) async -> [FeedPost]
 
     func fetchPosts(byAuthor authorId: String) async -> [FeedPost]

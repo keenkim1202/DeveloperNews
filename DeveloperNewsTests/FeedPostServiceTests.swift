@@ -52,6 +52,31 @@ import Foundation
         #expect(feedPost.fetchedRecentLimits == [20])
     }
 
+    @Test("id와 일치하는 게시물을 반환한다") func postByIdReturnsMatchingPost() async {
+        let feedPost = MockFeedPostServicing()
+        feedPost.recentPosts = [makePost(id: "a"), makePost(id: "b")]
+        let state = VMFixtures.makeAppState(feedPost: feedPost)
+
+        let post = await state.feedPostService.post(id: "b")
+
+        #expect(post?.id == "b")
+        #expect(feedPost.requestedPostIds == ["b"])
+    }
+
+    @Test("문서가 없으면 nil을 반환한다") func postByIdReturnsNilWhenMissing() async {
+        let feedPost = MockFeedPostServicing()
+        feedPost.recentPosts = [makePost(id: "a")]
+        let state = VMFixtures.makeAppState(feedPost: feedPost)
+
+        let post = await state.feedPostService.post(id: "missing")
+
+        // Only the nil return is checked. That a missing document leaves
+        // `errorMessage` alone is a contract of the live Firestore path, and the
+        // mock has no code that could set it — asserting it here would pass no
+        // matter what `FeedPostService` did.
+        #expect(post == nil)
+    }
+
     @Test func updateAndDeleteAreRecorded() async {
         let feedPost = MockFeedPostServicing()
         let state = VMFixtures.makeAppState(feedPost: feedPost)
