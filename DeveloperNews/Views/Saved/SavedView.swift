@@ -100,8 +100,8 @@ struct SavedView: View {
         return appState.communityService.posts.first { $0.id == postId }
     }
 
-    private func navigateToProfile(_ author: AuthorInfo) {
-        navigation(.saved(.userProfile(userId: author.id)))
+    private func navigateToProfile(_ userId: String) {
+        navigation(.saved(.userProfile(userId: userId)))
     }
 
     @ViewBuilder

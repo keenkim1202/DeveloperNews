@@ -9,7 +9,7 @@ struct FeedSectionListView<Destination: Hashable>: View {
     private let articleItems: [ContentItem]
     private let discussionItems: [ContentItem]
     private let destinationFor: (ContentItem) -> Destination
-    private let onAuthorTap: (AuthorInfo) -> Void
+    private let onAuthorTap: (String) -> Void
     private let inAppEngagement: (ContentItem) -> StoryEngagement?
 
     private var showsSummary: Bool
@@ -27,7 +27,7 @@ struct FeedSectionListView<Destination: Hashable>: View {
         articleItems: [ContentItem],
         discussionItems: [ContentItem],
         destinationFor: @escaping (ContentItem) -> Destination,
-        onAuthorTap: @escaping (AuthorInfo) -> Void,
+        onAuthorTap: @escaping (String) -> Void,
         inAppEngagement: @escaping (ContentItem) -> StoryEngagement? = { _ in nil },
         showsSummary: Bool = true,
         hasMore: Bool = false,
@@ -152,12 +152,5 @@ struct FeedSectionListView<Destination: Hashable>: View {
         .listSectionSpacing(.compact)
         .contentMargins(.top, showsSummary ? 0 : 8, for: .scrollContent)
     }
-}
-
-
-struct AuthorInfo: Hashable {
-    let id: String
-    let name: String
-    let emoji: String?
 }
 

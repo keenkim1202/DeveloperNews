@@ -92,8 +92,8 @@ struct HomeView: View {
         return appState.communityService.posts.first { $0.id == postId }
     }
 
-    private func navigateToProfile(_ author: AuthorInfo) {
-        navigation(.home(.userProfile(userId: author.id)))
+    private func navigateToProfile(_ userId: String) {
+        navigation(.home(.userProfile(userId: userId)))
     }
 
     @ViewBuilder

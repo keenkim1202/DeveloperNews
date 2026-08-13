@@ -8,7 +8,7 @@ struct FeedItemRow<Destination: Hashable>: View {
     private let isRead: Bool
     private let followingPost: CommunityPost?
     private let authorEmoji: (String) -> String?
-    private let onAuthorTap: (AuthorInfo) -> Void
+    private let onAuthorTap: (String) -> Void
     private let storyEngagement: StoryEngagement?
 
     @State private var translationTrigger = 0
@@ -21,7 +21,7 @@ struct FeedItemRow<Destination: Hashable>: View {
         isRead: Bool,
         followingPost: CommunityPost?,
         authorEmoji: @escaping (String) -> String?,
-        onAuthorTap: @escaping (AuthorInfo) -> Void,
+        onAuthorTap: @escaping (String) -> Void,
         storyEngagement: StoryEngagement? = nil,
     ) {
         self.translator = translator
@@ -51,11 +51,7 @@ struct FeedItemRow<Destination: Hashable>: View {
                         authorEmoji($0.authorId)
                     }) {
                     guard let post = followingPost else { return }
-                    onAuthorTap(
-                        AuthorInfo(
-                            id: post.authorId,
-                            name: post.authorName,
-                            emoji: authorEmoji(post.authorId)))
+                    onAuthorTap(post.authorId)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
