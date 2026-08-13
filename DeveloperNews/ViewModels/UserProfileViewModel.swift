@@ -11,6 +11,11 @@ final class UserProfileViewModel {
     var followingCount = 0
     var authorFeedPosts: [FeedPost] = []
     var authorBio: String?
+    var authorName: String?
+    var authorEmoji: String?
+    // Separates "not fetched yet" from "fetched, and this user has no name": the
+    // first renders blank, the second renders the unknown-user fallback.
+    private(set) var hasLoadedProfile = false
 
     init(
         appState: AppState,
@@ -41,11 +46,21 @@ final class UserProfileViewModel {
     func loadBio() async {
         if isOwnProfile {
             authorBio = appState.profileService.profileBio
+            authorName = nonEmpty(appState.profileService.displayName)
+            authorEmoji = nonEmpty(appState.profileService.profileEmoji)
         }
         else {
             let summaries = await appState.profileService.fetchUserSummaries(for: [authorId])
-            authorBio = summaries.first?.bio
+            let summary = summaries.first
+            authorBio = summary?.bio
+            authorName = nonEmpty(summary?.displayName)
+            authorEmoji = nonEmpty(summary?.emoji)
         }
+        hasLoadedProfile = true
+    }
+
+    private func nonEmpty(_ value: String?) -> String? {
+        value.flatMap { $0.isEmpty ? nil : $0 }
     }
 
     func loadFollowCounts() async {

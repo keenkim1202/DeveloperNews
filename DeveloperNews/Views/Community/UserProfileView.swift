@@ -2,8 +2,8 @@ import SwiftUI
 
 struct UserProfileView: View {
     private let appState: AppState
-    private let authorName: String
-    private let authorEmoji: String?
+    private let providedAuthorName: String?
+    private let providedAuthorEmoji: String?
 
     @State private var viewModel: UserProfileViewModel
     @State private var showBlockConfirm = false
@@ -13,23 +13,52 @@ struct UserProfileView: View {
     init(
         appState: AppState,
         authorId: String,
+    ) {
+        self.appState = appState
+        self.providedAuthorName = nil
+        self.providedAuthorEmoji = nil
+        _viewModel = State(initialValue: UserProfileViewModel(
+            appState: appState,
+            authorId: authorId))
+    }
+
+    // Kept for call sites whose navigation destination still carries the name and emoji.
+    init(
+        appState: AppState,
+        authorId: String,
         authorName: String,
         authorEmoji: String?,
     ) {
         self.appState = appState
-        self.authorName = authorName
-        self.authorEmoji = authorEmoji
+        self.providedAuthorName = authorName
+        self.providedAuthorEmoji = authorEmoji
         _viewModel = State(initialValue: UserProfileViewModel(
             appState: appState,
             authorId: authorId))
+    }
+
+    private var displayName: String {
+        if let providedAuthorName {
+            return providedAuthorName
+        }
+        if let loadedName = viewModel.authorName {
+            return loadedName
+        }
+        // Blank until the profile lands, so the title does not read "Unknown user"
+        // for the length of a fetch and then change under the reader.
+        return viewModel.hasLoadedProfile ? String(localized: .settingsUnknownUser) : ""
+    }
+
+    private var displayEmoji: String? {
+        providedAuthorEmoji ?? viewModel.authorEmoji
     }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
                 VStack(spacing: 8) {
-                    if let authorEmoji {
-                        Text(authorEmoji)
+                    if let displayEmoji {
+                        Text(displayEmoji)
                             .font(.system(size: 60))
                     }
                     else {
@@ -38,7 +67,7 @@ struct UserProfileView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    Text(authorName)
+                    Text(displayName)
                         .font(.title3.bold())
                     if let bio = viewModel.authorBio, !bio.isEmpty {
                         Text(bio)
@@ -111,7 +140,7 @@ struct UserProfileView: View {
                 }
             }
         }
-        .navigationTitle(authorName)
+        .navigationTitle(displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
