@@ -44,9 +44,10 @@ struct UserProfileView: View {
         if let loadedName = viewModel.authorName {
             return loadedName
         }
-        // Blank until the profile lands, so the title does not read "Unknown user"
-        // for the length of a fetch and then change under the reader.
-        return viewModel.hasLoadedProfile ? String(localized: .settingsUnknownUser) : ""
+        // Blank until both identity sources have been tried, so the title does
+        // not read "Unknown user" for the length of a fetch and then change
+        // under the reader.
+        return viewModel.hasResolvedIdentity ? String(localized: .settingsUnknownUser) : ""
     }
 
     private var displayEmoji: String? {

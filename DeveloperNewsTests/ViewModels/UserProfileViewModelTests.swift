@@ -98,6 +98,29 @@ import Foundation
         #expect(viewModel.authorEmoji == nil)
     }
 
+    @Test("프로필 문서를 못 읽으면 작성자의 공개 글에서 이름과 이모지를 가져온다")
+    func adoptsAuthorIdentityFromPostsWhenTheProfileIsUnreadable() async {
+        let auth = MockAuthServicing(userId: nil)
+        let profile = MockProfileServicing()
+        // Signed out: firestore.rules denies /users reads and
+        // fetchUserSummaries turns the denial into an empty array.
+        profile.userSummaries = []
+        let feedPost = MockFeedPostServicing()
+        feedPost.authorPosts = [VMFixtures.makeFeedPost(
+            id: "p1",
+            authorId: "author-1",
+            authorName: "Ada",
+            authorEmoji: "🦕")]
+        let appState = VMFixtures.makeAppState(auth: auth, profile: profile, feedPost: feedPost)
+        let viewModel = UserProfileViewModel(appState: appState, authorId: "author-1")
+
+        await viewModel.loadBio()
+        await viewModel.loadFeedPosts()
+
+        #expect(viewModel.authorName == "Ada")
+        #expect(viewModel.authorEmoji == "🦕")
+    }
+
     @Test("프로필을 불러오기 전에는 불러왔다고 표시하지 않는다")
     func doesNotReportProfileLoadedBeforeFetch() async {
         let auth = MockAuthServicing(userId: "viewer")
