@@ -133,17 +133,15 @@ final class FeedPostService: FeedPostServicing {
     }
 
     /// Reads the single feed post document for `id`.
-    /// A missing document means the post was deleted, which is a normal
-    /// outcome here, so it yields nil without reporting an error.
-    func post(id: FeedPost.ID) async -> FeedPost? {
-        do {
-            let snapshot = try await feedPostsRef.document(id).getDocument()
-            return Self.parsePost(snapshot)
-        }
-        catch {
-            errorMessage = error.localizedDescription
-            return nil
-        }
+    ///
+    /// Returns nil only when the document is genuinely absent — the post was
+    /// deleted, which is a normal outcome and not an error. A read that fails
+    /// throws instead, because the two are indistinguishable to the caller
+    /// otherwise, and a caller that maps both to "deleted" tells someone their
+    /// post is gone every time the network drops.
+    func post(id: FeedPost.ID) async throws -> FeedPost? {
+        let snapshot = try await feedPostsRef.document(id).getDocument()
+        return Self.parsePost(snapshot)
     }
 
     func fetchRecentPosts(limit: Int) async -> [FeedPost] {

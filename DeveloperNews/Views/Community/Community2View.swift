@@ -167,8 +167,8 @@ struct Community2View: View {
             else {
                 UnavailableDestinationView(reason: .itemNotFound)
             }
-        case let .feedPostDetail(post):
-            FeedPostDetailView(appState: appState, post: post)
+        case let .feedPostDetail(postId):
+            FeedPostDetailView(appState: appState, postId: postId)
         case let .postDetail(postId):
             if let post = appState.communityService.post(id: postId) {
                 CommunityPostDetailView(appState: appState, post: post)
@@ -199,7 +199,7 @@ struct Community2View: View {
     }
 
     private func navigateToDetail(_ post: FeedPost) {
-        navigation(.community(.feedPostDetail(post)))
+        navigation(.community(.feedPostDetail(post.id)))
     }
 
     private func navigateToProfile(_ post: FeedPost) {

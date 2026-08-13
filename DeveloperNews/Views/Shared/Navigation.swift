@@ -14,7 +14,7 @@ enum CommunityTabDestination: Hashable {
     case postLinkDetail(CommunityPost.ID)
     case followList(FollowListTarget)
     case storyDetail(FeedPostStory)
-    case feedPostDetail(FeedPost)
+    case feedPostDetail(FeedPost.ID)
     case userSearch
 }
 

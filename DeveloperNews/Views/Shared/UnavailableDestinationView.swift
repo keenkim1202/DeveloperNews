@@ -5,13 +5,23 @@ struct UnavailableDestinationView: View {
         case itemNotFound
         case postDeleted
         case profileUnavailable
+        // The read failed. Distinct from the cases above, which mean the record
+        // is genuinely gone — telling someone their post was deleted because
+        // the network dropped is a worse answer than saying nothing.
+        case loadFailed
     }
 
     private let reason: Reason
+    private let onRetry: (() -> Void)?
+
     @Environment(\.dismiss) private var dismiss
 
-    init(reason: Reason) {
+    init(
+        reason: Reason,
+        onRetry: (() -> Void)? = nil,
+    ) {
         self.reason = reason
+        self.onRetry = onRetry
     }
 
     var body: some View {
@@ -24,11 +34,24 @@ struct UnavailableDestinationView: View {
         } description: {
             Text(message)
         } actions: {
-            Button(action: goBack) {
-                Text(.unavailableDestinationGoBack)
-                    .fontWeight(.semibold)
+            if let onRetry {
+                Button(action: onRetry) {
+                    Text(.unavailableDestinationTryAgain)
+                        .fontWeight(.semibold)
+                }
+                .buttonStyle(.borderedProminent)
+                Button(action: goBack) {
+                    Text(.unavailableDestinationGoBack)
+                }
+                .buttonStyle(.bordered)
             }
-            .buttonStyle(.borderedProminent)
+            else {
+                Button(action: goBack) {
+                    Text(.unavailableDestinationGoBack)
+                        .fontWeight(.semibold)
+                }
+                .buttonStyle(.borderedProminent)
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
@@ -39,6 +62,7 @@ struct UnavailableDestinationView: View {
         case .itemNotFound:       .unavailableDestinationContentHeadline
         case .postDeleted:        .unavailableDestinationPostHeadline
         case .profileUnavailable: .unavailableDestinationProfileHeadline
+        case .loadFailed:         .unavailableDestinationLoadFailedHeadline
         }
     }
 
@@ -47,6 +71,7 @@ struct UnavailableDestinationView: View {
         case .itemNotFound:       .emptyTray
         case .postDeleted:        .delete
         case .profileUnavailable: .blockedUsers
+        case .loadFailed:         .refresh
         }
     }
 
@@ -55,6 +80,7 @@ struct UnavailableDestinationView: View {
         case .itemNotFound:       .unavailableDestinationContentMessage
         case .postDeleted:        .unavailableDestinationPostMessage
         case .profileUnavailable: .unavailableDestinationProfileMessage
+        case .loadFailed:         .unavailableDestinationLoadFailedMessage
         }
     }
 

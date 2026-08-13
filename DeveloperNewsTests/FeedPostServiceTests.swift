@@ -52,28 +52,39 @@ import Foundation
         #expect(feedPost.fetchedRecentLimits == [20])
     }
 
-    @Test("id와 일치하는 게시물을 반환한다") func postByIdReturnsMatchingPost() async {
+    @Test("id와 일치하는 게시물을 반환한다") func postByIdReturnsMatchingPost() async throws {
         let feedPost = MockFeedPostServicing()
         feedPost.recentPosts = [makePost(id: "a"), makePost(id: "b")]
         let state = VMFixtures.makeAppState(feedPost: feedPost)
 
-        let post = await state.feedPostService.post(id: "b")
+        let post = try await state.feedPostService.post(id: "b")
 
         #expect(post?.id == "b")
         #expect(feedPost.requestedPostIds == ["b"])
     }
 
-    @Test("문서가 없으면 nil을 반환한다") func postByIdReturnsNilWhenMissing() async {
+    @Test("읽기가 실패하면 nil이 아니라 에러를 던진다") func postByIdThrowsWhenTheReadFails() async {
+        struct ReadFailure: Error {}
+        let feedPost = MockFeedPostServicing()
+        // Seeded, so a nil return could only mean the lookup was swallowed.
+        feedPost.recentPosts = [makePost(id: "a")]
+        feedPost.postLookupError = ReadFailure()
+        let state = VMFixtures.makeAppState(feedPost: feedPost)
+
+        await #expect(throws: ReadFailure.self) {
+            try await state.feedPostService.post(id: "a")
+        }
+    }
+
+    @Test("문서가 없으면 nil을 반환한다") func postByIdReturnsNilWhenMissing() async throws {
         let feedPost = MockFeedPostServicing()
         feedPost.recentPosts = [makePost(id: "a")]
         let state = VMFixtures.makeAppState(feedPost: feedPost)
 
-        let post = await state.feedPostService.post(id: "missing")
+        let post = try await state.feedPostService.post(id: "missing")
 
-        // Only the nil return is checked. That a missing document leaves
-        // `errorMessage` alone is a contract of the live Firestore path, and the
-        // mock has no code that could set it — asserting it here would pass no
-        // matter what `FeedPostService` did.
+        // Returning rather than throwing is the point: an absent document is a
+        // deleted post, which the caller renders differently from a failed read.
         #expect(post == nil)
     }
 
