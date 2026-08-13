@@ -76,12 +76,8 @@ struct HomeView: View {
             else {
                 UnavailableDestinationView(reason: .postDeleted)
             }
-        case let .userProfile(author):
-            UserProfileView(
-                appState: appState,
-                authorId: author.id,
-                authorName: author.name,
-                authorEmoji: author.emoji)
+        case let .userProfile(userId):
+            UserProfileView(appState: appState, authorId: userId)
         }
     }
 
@@ -96,8 +92,8 @@ struct HomeView: View {
         return appState.communityService.posts.first { $0.id == postId }
     }
 
-    private func navigateToProfile(_ author: AuthorInfo) {
-        navigation(.home(.userProfile(author)))
+    private func navigateToProfile(_ userId: String) {
+        navigation(.home(.userProfile(userId: userId)))
     }
 
     @ViewBuilder

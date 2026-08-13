@@ -7,8 +7,9 @@ final class FeedPostDetailViewModel {
     private let appState: AppState
     private let commentService: any CommentServicing
 
-    // Snapshot of the post passed in. Like state is managed locally since the
-    // feed services do not expose a live `posts` collection to read back from.
+    // Snapshot of the post as it was read when the detail view appeared. Like
+    // state is managed locally since the feed services do not expose a live
+    // `posts` collection to read back from.
     private(set) var currentPost: FeedPost
 
     init(

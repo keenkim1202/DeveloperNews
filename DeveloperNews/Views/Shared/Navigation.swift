@@ -5,16 +5,16 @@ enum HomeTabDestination: Hashable {
     case articleDetail(URL)
     case bookmarkDetail(URL)
     case communityPostDetail(CommunityPost.ID)
-    case userProfile(AuthorInfo)
+    case userProfile(userId: String)
 }
 
 enum CommunityTabDestination: Hashable {
     case postDetail(CommunityPost.ID)
-    case userProfile(AuthorInfo)
+    case userProfile(userId: String)
     case postLinkDetail(CommunityPost.ID)
     case followList(FollowListTarget)
     case storyDetail(FeedPostStory)
-    case feedPostDetail(FeedPost)
+    case feedPostDetail(FeedPost.ID)
     case userSearch
 }
 
@@ -27,7 +27,7 @@ enum SavedTabDestination: Hashable {
     case articleDetail(URL)
     case bookmarkDetail(URL)
     case communityPostDetail(CommunityPost.ID)
-    case userProfile(AuthorInfo)
+    case userProfile(userId: String)
 }
 
 enum SettingsTabDestination: Hashable {
@@ -35,7 +35,7 @@ enum SettingsTabDestination: Hashable {
     case sourcesAttribution
     case privacyPolicy
     case termsOfUse
-    case userProfile(AuthorInfo)
+    case userProfile(userId: String)
 }
 
 enum AppDestination: Hashable {

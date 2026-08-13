@@ -80,4 +80,83 @@ import Foundation
 
         #expect(viewModel.authorBio == "Ada's bio")
     }
+
+    @Test("표시 이름이 빈 문자열이면 이름이 없는 것으로 취급한다")
+    func treatsEmptyDisplayNameAsMissing() async {
+        let auth = MockAuthServicing(userId: "viewer")
+        let profile = MockProfileServicing()
+        // Firestore hands back an empty string for a user who never set a name.
+        profile.userSummaries = [
+            UserSummary(id: "author-1", displayName: "", emoji: "", bio: nil),
+        ]
+        let appState = VMFixtures.makeAppState(auth: auth, profile: profile)
+        let viewModel = UserProfileViewModel(appState: appState, authorId: "author-1")
+
+        await viewModel.loadBio()
+
+        #expect(viewModel.authorName == nil)
+        #expect(viewModel.authorEmoji == nil)
+    }
+
+    @Test("프로필 문서를 못 읽으면 작성자의 공개 글에서 이름과 이모지를 가져온다")
+    func adoptsAuthorIdentityFromPostsWhenTheProfileIsUnreadable() async {
+        let auth = MockAuthServicing(userId: nil)
+        let profile = MockProfileServicing()
+        // Signed out: firestore.rules denies /users reads and
+        // fetchUserSummaries turns the denial into an empty array.
+        profile.userSummaries = []
+        let feedPost = MockFeedPostServicing()
+        feedPost.authorPosts = [VMFixtures.makeFeedPost(
+            id: "p1",
+            authorId: "author-1",
+            authorName: "Ada",
+            authorEmoji: "🦕")]
+        let appState = VMFixtures.makeAppState(auth: auth, profile: profile, feedPost: feedPost)
+        let viewModel = UserProfileViewModel(appState: appState, authorId: "author-1")
+
+        await viewModel.loadBio()
+        await viewModel.loadFeedPosts()
+
+        #expect(viewModel.authorName == "Ada")
+        #expect(viewModel.authorEmoji == "🦕")
+    }
+
+    @Test("작성자에게 피드 글이 없으면 커뮤니티 글에서 이름을 가져온다")
+    func adoptsAuthorNameFromACommunityPostWhenThereAreNoFeedPosts() async {
+        let auth = MockAuthServicing(userId: nil)
+        let profile = MockProfileServicing()
+        profile.userSummaries = []
+        let community = MockCommunityServicing()
+        community.posts = [VMFixtures.makePost(authorId: "author-1", authorName: "Ada")]
+        // No feed posts at all: this author only ever posted to the community.
+        let feedPost = MockFeedPostServicing()
+        let appState = VMFixtures.makeAppState(
+            auth: auth,
+            profile: profile,
+            community: community,
+            feedPost: feedPost)
+        let viewModel = UserProfileViewModel(appState: appState, authorId: "author-1")
+
+        await viewModel.loadBio()
+        await viewModel.loadFeedPosts()
+
+        #expect(viewModel.authorName == "Ada")
+    }
+
+    @Test("프로필을 불러오기 전에는 불러왔다고 표시하지 않는다")
+    func doesNotReportProfileLoadedBeforeFetch() async {
+        let auth = MockAuthServicing(userId: "viewer")
+        let profile = MockProfileServicing()
+        profile.userSummaries = [
+            UserSummary(id: "author-1", displayName: "Ada", emoji: nil, bio: nil),
+        ]
+        let appState = VMFixtures.makeAppState(auth: auth, profile: profile)
+        let viewModel = UserProfileViewModel(appState: appState, authorId: "author-1")
+
+        #expect(viewModel.hasLoadedProfile == false)
+
+        await viewModel.loadBio()
+
+        #expect(viewModel.hasLoadedProfile)
+    }
 }

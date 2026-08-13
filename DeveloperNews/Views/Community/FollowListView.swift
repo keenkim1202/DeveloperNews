@@ -60,11 +60,7 @@ struct FollowListView: View {
     private func row(for summary: UserSummary) -> some View {
         HStack(spacing: 12) {
             NavigationLink(
-                value: CommunityTabDestination.userProfile(
-                    AuthorInfo(
-                        id: summary.id,
-                        name: summary.displayName,
-                        emoji: summary.emoji))
+                value: CommunityTabDestination.userProfile(userId: summary.id)
             ) {
                 HStack(spacing: 12) {
                     avatar(for: summary)

@@ -16,6 +16,8 @@ final class MockFeedPostServicing: FeedPostServicing {
     private(set) var updatedPosts: [(postId: String, comment: String)] = []
     private(set) var deletedPostIds: [String] = []
     private(set) var reportedPosts: [(postId: String, reporterId: String, reason: String)] = []
+    private(set) var requestedPostIds: [String] = []
+    var postLookupError: (any Error)?
     private(set) var fetchedRecentLimits: [Int] = []
     private(set) var fetchedAuthorIds: [String] = []
     private(set) var fetchedAuthorBatches: [[String]] = []
@@ -56,6 +58,17 @@ final class MockFeedPostServicing: FeedPostServicing {
         reason: String,
     ) async {
         reportedPosts.append((post.id, reporterId, reason))
+    }
+
+    // Looks through every seeded array so a test only has to fill the one its
+    // scenario already uses. Set `postLookupError` to drive the failure path,
+    // which is a different outcome from an id that matches nothing.
+    func post(id: FeedPost.ID) async throws -> FeedPost? {
+        requestedPostIds.append(id)
+        if let postLookupError {
+            throw postLookupError
+        }
+        return (recentPosts + authorPosts + authorsPosts).first { $0.id == id }
     }
 
     func fetchRecentPosts(limit: Int) async -> [FeedPost] {

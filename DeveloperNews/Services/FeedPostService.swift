@@ -2,6 +2,11 @@ import FirebaseAuth
 @preconcurrency import FirebaseFirestore
 import Foundation
 
+enum FeedPostServiceError: Error {
+    /// The document exists but does not decode into a `FeedPost`.
+    case malformedDocument(id: FeedPost.ID)
+}
+
 @Observable
 @MainActor
 final class FeedPostService: FeedPostServicing {
@@ -132,6 +137,27 @@ final class FeedPostService: FeedPostServicing {
         }
     }
 
+    /// Reads the single feed post document for `id`.
+    ///
+    /// Returns nil only when the document is genuinely absent — the post was
+    /// deleted, which is a normal outcome and not an error. A read that fails
+    /// throws instead, because the two are indistinguishable to the caller
+    /// otherwise, and a caller that maps both to "deleted" tells someone their
+    /// post is gone every time the network drops.
+    func post(id: FeedPost.ID) async throws -> FeedPost? {
+        let snapshot = try await feedPostsRef.document(id).getDocument()
+        guard snapshot.exists else {
+            return nil
+        }
+        guard let post = Self.parsePost(snapshot) else {
+            // The document is there but will not decode — a legacy shape, or a
+            // required field gone. Returning nil here would report it as a
+            // deletion, which is the one thing this signature exists to avoid.
+            throw FeedPostServiceError.malformedDocument(id: id)
+        }
+        return post
+    }
+
     func fetchRecentPosts(limit: Int) async -> [FeedPost] {
         do {
             let snapshot = try await feedPostsRef
@@ -183,8 +209,13 @@ final class FeedPostService: FeedPostServicing {
         return collected.sorted { $0.createdAt > $1.createdAt }
     }
 
-    private static func parsePost(_ doc: QueryDocumentSnapshot) -> FeedPost? {
-        let data = doc.data()
+    // Takes a `DocumentSnapshot` so both collection queries and single-document
+    // reads decode through here; a missing document has no data and yields nil.
+    private static func parsePost(_ doc: DocumentSnapshot) -> FeedPost? {
+        guard let data = doc.data() else {
+            return nil
+        }
+
         guard let authorId = data["authorId"] as? String,
               let comment = data["comment"] as? String,
               let storyURL = data["storyURL"] as? String,

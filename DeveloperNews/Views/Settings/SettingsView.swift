@@ -105,12 +105,8 @@ struct SettingsView: View {
             PrivacyPolicyView()
         case .termsOfUse:
             TermsOfUseView()
-        case let .userProfile(author):
-            UserProfileView(
-                appState: appState,
-                authorId: author.id,
-                authorName: author.name,
-                authorEmoji: author.emoji)
+        case let .userProfile(userId):
+            UserProfileView(appState: appState, authorId: userId)
         }
     }
 
@@ -248,11 +244,7 @@ struct SettingsView: View {
         if viewModel.isSignedIn {
             Section {
                 NavigationLink(
-                    value: SettingsTabDestination.userProfile(
-                        AuthorInfo(
-                            id: viewModel.userId ?? "",
-                            name: viewModel.displayName,
-                            emoji: viewModel.profileEmoji))
+                    value: SettingsTabDestination.userProfile(userId: viewModel.userId ?? "")
                 ) {
                     HStack(spacing: 12) {
                         if let emoji = viewModel.profileEmoji {

@@ -158,12 +158,8 @@ struct Community2View: View {
     @ViewBuilder
     private func destination(_ dest: CommunityTabDestination) -> some View {
         switch dest {
-        case let .userProfile(author):
-            UserProfileView(
-                appState: appState,
-                authorId: author.id,
-                authorName: author.name,
-                authorEmoji: author.emoji)
+        case let .userProfile(userId):
+            UserProfileView(appState: appState, authorId: userId)
         case let .storyDetail(story):
             if let item = story.contentItem {
                 ArticleDetailView(appState: appState, item: item)
@@ -171,8 +167,8 @@ struct Community2View: View {
             else {
                 UnavailableDestinationView(reason: .itemNotFound)
             }
-        case let .feedPostDetail(post):
-            FeedPostDetailView(appState: appState, post: post)
+        case let .feedPostDetail(postId):
+            FeedPostDetailView(appState: appState, postId: postId)
         case let .postDetail(postId):
             if let post = appState.communityService.post(id: postId) {
                 CommunityPostDetailView(appState: appState, post: post)
@@ -203,15 +199,11 @@ struct Community2View: View {
     }
 
     private func navigateToDetail(_ post: FeedPost) {
-        navigation(.community(.feedPostDetail(post)))
+        navigation(.community(.feedPostDetail(post.id)))
     }
 
     private func navigateToProfile(_ post: FeedPost) {
-        navigation(.community(.userProfile(
-            AuthorInfo(
-                id: post.authorId,
-                name: post.authorName,
-                emoji: post.authorEmoji))))
+        navigation(.community(.userProfile(userId: post.authorId)))
     }
 
     private func toggleLike(_ post: FeedPost) {

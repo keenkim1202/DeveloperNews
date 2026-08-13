@@ -4297,6 +4297,40 @@
         }
       }
     },
+    "unavailableDestination.loadFailed.headline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't load this post"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "게시글을 불러오지 못했어요"
+          }
+        }
+      }
+    },
+    "unavailableDestination.loadFailed.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your connection and try again. The post may still be there."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "연결을 확인하고 다시 시도해 주세요. 게시글은 그대로 있을 수 있어요."
+          }
+        }
+      }
+    },
     "unavailableDestination.post.headline": {
       "extractionState": "manual",
       "localizations": {
@@ -4361,6 +4395,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "이 프로필은 더 이상 접근할 수 없습니다."
+          }
+        }
+      }
+    },
+    "unavailableDestination.tryAgain": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다시 시도"
           }
         }
       }

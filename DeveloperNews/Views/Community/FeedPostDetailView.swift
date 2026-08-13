@@ -1,9 +1,81 @@
 import SwiftUI
 
+/// Resolves the post for `postId` on appear rather than carrying it on the
+/// navigation stack, so a push always renders the current document.
+/// `FeedPostServicing.post(id:)` is async and the destination builder is not,
+/// so the read happens here and the body only renders once it has an answer.
 struct FeedPostDetailView: View {
-    private let appState: AppState
+    private enum Resolution {
+        case loading
+        case resolved(FeedPostDetailViewModel)
+        case missing
+        case failed
+    }
 
-    @State private var viewModel: FeedPostDetailViewModel
+    private let appState: AppState
+    private let postId: FeedPost.ID
+
+    @State private var resolution: Resolution = .loading
+
+    init(
+        appState: AppState,
+        postId: FeedPost.ID,
+    ) {
+        self.appState = appState
+        self.postId = postId
+    }
+
+    var body: some View {
+        Group {
+            switch resolution {
+            case .loading:
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case let .resolved(viewModel):
+                FeedPostDetailContentView(viewModel: viewModel)
+            case .missing:
+                UnavailableDestinationView(reason: .postDeleted)
+            case .failed:
+                UnavailableDestinationView(
+                    reason: .loadFailed,
+                    onRetry: retry)
+            }
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
+        .task(resolvePost)
+    }
+
+    private func resolvePost() async {
+        guard case .loading = resolution else {
+            return
+        }
+        do {
+            guard let post = try await appState.feedPostService.post(id: postId) else {
+                resolution = .missing
+                return
+            }
+            resolution = .resolved(FeedPostDetailViewModel(
+                appState: appState,
+                post: post))
+        }
+        catch {
+            // A failed read is not a deleted post. Saying so would be a lie the
+            // reader cannot check, and it hides a condition that retrying fixes.
+            resolution = .failed
+        }
+    }
+
+    private func retry() {
+        resolution = .loading
+        Task {
+            await resolvePost()
+        }
+    }
+}
+
+private struct FeedPostDetailContentView: View {
+    private let viewModel: FeedPostDetailViewModel
 
     @State private var showReportConfirm = false
     @State private var showBlockConfirm = false
@@ -18,14 +90,8 @@ struct FeedPostDetailView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    init(
-        appState: AppState,
-        post: FeedPost,
-    ) {
-        self.appState = appState
-        _viewModel = State(initialValue: FeedPostDetailViewModel(
-            appState: appState,
-            post: post))
+    init(viewModel: FeedPostDetailViewModel) {
+        self.viewModel = viewModel
     }
 
     private var currentUserId: String? {
@@ -85,8 +151,6 @@ struct FeedPostDetailView: View {
                         onCancelReply: cancelReply)
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar(.hidden, for: .tabBar)
             .toolbar {
                 if currentUserId != nil {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -167,10 +231,7 @@ struct FeedPostDetailView: View {
         HStack(spacing: 8) {
             NavigationLink(
                 value: CommunityTabDestination.userProfile(
-                    AuthorInfo(
-                        id: currentPost.authorId,
-                        name: currentPost.authorName,
-                        emoji: currentPost.authorEmoji))) {
+                    userId: currentPost.authorId)) {
                 HStack(spacing: 4) {
                     if let emoji = currentPost.authorEmoji {
                         Text(emoji)

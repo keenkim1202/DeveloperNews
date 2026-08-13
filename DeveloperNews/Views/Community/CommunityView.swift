@@ -60,12 +60,8 @@ struct CommunityView: View {
             else {
                 UnavailableDestinationView(reason: .postDeleted)
             }
-        case let .userProfile(author):
-            UserProfileView(
-                appState: appState,
-                authorId: author.id,
-                authorName: author.name,
-                authorEmoji: author.emoji)
+        case let .userProfile(userId):
+            UserProfileView(appState: appState, authorId: userId)
         case let .postLinkDetail(postId):
             if let post = appState.communityService.post(id: postId),
                let item = post.linkContentItem {
@@ -86,15 +82,15 @@ struct CommunityView: View {
             else {
                 UnavailableDestinationView(reason: .itemNotFound)
             }
-        case let .feedPostDetail(post):
-            FeedPostDetailView(appState: appState, post: post)
+        case let .feedPostDetail(postId):
+            FeedPostDetailView(appState: appState, postId: postId)
         case .userSearch:
             UserSearchView(appState: appState)
         }
     }
 
-    private func navigateToProfile(_ author: AuthorInfo) {
-        navigation(.community(.userProfile(author)))
+    private func navigateToProfile(userId: String) {
+        navigation(.community(.userProfile(userId: userId)))
     }
 
     private func openCreatePost() {
@@ -124,11 +120,7 @@ struct CommunityView: View {
                             isRead: appState.isPostRead(post.id),
                             post: post,
                             authorEmoji: emoji) {
-                            navigateToProfile(
-                                AuthorInfo(
-                                    id: post.authorId,
-                                    name: post.authorName,
-                                    emoji: emoji))
+                            navigateToProfile(userId: post.authorId)
                         }
                     }
                 }
