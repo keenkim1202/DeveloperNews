@@ -121,6 +121,28 @@ import Foundation
         #expect(viewModel.authorEmoji == "🦕")
     }
 
+    @Test("작성자에게 피드 글이 없으면 커뮤니티 글에서 이름을 가져온다")
+    func adoptsAuthorNameFromACommunityPostWhenThereAreNoFeedPosts() async {
+        let auth = MockAuthServicing(userId: nil)
+        let profile = MockProfileServicing()
+        profile.userSummaries = []
+        let community = MockCommunityServicing()
+        community.posts = [VMFixtures.makePost(authorId: "author-1", authorName: "Ada")]
+        // No feed posts at all: this author only ever posted to the community.
+        let feedPost = MockFeedPostServicing()
+        let appState = VMFixtures.makeAppState(
+            auth: auth,
+            profile: profile,
+            community: community,
+            feedPost: feedPost)
+        let viewModel = UserProfileViewModel(appState: appState, authorId: "author-1")
+
+        await viewModel.loadBio()
+        await viewModel.loadFeedPosts()
+
+        #expect(viewModel.authorName == "Ada")
+    }
+
     @Test("프로필을 불러오기 전에는 불러왔다고 표시하지 않는다")
     func doesNotReportProfileLoadedBeforeFetch() async {
         let auth = MockAuthServicing(userId: "viewer")

@@ -77,15 +77,23 @@ final class UserProfileViewModel {
 
     /// Fills the author's name and emoji from their own public posts.
     ///
-    /// `feedPosts` is world-readable while `/users` is not, so for a signed-out
-    /// viewer this is the only identity available — without it every author
-    /// opened from the public Discover feed renders as the unknown user.
+    /// `feedPosts` and `posts` are world-readable while `/users` is not, so for
+    /// a signed-out viewer these are the only identity available — without them
+    /// every author opened from a public feed renders as the unknown user.
+    ///
+    /// Both sources are consulted because either can be the empty one: a profile
+    /// reached from a community post may have no feed posts, and vice versa.
+    /// Only `FeedPost` carries an emoji.
     private func adoptAuthorIdentityFromPosts() {
-        guard let newest = authorFeedPosts.first else {
-            return
+        if let newestFeedPost = authorFeedPosts.first {
+            authorName = authorName ?? nonEmpty(newestFeedPost.authorName)
+            authorEmoji = authorEmoji ?? nonEmpty(newestFeedPost.authorEmoji)
         }
-        authorName = authorName ?? nonEmpty(newest.authorName)
-        authorEmoji = authorEmoji ?? nonEmpty(newest.authorEmoji)
+        if authorName == nil {
+            let communityPost = appState.communityService.posts
+                .first { $0.authorId == authorId }
+            authorName = nonEmpty(communityPost?.authorName)
+        }
     }
 
     private func nonEmpty(_ value: String?) -> String? {
