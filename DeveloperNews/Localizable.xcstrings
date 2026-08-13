@@ -1,6 +1,91 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%@ commented on your post": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ commented on your post"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@님이 회원님의 게시글에 댓글을 남겼습니다"
+          }
+        }
+      }
+    },
+    "%@ liked your comment": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ liked your comment"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@님이 회원님의 댓글을 좋아합니다"
+          }
+        }
+      }
+    },
+    "%@ liked your post": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ liked your post"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@님이 회원님의 게시글을 좋아합니다"
+          }
+        }
+      }
+    },
+    "%@ replied to your comment": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ replied to your comment"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@님이 회원님의 댓글에 답글을 남겼습니다"
+          }
+        }
+      }
+    },
+    "%@ started following you": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ started following you"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@님이 회원님을 팔로우합니다"
+          }
+        }
+      }
+    },
     "%lld": {},
     "%lld / %lld": {
       "localizations": {
@@ -1607,6 +1692,108 @@
           "stringUnit": {
             "state": "translated",
             "value": "내 주제"
+          }
+        }
+      }
+    },
+    "activity.empty": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No activity yet"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아직 활동이 없습니다"
+          }
+        }
+      }
+    },
+    "activity.emptyDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Likes, comments, and new followers land here."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "좋아요, 댓글, 새 팔로워가 여기에 모입니다."
+          }
+        }
+      }
+    },
+    "activity.signIn": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to see your activity"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "로그인하면 활동을 볼 수 있습니다"
+          }
+        }
+      }
+    },
+    "activity.signInDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reactions to your posts and comments are only kept for a signed-in account."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "게시글과 댓글에 대한 반응은 로그인한 계정에만 기록됩니다."
+          }
+        }
+      }
+    },
+    "activity.someone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Someone"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "누군가"
+          }
+        }
+      }
+    },
+    "activity.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activity"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "활동"
           }
         }
       }

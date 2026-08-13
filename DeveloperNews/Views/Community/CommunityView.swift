@@ -86,6 +86,8 @@ struct CommunityView: View {
             FeedPostDetailView(appState: appState, postId: postId)
         case .userSearch:
             UserSearchView(appState: appState)
+        case .activity:
+            ActivityView(appState: appState)
         }
     }
 

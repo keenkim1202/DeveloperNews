@@ -24,6 +24,7 @@ final class AppState {
     let communityService: any CommunityServicing
     let feedPostService: any FeedPostServicing
     let storyEngagementService: any StoryEngagementServicing
+    let activityService: any ActivityServicing
 
     var selectedTopics: Set<Topic> = []
     var focusedTopic: Topic?
@@ -159,6 +160,7 @@ final class AppState {
         communityService: any CommunityServicing,
         feedPostService: any FeedPostServicing,
         storyEngagementService: any StoryEngagementServicing,
+        activityService: any ActivityServicing,
         contentSourceClient: (any ContentSourceClient)? = nil,
         persistenceStore: PersistenceStore = PersistenceStore(),
     ) {
@@ -168,6 +170,7 @@ final class AppState {
         self.communityService = communityService
         self.feedPostService = feedPostService
         self.storyEngagementService = storyEngagementService
+        self.activityService = activityService
         self.persistenceStore = persistenceStore
         let client = contentSourceClient ?? Self.defaultContentSourceClient()
         self.contentSourceClient = client
@@ -330,6 +333,31 @@ final class AppState {
 
     func isPostRead(_ postId: String) -> Bool {
         readTracker.isPostRead(postId)
+    }
+
+    // MARK: - Activity inbox
+
+    /// Activities worth showing: nothing from a blocked user, and nothing whose
+    /// actor is the signed-in user, which a stale document could still be.
+    var visibleActivities: [Activity] {
+        activityService.activities.filter { activity in
+            !blockedUserIds.contains(activity.actorId) && activity.actorId != authService.userId
+        }
+    }
+
+    var unreadActivityCount: Int {
+        visibleActivities.count { !$0.isRead }
+    }
+
+    func startListeningForActivities() {
+        guard let uid = authService.userId else {
+            return
+        }
+        activityService.startListening(userId: uid)
+    }
+
+    func stopListeningForActivities() {
+        activityService.stopListening()
     }
 
     func blockUser(_ userId: String) {

@@ -26,6 +26,13 @@ struct Community2View: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: openActivity) {
+                        Image(systemName: "bell")
+                    }
+                    .badge(appState.unreadActivityCount)
+                    .accessibilityLabel(Text(.activityTitle))
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(action: openUserSearch) {
                         Image(systemName: "magnifyingglass")
                     }
@@ -191,11 +198,17 @@ struct Community2View: View {
                 kind: target.kind)
         case .userSearch:
             UserSearchView(appState: appState)
+        case .activity:
+            ActivityView(appState: appState)
         }
     }
 
     private func openUserSearch() {
         navigation(.community(.userSearch))
+    }
+
+    private func openActivity() {
+        navigation(.community(.activity))
     }
 
     private func navigateToDetail(_ post: FeedPost) {

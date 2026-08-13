@@ -11,6 +11,7 @@ protocol CommentServicing {
 
     func addComment(
         postId: String,
+        postAuthorId: String,
         text: String,
         author: FirebaseAuth.User,
         authorDisplayName: String,

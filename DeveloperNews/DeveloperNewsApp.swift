@@ -22,6 +22,7 @@ struct DeveloperNewsApp: App {
         let communityService = CommunityService()
         let feedPostService = FeedPostService()
         let storyEngagementService = StoryEngagementService()
+        let activityService = ActivityService()
         _appState = State(
             initialValue: AppState(
                 translator: translator,
@@ -29,7 +30,8 @@ struct DeveloperNewsApp: App {
                 profileService: profileService,
                 communityService: communityService,
                 feedPostService: feedPostService,
-                storyEngagementService: storyEngagementService))
+                storyEngagementService: storyEngagementService,
+                activityService: activityService))
     }
 
     var body: some Scene {

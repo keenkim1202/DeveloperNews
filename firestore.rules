@@ -13,6 +13,38 @@ service cloud.firestore {
       allow update: if request.auth != null && request.auth.uid == userId;
 
       allow delete: if request.auth != null && request.auth.uid == userId;
+
+      // Activity inbox. Written by whoever performed the action into the
+      // recipient's subcollection, and readable only by the recipient.
+      match /activities/{activityId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+
+        // The actor writes the row, never to themselves, and never pre-read.
+        allow create: if request.auth != null
+          && request.auth.uid != userId
+          && request.resource.data.actorId == request.auth.uid
+          && request.resource.data.isRead == false;
+
+        allow update: if request.auth != null && (
+          // The recipient may only flip the row to read.
+          (
+            request.auth.uid == userId
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead'])
+            && request.resource.data.isRead == true
+          )
+          // The actor may rewrite their own row, which is how a re-liked post
+          // reuses its stable document id instead of stacking a duplicate.
+          || (
+            request.auth.uid == resource.data.actorId
+            && request.resource.data.actorId == request.auth.uid
+          )
+        );
+
+        // The recipient can dismiss a row; the actor withdraws their own on
+        // unlike or unfollow.
+        allow delete: if request.auth != null
+          && (request.auth.uid == userId || request.auth.uid == resource.data.actorId);
+      }
     }
 
     match /posts/{postId} {

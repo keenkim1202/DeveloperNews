@@ -76,6 +76,7 @@ final class FeedPostDetailViewModel {
         else { return }
         await commentService.addComment(
             postId: currentPost.id,
+            postAuthorId: currentPost.authorId,
             text: trimmed,
             author: user,
             authorDisplayName: appState.profileService.displayName,

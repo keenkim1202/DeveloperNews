@@ -11,8 +11,13 @@ final class CommunityService: CommunityServicing {
     private(set) var authorEmojiCache: [String: String] = [:]
 
     private let db = Firestore.firestore()
+    private let activityRecorder: any ActivityRecording
     private var listenerRegistration: ListenerRegistration?
     private var authorEmojiFetchGeneration = 0
+
+    init(activityRecorder: any ActivityRecording = ActivityRecorder()) {
+        self.activityRecorder = activityRecorder
+    }
 
     private var postsRef: CollectionReference {
         db.collection("posts")
@@ -273,6 +278,20 @@ final class CommunityService: CommunityServicing {
         }
         catch {
             errorMessage = error.localizedDescription
+            return
+        }
+
+        let draft = ActivityDraft(
+            kind: .postLike,
+            recipientId: post.authorId,
+            actorId: userId,
+            target: .communityPost(post.id),
+            preview: post.title)
+        if isLiked {
+            await activityRecorder.clear(draft)
+        }
+        else {
+            await activityRecorder.set(draft)
         }
     }
 

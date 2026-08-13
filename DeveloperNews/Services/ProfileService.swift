@@ -10,9 +10,14 @@ final class ProfileService: ProfileServicing {
     private(set) var errorMessage: String?
 
     private let db = Firestore.firestore()
+    private let activityRecorder: any ActivityRecording
     private var listenerRegistration: ListenerRegistration?
     private var currentUser: FirebaseAuth.User?
     private var profileCreationInFlight = false
+
+    init(activityRecorder: any ActivityRecording = ActivityRecorder()) {
+        self.activityRecorder = activityRecorder
+    }
 
     var displayName: String {
         if let name = profile?.displayName, !name.isEmpty {
@@ -295,6 +300,18 @@ final class ProfileService: ProfileServicing {
         }
         catch {
             errorMessage = error.localizedDescription
+            return
+        }
+
+        let draft = ActivityDraft(
+            kind: .follow,
+            recipientId: targetUserId,
+            actorId: uid)
+        if isCurrentlyFollowing {
+            await activityRecorder.clear(draft)
+        }
+        else {
+            await activityRecorder.set(draft)
         }
     }
 
