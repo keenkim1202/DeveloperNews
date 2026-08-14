@@ -8,7 +8,16 @@ protocol CommunityServicing {
     var errorMessage: String? { get }
     var authorEmojiCache: [String: String] { get }
 
+    /// Looks the post up in the loaded window only. Returns nil for a post
+    /// that exists but is older than that window, so a caller that must not
+    /// mistake "not loaded" for "deleted" needs `fetchPost(id:)`.
     func post(id: CommunityPost.ID) -> CommunityPost?
+
+    /// Reads the single post document for `id`.
+    ///
+    /// Returns nil only when the document is genuinely absent. A read that
+    /// fails throws instead, so a network drop is not reported as a deletion.
+    func fetchPost(id: CommunityPost.ID) async throws -> CommunityPost?
 
     func startListening()
     func refresh() async

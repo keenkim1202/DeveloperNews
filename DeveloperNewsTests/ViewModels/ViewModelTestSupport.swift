@@ -11,6 +11,7 @@ enum VMFixtures {
         community: MockCommunityServicing = MockCommunityServicing(),
         feedPost: MockFeedPostServicing = MockFeedPostServicing(),
         storyEngagement: MockStoryEngagementServicing = MockStoryEngagementServicing(),
+        activity: MockActivityServicing = MockActivityServicing(),
         translator: MockTranslating = MockTranslating(),
         contentSourceClient: (any ContentSourceClient)? = nil,
     ) -> AppState {
@@ -21,6 +22,7 @@ enum VMFixtures {
             communityService: community,
             feedPostService: feedPost,
             storyEngagementService: storyEngagement,
+            activityService: activity,
             contentSourceClient: contentSourceClient,
             persistenceStore: makeIsolatedPersistenceStore())
     }

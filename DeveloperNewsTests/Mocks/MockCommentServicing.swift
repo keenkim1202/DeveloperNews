@@ -9,7 +9,7 @@ final class MockCommentServicing: CommentServicing {
 
     private(set) var listeningPostId: String?
     private(set) var didStopListening = false
-    private(set) var addedComments: [(text: String, parentId: String?)] = []
+    private(set) var addedComments: [(text: String, parentId: String?, postAuthorId: String)] = []
     private(set) var reportedComments: [(commentId: String, reporterId: String, reason: String)] = []
     private(set) var toggledCommentLikes: [(commentId: String, userId: String)] = []
 
@@ -23,13 +23,17 @@ final class MockCommentServicing: CommentServicing {
 
     func addComment(
         postId: String,
+        postAuthorId: String,
         text: String,
         author: FirebaseAuth.User,
         authorDisplayName: String,
         authorEmoji: String?,
         parentCommentId: String?,
     ) async {
-        addedComments.append((text: text, parentId: parentCommentId))
+        addedComments.append((
+            text: text,
+            parentId: parentCommentId,
+            postAuthorId: postAuthorId))
     }
 
     func deleteComment(_ comment: CommunityComment) async {

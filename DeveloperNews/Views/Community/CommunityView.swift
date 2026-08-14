@@ -54,12 +54,7 @@ struct CommunityView: View {
     private func destination(_ dest: CommunityTabDestination) -> some View {
         switch dest {
         case let .postDetail(postId):
-            if let post = appState.communityService.post(id: postId) {
-                CommunityPostDetailView(appState: appState, post: post)
-            }
-            else {
-                UnavailableDestinationView(reason: .postDeleted)
-            }
+            CommunityPostDetailView(appState: appState, postId: postId)
         case let .userProfile(userId):
             UserProfileView(appState: appState, authorId: userId)
         case let .postLinkDetail(postId):
@@ -86,6 +81,8 @@ struct CommunityView: View {
             FeedPostDetailView(appState: appState, postId: postId)
         case .userSearch:
             UserSearchView(appState: appState)
+        case .activity:
+            ActivityView(appState: appState)
         }
     }
 

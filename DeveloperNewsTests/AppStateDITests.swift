@@ -13,6 +13,7 @@ import Foundation
         community: MockCommunityServicing = MockCommunityServicing(),
         feedPost: MockFeedPostServicing = MockFeedPostServicing(),
         storyEngagement: MockStoryEngagementServicing = MockStoryEngagementServicing(),
+        activity: MockActivityServicing = MockActivityServicing(),
         translator: MockTranslating = MockTranslating(),
     ) -> AppState {
         AppState(
@@ -22,6 +23,7 @@ import Foundation
             communityService: community,
             feedPostService: feedPost,
             storyEngagementService: storyEngagement,
+            activityService: activity,
             persistenceStore: VMFixtures.makeIsolatedPersistenceStore())
     }
 
@@ -58,6 +60,34 @@ import Foundation
 
         #expect(isSuccess(result))
         #expect(profile.didStopListening)
+    }
+
+    // Firestore leaves a document's subcollections behind when the document is
+    // deleted, so the inbox has to be cleared before the profile goes.
+    @Test func deleteCurrentAccountClearsTheActivityInbox() async {
+        let auth = MockAuthServicing(userId: "user-123")
+        auth.deleteAccountResult = .success
+        let activity = MockActivityServicing()
+        let state = makeAppState(auth: auth, activity: activity)
+
+        let result = await state.deleteCurrentAccount()
+
+        #expect(isSuccess(result))
+        #expect(activity.deletedInboxUserIds == ["user-123"])
+        #expect(activity.didStopListening)
+    }
+
+    @Test func deleteCurrentAccountFailsWhenTheInboxCannotBeCleared() async {
+        struct Failure: Error {}
+        let auth = MockAuthServicing(userId: "user-123")
+        auth.deleteAccountResult = .success
+        let activity = MockActivityServicing()
+        activity.deleteInboxError = Failure()
+        let state = makeAppState(auth: auth, activity: activity)
+
+        let result = await state.deleteCurrentAccount()
+
+        #expect(isFailed(result))
     }
 
     @Test func signOutRoutesThroughInjectedServices() async {

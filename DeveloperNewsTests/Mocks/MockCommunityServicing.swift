@@ -14,6 +14,20 @@ final class MockCommunityServicing: CommunityServicing {
     private(set) var didStartListening = false
     private(set) var didStopListening = false
 
+    /// Posts reachable only by a single-document read — the ones outside the
+    /// loaded window that `post(id:)` deliberately cannot see.
+    var unloadedPosts: [CommunityPost] = []
+    var fetchPostError: (any Error)?
+    private(set) var fetchedPostIds: [CommunityPost.ID] = []
+
+    func fetchPost(id: CommunityPost.ID) async throws -> CommunityPost? {
+        fetchedPostIds.append(id)
+        if let fetchPostError {
+            throw fetchPostError
+        }
+        return (posts + unloadedPosts).first { $0.id == id }
+    }
+
     func post(id: CommunityPost.ID) -> CommunityPost? {
         posts.first { $0.id == id }
     }

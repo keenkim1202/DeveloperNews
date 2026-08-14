@@ -26,6 +26,12 @@ struct Community2View: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: openActivity) {
+                        activityBell
+                    }
+                    .accessibilityLabel(Text(.activityTitle))
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(action: openUserSearch) {
                         Image(systemName: "magnifyingglass")
                     }
@@ -35,6 +41,20 @@ struct Community2View: View {
             .keenOnChange(of: viewModel.tab, perform: onTabChange)
             .onAppear(perform: onAppear)
         }
+    }
+
+    // `.badge` is only honored on list rows and tab items, so the unread mark
+    // on a toolbar button has to be drawn.
+    private var activityBell: some View {
+        Image(systemName: "bell")
+            .overlay(alignment: .topTrailing) {
+                if appState.unreadActivityCount > 0 {
+                    Circle()
+                        .fill(DSColor.destructive)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 4, y: -3)
+                }
+            }
     }
 
     private var tabPicker: some View {
@@ -170,12 +190,7 @@ struct Community2View: View {
         case let .feedPostDetail(postId):
             FeedPostDetailView(appState: appState, postId: postId)
         case let .postDetail(postId):
-            if let post = appState.communityService.post(id: postId) {
-                CommunityPostDetailView(appState: appState, post: post)
-            }
-            else {
-                UnavailableDestinationView(reason: .postDeleted)
-            }
+            CommunityPostDetailView(appState: appState, postId: postId)
         case let .postLinkDetail(postId):
             if let post = appState.communityService.post(id: postId),
                let item = post.linkContentItem {
@@ -191,11 +206,17 @@ struct Community2View: View {
                 kind: target.kind)
         case .userSearch:
             UserSearchView(appState: appState)
+        case .activity:
+            ActivityView(appState: appState)
         }
     }
 
     private func openUserSearch() {
         navigation(.community(.userSearch))
+    }
+
+    private func openActivity() {
+        navigation(.community(.activity))
     }
 
     private func navigateToDetail(_ post: FeedPost) {

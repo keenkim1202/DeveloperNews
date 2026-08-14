@@ -1,6 +1,82 @@
 import SwiftUI
 
+/// Resolves the post for `postId` before rendering the detail screen.
+///
+/// The loaded window `CommunityService` keeps is capped, so a route that only
+/// consulted it reported any older post as deleted — which is what an activity
+/// row pointing at a months-old post would hit. The in-memory lookup still runs
+/// first, so the common case costs no read.
 struct CommunityPostDetailView: View {
+    private enum Resolution {
+        case loading
+        case resolved(CommunityPost)
+        case missing
+        case failed
+    }
+
+    private let appState: AppState
+    private let postId: CommunityPost.ID
+
+    @State private var resolution: Resolution = .loading
+
+    init(
+        appState: AppState,
+        postId: CommunityPost.ID,
+    ) {
+        self.appState = appState
+        self.postId = postId
+    }
+
+    var body: some View {
+        Group {
+            switch resolution {
+            case .loading:
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case let .resolved(post):
+                CommunityPostDetailContentView(appState: appState, post: post)
+            case .missing:
+                UnavailableDestinationView(reason: .postDeleted)
+            case .failed:
+                UnavailableDestinationView(
+                    reason: .loadFailed,
+                    onRetry: retry)
+            }
+        }
+        .task(resolvePost)
+    }
+
+    private func resolvePost() async {
+        guard case .loading = resolution else {
+            return
+        }
+        if let post = appState.communityService.post(id: postId) {
+            resolution = .resolved(post)
+            return
+        }
+        do {
+            guard let post = try await appState.communityService.fetchPost(id: postId) else {
+                resolution = .missing
+                return
+            }
+            resolution = .resolved(post)
+        }
+        catch {
+            // A failed read is not a deleted post. Saying so would be a lie the
+            // reader cannot check, and it hides a condition that retrying fixes.
+            resolution = .failed
+        }
+    }
+
+    private func retry() {
+        resolution = .loading
+        Task {
+            await resolvePost()
+        }
+    }
+}
+
+struct CommunityPostDetailContentView: View {
     private let appState: AppState
     private let post: CommunityPost
 

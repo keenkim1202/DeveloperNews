@@ -2,6 +2,11 @@ import FirebaseAuth
 import FirebaseFirestore
 import Foundation
 
+enum CommunityServiceError: Error {
+    /// The document exists but does not decode into a `CommunityPost`.
+    case malformedDocument(id: CommunityPost.ID)
+}
+
 @Observable
 @MainActor
 final class CommunityService: CommunityServicing {
@@ -11,8 +16,13 @@ final class CommunityService: CommunityServicing {
     private(set) var authorEmojiCache: [String: String] = [:]
 
     private let db = Firestore.firestore()
+    private let activityRecorder: any ActivityRecording
     private var listenerRegistration: ListenerRegistration?
     private var authorEmojiFetchGeneration = 0
+
+    init(activityRecorder: any ActivityRecording = ActivityRecorder()) {
+        self.activityRecorder = activityRecorder
+    }
 
     private var postsRef: CollectionReference {
         db.collection("posts")
@@ -22,6 +32,17 @@ final class CommunityService: CommunityServicing {
     /// Returns nil if the post has been deleted or is not yet loaded.
     func post(id: CommunityPost.ID) -> CommunityPost? {
         posts.first { $0.id == id }
+    }
+
+    func fetchPost(id: CommunityPost.ID) async throws -> CommunityPost? {
+        let snapshot = try await postsRef.document(id).getDocument()
+        guard snapshot.exists else {
+            return nil
+        }
+        guard let post = Self.parsePost(snapshot) else {
+            throw CommunityServiceError.malformedDocument(id: id)
+        }
+        return post
     }
 
     func startListening() {
@@ -273,11 +294,29 @@ final class CommunityService: CommunityServicing {
         }
         catch {
             errorMessage = error.localizedDescription
+            return
+        }
+
+        let draft = ActivityDraft(
+            kind: .postLike,
+            recipientId: post.authorId,
+            actorId: userId,
+            target: .communityPost(post.id),
+            preview: post.title)
+        if isLiked {
+            await activityRecorder.clear(draft)
+        }
+        else {
+            await activityRecorder.set(draft)
         }
     }
 
-    private static func parsePost(_ doc: QueryDocumentSnapshot) -> CommunityPost? {
-        let data = doc.data()
+    // Takes a `DocumentSnapshot` so both collection queries and single-document
+    // reads decode through here; a missing document has no data and yields nil.
+    private static func parsePost(_ doc: DocumentSnapshot) -> CommunityPost? {
+        guard let data = doc.data() else {
+            return nil
+        }
         guard let authorId = data["authorId"] as? String,
               let title = data["title"] as? String
         else { return nil }

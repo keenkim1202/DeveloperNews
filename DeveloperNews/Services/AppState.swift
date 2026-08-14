@@ -24,6 +24,7 @@ final class AppState {
     let communityService: any CommunityServicing
     let feedPostService: any FeedPostServicing
     let storyEngagementService: any StoryEngagementServicing
+    let activityService: any ActivityServicing
 
     var selectedTopics: Set<Topic> = []
     var focusedTopic: Topic?
@@ -159,6 +160,7 @@ final class AppState {
         communityService: any CommunityServicing,
         feedPostService: any FeedPostServicing,
         storyEngagementService: any StoryEngagementServicing,
+        activityService: any ActivityServicing,
         contentSourceClient: (any ContentSourceClient)? = nil,
         persistenceStore: PersistenceStore = PersistenceStore(),
     ) {
@@ -168,6 +170,7 @@ final class AppState {
         self.communityService = communityService
         self.feedPostService = feedPostService
         self.storyEngagementService = storyEngagementService
+        self.activityService = activityService
         self.persistenceStore = persistenceStore
         let client = contentSourceClient ?? Self.defaultContentSourceClient()
         self.contentSourceClient = client
@@ -332,6 +335,31 @@ final class AppState {
         readTracker.isPostRead(postId)
     }
 
+    // MARK: - Activity inbox
+
+    /// Activities worth showing: nothing from a blocked user, and nothing whose
+    /// actor is the signed-in user, which a stale document could still be.
+    var visibleActivities: [Activity] {
+        activityService.activities.filter { activity in
+            !blockedUserIds.contains(activity.actorId) && activity.actorId != authService.userId
+        }
+    }
+
+    var unreadActivityCount: Int {
+        visibleActivities.count { !$0.isRead }
+    }
+
+    func startListeningForActivities() {
+        guard let uid = authService.userId else {
+            return
+        }
+        activityService.startListening(userId: uid)
+    }
+
+    func stopListeningForActivities() {
+        activityService.stopListening()
+    }
+
     func blockUser(_ userId: String) {
         blockedUserIds.insert(userId)
         saveBlockedUsers()
@@ -347,9 +375,15 @@ final class AppState {
         guard let uid = authService.userId else { return .failed }
 
         profileService.stopListening()
+        stopListeningForActivities()
 
         do {
             try await communityService.deleteUserContent(uid: uid)
+            // Before the profile document, since deleting it does not take the
+            // activities subcollection with it. Rows this user wrote into other
+            // inboxes are not reachable from here — the read rule scopes an
+            // inbox to its owner — so those are left naming a gone account.
+            try await activityService.deleteInbox(userId: uid)
             try await profileService.deleteOwnProfile(uid: uid)
         }
         catch {

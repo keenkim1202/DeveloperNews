@@ -94,6 +94,7 @@ final class CommunityPostDetailViewModel {
         else { return }
         await commentService.addComment(
             postId: post.id,
+            postAuthorId: post.authorId,
             text: trimmed,
             author: user,
             authorDisplayName: appState.profileService.displayName,

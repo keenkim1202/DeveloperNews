@@ -24,6 +24,7 @@ final class MockProfileServicing: ProfileServicing {
 
     private(set) var didStopListening = false
     private(set) var searchedQueries: [String] = []
+    private(set) var requestedSummaryIds: [[String]] = []
 
     func isFollowing(_ userId: String) -> Bool {
         followedUserIds.contains(userId)
@@ -61,7 +62,8 @@ final class MockProfileServicing: ProfileServicing {
     }
 
     func fetchUserSummaries(for userIds: [String]) async -> [UserSummary] {
-        userSummaries
+        requestedSummaryIds.append(userIds)
+        return userSummaries
     }
 
     func fetchFollowers(of userId: String) async -> [UserSummary] {

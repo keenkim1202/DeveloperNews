@@ -10,11 +10,23 @@ final class CommentService: CommentServicing {
 
     private let db = Firestore.firestore()
     private let parentCollection: String
+    private let activityRecorder: any ActivityRecording
     @ObservationIgnored
     nonisolated(unsafe) private var listenerRegistration: ListenerRegistration?
 
-    init(parentCollection: String = "posts") {
+    init(
+        parentCollection: String = "posts",
+        activityRecorder: any ActivityRecording = ActivityRecorder(),
+    ) {
         self.parentCollection = parentCollection
+        self.activityRecorder = activityRecorder
+    }
+
+    /// The activity destination for a post in this service's parent
+    /// collection. Nil for `storyEngagement`, whose ids are URL hashes with no
+    /// detail route, which suppresses activity for story comments.
+    private func activityTarget(postId: String) -> ActivityTarget? {
+        ActivityTarget(collectionName: parentCollection, postId: postId)
     }
 
     deinit {
@@ -56,6 +68,7 @@ final class CommentService: CommentServicing {
 
     func addComment(
         postId: String,
+        postAuthorId: String,
         text: String,
         author: FirebaseAuth.User,
         authorDisplayName: String,
@@ -63,6 +76,12 @@ final class CommentService: CommentServicing {
         parentCommentId: String? = nil,
     ) async {
         errorMessage = nil
+
+        // Resolved before the write so the reply target comes from the same
+        // snapshot the user was replying to.
+        let parentComment = parentCommentId.flatMap { id in
+            comments.first { $0.id == id }
+        }
 
         var data: [String: Any] = [
             "authorId": author.uid,
@@ -77,15 +96,58 @@ final class CommentService: CommentServicing {
             data["parentCommentId"] = parentCommentId
         }
 
+        let newCommentId: String
         do {
-            try await commentsRef(postId).addDocument(data: data)
+            newCommentId = try await commentsRef(postId).addDocument(data: data).documentID
             try await db.collection(parentCollection).document(postId).updateData([
                 "commentCount": FieldValue.increment(Int64(1)),
             ])
         }
         catch {
             errorMessage = error.localizedDescription
+            return
         }
+
+        guard let draft = Self.commentActivityDraft(
+            parentCollection: parentCollection,
+            postId: postId,
+            postAuthorId: postAuthorId,
+            parentComment: parentComment,
+            actorId: author.uid,
+            commentId: newCommentId,
+            text: text)
+        else { return }
+        // Keyed on the new comment's id, so a second comment on the same post
+        // is a second row while the same comment can never become two.
+        await activityRecorder.set(draft)
+    }
+
+    /// The activity a new comment produces, or nil when the parent collection
+    /// has no detail route to send the recipient to.
+    ///
+    /// A reply notifies whoever it answers; a top-level comment notifies the
+    /// post author. A reply whose parent is outside the listener window is
+    /// recorded as a plain comment to the post author rather than as a reply to
+    /// someone we cannot name.
+    static func commentActivityDraft(
+        parentCollection: String,
+        postId: String,
+        postAuthorId: String,
+        parentComment: CommunityComment?,
+        actorId: String,
+        commentId: String,
+        text: String,
+    ) -> ActivityDraft? {
+        guard let target = ActivityTarget(collectionName: parentCollection, postId: postId) else {
+            return nil
+        }
+        return ActivityDraft(
+            kind: parentComment == nil ? .postComment : .commentReply,
+            recipientId: parentComment?.authorId ?? postAuthorId,
+            actorId: actorId,
+            target: target,
+            commentId: commentId,
+            preview: text)
     }
 
     func deleteComment(_ comment: CommunityComment) async {
@@ -111,6 +173,7 @@ final class CommentService: CommentServicing {
         userId: String,
     ) async {
         errorMessage = nil
+        let wasLiked = comment.likedBy.contains(userId)
         do {
             try await Self.runCommentLikeTransaction(
                 db,
@@ -121,6 +184,24 @@ final class CommentService: CommentServicing {
         }
         catch {
             errorMessage = error.localizedDescription
+            return
+        }
+
+        guard let target = activityTarget(postId: comment.postId) else {
+            return
+        }
+        let draft = ActivityDraft(
+            kind: .commentLike,
+            recipientId: comment.authorId,
+            actorId: userId,
+            target: target,
+            commentId: comment.id,
+            preview: comment.text)
+        if wasLiked {
+            await activityRecorder.clear(draft)
+        }
+        else {
+            await activityRecorder.set(draft)
         }
     }
 

@@ -125,6 +125,9 @@ final class StoryEngagementViewModel {
         await storyEngagementService.ensureDocument(storyURL: storyURL)
         await commentService.addComment(
             postId: documentId,
+            // A story is nobody's post, so a comment on one has no author to
+            // notify.
+            postAuthorId: "",
             text: trimmed,
             author: user,
             authorDisplayName: appState.profileService.displayName,

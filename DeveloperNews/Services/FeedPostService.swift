@@ -14,6 +14,11 @@ final class FeedPostService: FeedPostServicing {
     private(set) var creationToken = 0
 
     private let db = Firestore.firestore()
+    private let activityRecorder: any ActivityRecording
+
+    init(activityRecorder: any ActivityRecording = ActivityRecorder()) {
+        self.activityRecorder = activityRecorder
+    }
 
     // Firestore caps `in` queries at 10 values per request, so author batches
     // for the Following feed are chunked to stay within that limit.
@@ -81,6 +86,20 @@ final class FeedPostService: FeedPostServicing {
         }
         catch {
             errorMessage = error.localizedDescription
+            return
+        }
+
+        let draft = ActivityDraft(
+            kind: .postLike,
+            recipientId: post.authorId,
+            actorId: userId,
+            target: .feedPost(post.id),
+            preview: post.comment)
+        if isLiked {
+            await activityRecorder.clear(draft)
+        }
+        else {
+            await activityRecorder.set(draft)
         }
     }
 

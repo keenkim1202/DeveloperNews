@@ -50,6 +50,7 @@ struct ContentView: View {
             appState.profileService.startListening(for: user)
         }
         appState.communityService.startListening()
+        appState.startListeningForActivities()
         appState.processPendingSharedItems()
     }
 
@@ -85,12 +86,14 @@ struct ContentView: View {
     private func onIsSignedInChange(_ signedIn: Bool) {
         if signedIn, let user = appState.authService.user {
             appState.profileService.startListening(for: user)
+            appState.startListeningForActivities()
             Task {
                 await appState.profileService.createProfileIfNeeded(for: user)
             }
         }
         else {
             appState.profileService.stopListening()
+            appState.stopListeningForActivities()
         }
     }
 }
@@ -104,7 +107,8 @@ struct ContentView: View {
             profileService: ProfileService(),
             communityService: CommunityService(),
             feedPostService: FeedPostService(),
-            storyEngagementService: StoryEngagementService()))
+            storyEngagementService: StoryEngagementService(),
+            activityService: ActivityService()))
 }
 
 
@@ -155,6 +159,7 @@ struct MainTabView: View {
                 .tabItem {
                     Label(.community, systemImage: "person.2")
                 }
+                .badge(appState.unreadActivityCount)
                 .tag(AppTab.community)
 
             SavedView(
