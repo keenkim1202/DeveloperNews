@@ -155,9 +155,27 @@ code, body = write_activity("real-comment",
                             activity("postComment", "feedPosts", "post-alice", "comment-bob"), BOB)
 check("postComment after actually commenting", code == 200, True, body)
 
+code, body = write_activity("forged-comment-like",
+                            activity("commentLike", "feedPosts", "post-alice", "comment-alice"), BOB)
+check("commentLike without actually liking the comment", code == 200, False, body)
+
+request("PATCH", "/feedPosts/post-alice/comments/comment-alice", {"fields": {
+    "authorId": s(ALICE), "text": s("mine"),
+    "likeCount": {"integerValue": "1"},
+    "likedBy": {"arrayValue": {"values": [s(BOB)]}}}})
 code, body = write_activity("real-comment-like",
                             activity("commentLike", "feedPosts", "post-alice", "comment-alice"), BOB)
-check("commentLike on a comment the recipient wrote", code == 200, True, body)
+check("commentLike after actually liking the comment", code == 200, True, body)
+
+# One earned action must not be replayable under a second document id, or a
+# single like fills the 100-row listener and displaces real activity.
+code, body = write_activity("real-like-replay",
+                            activity("postLike", "feedPosts", "post-alice"), BOB)
+check("earned like replayed under a second document id", code == 200, False, body)
+
+code, body = write_activity("real-comment-replay",
+                            activity("postComment", "feedPosts", "post-alice", "comment-bob"), BOB)
+check("earned comment replayed under a second document id", code == 200, False, body)
 
 # Bob liked his own post; Alice is not its author, so her inbox must reject it.
 request("PATCH", "/feedPosts/post-bob", {"fields": {

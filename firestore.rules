@@ -89,7 +89,8 @@ service cloud.firestore {
 
         function isEarnedCommentLike(data, actor) {
           return data.kind == 'commentLike'
-            && activityComment(data).get('authorId', '') == userId;
+            && activityComment(data).get('authorId', '') == userId
+            && actor in activityComment(data).get('likedBy', []);
         }
 
         function activityIsEarned(data, actor) {
