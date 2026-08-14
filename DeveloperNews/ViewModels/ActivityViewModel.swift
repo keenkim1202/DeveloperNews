@@ -11,7 +11,10 @@ final class ActivityViewModel {
     /// the highlight on the rows the user came to see would vanish under them.
     private(set) var unreadOnOpen: Set<Activity.ID> = []
     private(set) var actorsById: [String: UserSummary] = [:]
-    private(set) var isResolvingActors = false
+
+    /// Actor ids already looked up, resolved or not, so a lookup that came back
+    /// empty is not retried on every sync.
+    private var attemptedActorIds: Set<String> = []
 
     init(appState: AppState) {
         self.appState = appState
@@ -37,8 +40,18 @@ final class ActivityViewModel {
         actorsById[activity.actorId]
     }
 
-    func onAppear() async {
-        unreadOnOpen = Set(activities.filter { !$0.isRead }.map(\.id))
+    /// Brings the screen up to date with whatever the listener currently holds.
+    ///
+    /// Called on appear and again on every change to the activity list, because
+    /// the listener is live: its first snapshot can land after the screen is
+    /// already up, and new activities arrive while the user is looking at it.
+    /// Doing this once on appear left those rows unnamed and, worse, left them
+    /// unread so the badge never cleared.
+    func sync() async {
+        // Recorded before the await so rows the user has actually seen keep
+        // their highlight after everything is marked read, and extended rather
+        // than replaced so a row that arrives mid-session is highlighted too.
+        unreadOnOpen.formUnion(activities.filter { !$0.isRead }.map(\.id))
         await resolveActors()
         await appState.activityService.markAllAsRead()
         if let message = appState.activityService.errorMessage {
@@ -48,14 +61,15 @@ final class ActivityViewModel {
 
     /// Fills in the actors' current names and emoji. Activities store only an
     /// id, so this is what turns "someone" into a name.
+    ///
+    /// Ids that resolve to nothing — a deleted account — are remembered as
+    /// attempted so a repeating `sync` does not refetch them every time.
     func resolveActors() async {
-        let missing = Set(activities.map(\.actorId)).subtracting(actorsById.keys)
+        let missing = Set(activities.map(\.actorId)).subtracting(attemptedActorIds)
         guard !missing.isEmpty else {
             return
         }
-        isResolvingActors = true
-        defer { isResolvingActors = false }
-
+        attemptedActorIds.formUnion(missing)
         let summaries = await appState.profileService.fetchUserSummaries(for: Array(missing))
         for summary in summaries {
             actorsById[summary.id] = summary

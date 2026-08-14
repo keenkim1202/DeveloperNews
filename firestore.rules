@@ -17,13 +17,99 @@ service cloud.firestore {
       // Activity inbox. Written by whoever performed the action into the
       // recipient's subcollection, and readable only by the recipient.
       match /activities/{activityId} {
+        // A follow points at no post and no comment. A post like points at a
+        // post only. Every comment kind points at both.
+        function activityShapeIsValid(data) {
+          return data.keys().hasOnly([
+              'kind', 'actorId', 'preview', 'isRead', 'createdAt',
+              'targetCollection', 'targetPostId', 'commentId'])
+            && data.keys().hasAll(['kind', 'actorId', 'preview', 'isRead', 'createdAt'])
+            && data.kind in ['postLike', 'postComment', 'commentReply', 'commentLike', 'follow']
+            && data.actorId is string
+            && data.preview is string
+            && data.preview.size() <= 140
+            && data.isRead is bool
+            && (data.kind == 'follow'
+              ? !data.keys().hasAny(['targetCollection', 'targetPostId', 'commentId'])
+              : (
+                data.keys().hasAll(['targetCollection', 'targetPostId'])
+                && data.targetCollection in ['posts', 'feedPosts']
+                && data.targetPostId is string
+                && (data.kind == 'postLike'
+                  ? !data.keys().hasAny(['commentId'])
+                  : data.commentId is string)
+              ));
+        }
+
+        function activityPost(data) {
+          return get(
+            /databases/$(database)/documents/$(data.targetCollection)/$(data.targetPostId)).data;
+        }
+
+        function activityComment(data) {
+          return get(
+            /databases/$(database)/documents/$(data.targetCollection)/$(data.targetPostId)/comments/$(data.commentId)).data;
+        }
+
+        // Each kind below is admitted only while the state its notification
+        // claims still exists. Without this, `actorId == auth.uid` is the only
+        // thing standing between an inbox and an unlimited flood of forged
+        // rows about posts the recipient does not own.
+        //
+        // A missing document makes `get(...)` null and the field read fails,
+        // which denies — the outcome we want for a row pointing at nothing.
+        // The kind check leads each clause so the reads are skipped for the
+        // kinds they do not apply to.
+        function isEarnedFollow(data, actor) {
+          return data.kind == 'follow'
+            && userId in get(
+              /databases/$(database)/documents/users/$(actor)).data.get('followedUserIds', []);
+        }
+
+        function isEarnedPostLike(data, actor) {
+          return data.kind == 'postLike'
+            && actor in activityPost(data).get('likedBy', [])
+            && activityPost(data).get('authorId', '') == userId;
+        }
+
+        function isEarnedPostComment(data, actor) {
+          return data.kind == 'postComment'
+            && activityComment(data).get('authorId', '') == actor
+            && activityPost(data).get('authorId', '') == userId;
+        }
+
+        // The recipient is the parent comment's author, and the activity does
+        // not carry the parent id, so this can only prove the actor wrote the
+        // comment it names — not that they replied to this recipient. It still
+        // costs a real comment per forged row.
+        function isEarnedCommentReply(data, actor) {
+          return data.kind == 'commentReply'
+            && activityComment(data).get('authorId', '') == actor;
+        }
+
+        function isEarnedCommentLike(data, actor) {
+          return data.kind == 'commentLike'
+            && activityComment(data).get('authorId', '') == userId;
+        }
+
+        function activityIsEarned(data, actor) {
+          return isEarnedFollow(data, actor)
+            || isEarnedPostLike(data, actor)
+            || isEarnedPostComment(data, actor)
+            || isEarnedCommentReply(data, actor)
+            || isEarnedCommentLike(data, actor);
+        }
+
         allow read: if request.auth != null && request.auth.uid == userId;
 
         // The actor writes the row, never to themselves, and never pre-read.
         allow create: if request.auth != null
           && request.auth.uid != userId
           && request.resource.data.actorId == request.auth.uid
-          && request.resource.data.isRead == false;
+          && request.resource.data.isRead == false
+          && request.resource.data.createdAt == request.time
+          && activityShapeIsValid(request.resource.data)
+          && activityIsEarned(request.resource.data, request.auth.uid);
 
         allow update: if request.auth != null && (
           // The recipient may only flip the row to read.
@@ -32,11 +118,20 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead'])
             && request.resource.data.isRead == true
           )
-          // The actor may rewrite their own row, which is how a re-liked post
-          // reuses its stable document id instead of stacking a duplicate.
+          // The actor rewrites their own row when a toggle is switched back on,
+          // which is how a re-liked post reuses its stable document id instead
+          // of stacking a duplicate. It stays a row about the same action by
+          // the same actor, and a row the recipient has already read stays
+          // read, so re-liking cannot be used to relight the badge.
           || (
             request.auth.uid == resource.data.actorId
-            && request.resource.data.actorId == request.auth.uid
+            && request.resource.data.actorId == resource.data.actorId
+            && request.resource.data.kind == resource.data.kind
+            && request.resource.data.isRead == resource.data.isRead
+            && request.resource.data.get('targetCollection', '') == resource.data.get('targetCollection', '')
+            && request.resource.data.get('targetPostId', '') == resource.data.get('targetPostId', '')
+            && request.resource.data.get('commentId', '') == resource.data.get('commentId', '')
+            && activityShapeIsValid(request.resource.data)
           )
         );
 

@@ -9,6 +9,8 @@ final class MockActivityServicing: ActivityServicing {
     private(set) var listeningUserIds: [String] = []
     private(set) var didStopListening = false
     private(set) var markAllAsReadCallCount = 0
+    private(set) var deletedInboxUserIds: [String] = []
+    var deleteInboxError: (any Error)?
 
     func startListening(userId: String) {
         listeningUserIds.append(userId)
@@ -31,5 +33,13 @@ final class MockActivityServicing: ActivityServicing {
                 createdAt: activity.createdAt,
                 isRead: true)
         }
+    }
+
+    func deleteInbox(userId: String) async throws {
+        deletedInboxUserIds.append(userId)
+        if let deleteInboxError {
+            throw deleteInboxError
+        }
+        activities = []
     }
 }

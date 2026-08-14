@@ -74,4 +74,30 @@ final class ActivityService: ActivityServicing {
             errorMessage = error.localizedDescription
         }
     }
+
+    /// Pages through the inbox rather than reading it whole, so a long-lived
+    /// account does not have to fit its entire history in one query.
+    func deleteInbox(userId: String) async throws {
+        while true {
+            let snapshot = try await activitiesRef(userId)
+                .limit(to: Self.deletionPageSize)
+                .getDocuments()
+            guard !snapshot.documents.isEmpty else {
+                return
+            }
+
+            let batch = db.batch()
+            for document in snapshot.documents {
+                batch.deleteDocument(document.reference)
+            }
+            try await batch.commit()
+
+            if snapshot.documents.count < Self.deletionPageSize {
+                return
+            }
+        }
+    }
+
+    /// Under Firestore's 500-write batch limit.
+    private static let deletionPageSize = 200
 }

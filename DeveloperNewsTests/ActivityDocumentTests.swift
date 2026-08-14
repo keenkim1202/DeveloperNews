@@ -54,4 +54,80 @@ import Testing
     @Test func storyEngagementHasNoTarget() {
         #expect(ActivityTarget(collectionName: "storyEngagement", postId: "hash") == nil)
     }
+
+    private func makeComment(
+        id: String = "c1",
+        authorId: String = "comment-author",
+    ) -> CommunityComment {
+        CommunityComment(
+            id: id,
+            postId: "p1",
+            authorId: authorId,
+            authorName: "Author",
+            authorEmoji: nil,
+            text: "Parent comment",
+            createdAt: .now,
+            likeCount: 0,
+            likedBy: [],
+            parentCommentId: nil)
+    }
+
+    @Test func topLevelCommentNotifiesThePostAuthor() {
+        let draft = CommentService.commentActivityDraft(
+            parentCollection: "feedPosts",
+            postId: "p1",
+            postAuthorId: "post-author",
+            parentComment: nil,
+            actorId: "actor",
+            commentId: "new",
+            text: "Nice")
+
+        #expect(draft?.kind == .postComment)
+        #expect(draft?.recipientId == "post-author")
+        #expect(draft?.target == .feedPost("p1"))
+    }
+
+    @Test func replyNotifiesTheParentCommentAuthor() {
+        let draft = CommentService.commentActivityDraft(
+            parentCollection: "posts",
+            postId: "p1",
+            postAuthorId: "post-author",
+            parentComment: makeComment(authorId: "parent-author"),
+            actorId: "actor",
+            commentId: "new",
+            text: "Agreed")
+
+        #expect(draft?.kind == .commentReply)
+        #expect(draft?.recipientId == "parent-author")
+        #expect(draft?.target == .communityPost("p1"))
+    }
+
+    // A reply whose parent has fallen outside the comment listener window has
+    // nobody to name, so it degrades to a comment on the post.
+    @Test func replyWithAnUnresolvedParentFallsBackToThePostAuthor() {
+        let draft = CommentService.commentActivityDraft(
+            parentCollection: "feedPosts",
+            postId: "p1",
+            postAuthorId: "post-author",
+            parentComment: nil,
+            actorId: "actor",
+            commentId: "new",
+            text: "Agreed")
+
+        #expect(draft?.kind == .postComment)
+        #expect(draft?.recipientId == "post-author")
+    }
+
+    @Test func storyCommentsProduceNoActivity() {
+        let draft = CommentService.commentActivityDraft(
+            parentCollection: "storyEngagement",
+            postId: "hash",
+            postAuthorId: "",
+            parentComment: nil,
+            actorId: "actor",
+            commentId: "new",
+            text: "Nice")
+
+        #expect(draft == nil)
+    }
 }

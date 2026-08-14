@@ -375,9 +375,15 @@ final class AppState {
         guard let uid = authService.userId else { return .failed }
 
         profileService.stopListening()
+        stopListeningForActivities()
 
         do {
             try await communityService.deleteUserContent(uid: uid)
+            // Before the profile document, since deleting it does not take the
+            // activities subcollection with it. Rows this user wrote into other
+            // inboxes are not reachable from here — the read rule scopes an
+            // inbox to its owner — so those are left naming a gone account.
+            try await activityService.deleteInbox(userId: uid)
             try await profileService.deleteOwnProfile(uid: uid)
         }
         catch {

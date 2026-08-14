@@ -33,6 +33,7 @@ struct ActivityView: View {
         .navigationTitle(.activityTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .keenOnChange(of: viewModel.activities, perform: onActivitiesChange)
         .task(load)
     }
 
@@ -67,6 +68,12 @@ struct ActivityView: View {
     }
 
     private func load() async {
-        await viewModel.onAppear()
+        await viewModel.sync()
+    }
+
+    private func onActivitiesChange() {
+        Task {
+            await viewModel.sync()
+        }
     }
 }

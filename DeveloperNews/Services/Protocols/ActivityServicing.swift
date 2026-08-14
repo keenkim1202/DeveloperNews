@@ -11,4 +11,10 @@ protocol ActivityServicing {
     func stopListening()
 
     func markAllAsRead() async
+
+    /// Deletes the user's whole inbox. Firestore does not remove a document's
+    /// subcollections when the document goes, so account deletion has to clear
+    /// this explicitly or the rows outlive their owner unreachable — the read
+    /// rule keys on a uid that no longer signs in.
+    func deleteInbox(userId: String) async throws
 }

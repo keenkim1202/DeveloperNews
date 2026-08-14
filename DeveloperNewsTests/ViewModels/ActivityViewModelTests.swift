@@ -22,7 +22,7 @@ import Testing
             isRead: isRead)
     }
 
-    @Test func onAppearMarksEverythingReadAndKeepsTheOpeningHighlight() async {
+    @Test func syncMarksEverythingReadAndKeepsTheOpeningHighlight() async {
         let activity = MockActivityServicing()
         activity.activities = [
             makeActivity(id: "a", isRead: false),
@@ -33,12 +33,38 @@ import Testing
             activity: activity)
         let vm = ActivityViewModel(appState: state)
 
-        await vm.onAppear()
+        await vm.sync()
 
         #expect(activity.markAllAsReadCallCount == 1)
         #expect(vm.isUnread(activity.activities[0]))
         #expect(!vm.isUnread(activity.activities[1]))
         #expect(state.unreadActivityCount == 0)
+    }
+
+    // The listener is live, so the first snapshot can land after the screen is
+    // already up. A sync that only ran once would leave those rows unread with
+    // the badge lit, and their actors unresolved.
+    @Test func syncHandlesActivitiesThatArriveAfterTheFirstRun() async {
+        let profile = MockProfileServicing()
+        let activity = MockActivityServicing()
+        let state = VMFixtures.makeAppState(
+            auth: MockAuthServicing(userId: "me"),
+            profile: profile,
+            activity: activity)
+        let vm = ActivityViewModel(appState: state)
+
+        await vm.sync()
+        #expect(state.unreadActivityCount == 0)
+
+        profile.userSummaries = [
+            UserSummary(id: "late", displayName: "Late", emoji: nil, bio: nil),
+        ]
+        activity.activities = [makeActivity(id: "late", actorId: "late", isRead: false)]
+        await vm.sync()
+
+        #expect(state.unreadActivityCount == 0)
+        #expect(vm.isUnread(activity.activities[0]))
+        #expect(vm.actor(for: activity.activities[0])?.displayName == "Late")
     }
 
     @Test func blockedActorsAreHidden() {
@@ -88,6 +114,25 @@ import Testing
         await vm.resolveActors()
 
         #expect(vm.actor(for: activity.activities[0])?.displayName == "Alice")
+        #expect(profile.requestedSummaryIds.count == 1)
+    }
+
+    // An actor whose account is gone resolves to nothing. Without remembering
+    // the attempt, every sync would refetch them for as long as the row lives.
+    @Test func anActorThatResolvesToNothingIsNotRefetched() async {
+        let profile = MockProfileServicing()
+        let activity = MockActivityServicing()
+        activity.activities = [makeActivity(actorId: "deleted")]
+        let state = VMFixtures.makeAppState(
+            auth: MockAuthServicing(userId: "me"),
+            profile: profile,
+            activity: activity)
+        let vm = ActivityViewModel(appState: state)
+
+        await vm.resolveActors()
+        await vm.resolveActors()
+
+        #expect(vm.actor(for: activity.activities[0]) == nil)
         #expect(profile.requestedSummaryIds.count == 1)
     }
 

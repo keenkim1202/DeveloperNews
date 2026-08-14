@@ -108,20 +108,44 @@ final class CommentService: CommentServicing {
             return
         }
 
-        guard let target = activityTarget(postId: postId) else {
-            return
+        guard let draft = Self.commentActivityDraft(
+            parentCollection: parentCollection,
+            postId: postId,
+            postAuthorId: postAuthorId,
+            parentComment: parentComment,
+            actorId: author.uid,
+            commentId: newCommentId,
+            text: text)
+        else { return }
+        await activityRecorder.append(draft)
+    }
+
+    /// The activity a new comment produces, or nil when the parent collection
+    /// has no detail route to send the recipient to.
+    ///
+    /// A reply notifies whoever it answers; a top-level comment notifies the
+    /// post author. A reply whose parent is outside the listener window is
+    /// recorded as a plain comment to the post author rather than as a reply to
+    /// someone we cannot name.
+    static func commentActivityDraft(
+        parentCollection: String,
+        postId: String,
+        postAuthorId: String,
+        parentComment: CommunityComment?,
+        actorId: String,
+        commentId: String,
+        text: String,
+    ) -> ActivityDraft? {
+        guard let target = ActivityTarget(collectionName: parentCollection, postId: postId) else {
+            return nil
         }
-        // A reply notifies whoever it answers; a top-level comment notifies the
-        // post author. A reply whose parent is outside the listener window is
-        // recorded as a plain comment to the post author rather than as a reply
-        // to someone we cannot name.
-        await activityRecorder.append(ActivityDraft(
+        return ActivityDraft(
             kind: parentComment == nil ? .postComment : .commentReply,
             recipientId: parentComment?.authorId ?? postAuthorId,
-            actorId: author.uid,
+            actorId: actorId,
             target: target,
-            commentId: newCommentId,
-            preview: text))
+            commentId: commentId,
+            preview: text)
     }
 
     func deleteComment(_ comment: CommunityComment) async {

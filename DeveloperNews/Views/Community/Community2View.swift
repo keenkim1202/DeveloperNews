@@ -27,9 +27,8 @@ struct Community2View: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: openActivity) {
-                        Image(systemName: "bell")
+                        activityBell
                     }
-                    .badge(appState.unreadActivityCount)
                     .accessibilityLabel(Text(.activityTitle))
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -42,6 +41,20 @@ struct Community2View: View {
             .keenOnChange(of: viewModel.tab, perform: onTabChange)
             .onAppear(perform: onAppear)
         }
+    }
+
+    // `.badge` is only honored on list rows and tab items, so the unread mark
+    // on a toolbar button has to be drawn.
+    private var activityBell: some View {
+        Image(systemName: "bell")
+            .overlay(alignment: .topTrailing) {
+                if appState.unreadActivityCount > 0 {
+                    Circle()
+                        .fill(DSColor.destructive)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 4, y: -3)
+                }
+            }
     }
 
     private var tabPicker: some View {
