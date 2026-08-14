@@ -78,12 +78,7 @@ struct SavedView: View {
                 UnavailableDestinationView(reason: .itemNotFound)
             }
         case let .communityPostDetail(postId):
-            if let post = appState.communityService.post(id: postId) {
-                CommunityPostDetailView(appState: appState, post: post)
-            }
-            else {
-                UnavailableDestinationView(reason: .postDeleted)
-            }
+            CommunityPostDetailView(appState: appState, postId: postId)
         case let .userProfile(userId):
             UserProfileView(appState: appState, authorId: userId)
         }
