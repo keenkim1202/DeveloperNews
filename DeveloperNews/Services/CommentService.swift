@@ -117,7 +117,9 @@ final class CommentService: CommentServicing {
             commentId: newCommentId,
             text: text)
         else { return }
-        await activityRecorder.append(draft)
+        // Keyed on the new comment's id, so a second comment on the same post
+        // is a second row while the same comment can never become two.
+        await activityRecorder.set(draft)
     }
 
     /// The activity a new comment produces, or nil when the parent collection

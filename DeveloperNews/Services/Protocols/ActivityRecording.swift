@@ -34,12 +34,10 @@ struct ActivityDraft: Hashable, Sendable {
 /// failure of the like, comment, or follow that triggered it.
 @MainActor
 protocol ActivityRecording {
-    /// Adds an activity for an action that can genuinely happen more than once,
-    /// such as posting a second comment on the same post.
-    func append(_ draft: ActivityDraft) async
-
-    /// Writes an activity under an id derived from the draft, so a toggle that
-    /// is switched on twice leaves one row rather than two.
+    /// Writes an activity under an id derived from the draft, so one action
+    /// can only ever occupy one row. The security rules require the same id,
+    /// which is what stops a single real like from being replayed into an
+    /// inbox under a hundred different document ids.
     func set(_ draft: ActivityDraft) async
 
     /// Removes the activity `set(_:)` writes for the same draft.

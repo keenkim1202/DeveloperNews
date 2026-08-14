@@ -34,6 +34,17 @@ import Testing
         #expect(commentLike == "commentLike_feedPosts_p1_c1_actor")
     }
 
+    // The create rule rebuilds this id from the document's own fields and
+    // rejects a write that lands anywhere else, which is what keeps one action
+    // to one inbox row. Changing the format here without changing
+    // `expectedActivityId` in firestore.rules silently stops every write.
+    @Test func stableIdMatchesTheFormatTheSecurityRulesRebuild() {
+        let comment = ActivityDocument.stableId(
+            for: makeDraft(kind: .postComment, target: .feedPost("p1"), commentId: "c1"))
+
+        #expect(comment == "postComment_feedPosts_p1_c1_actor")
+    }
+
     @Test func stableIdIsStableAcrossRepeatedToggles() {
         let draft = makeDraft(kind: .postLike, target: .feedPost("p1"))
 

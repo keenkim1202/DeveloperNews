@@ -65,10 +65,26 @@ def activity(kind, target_collection=None, target_post=None, comment_id=None,
     return fields
 
 
-def write_activity(doc_id, fields, uid, recipient=ALICE):
+def stable_id(fields):
+    """Mirrors ActivityDocument.stableId, which the create rule pins the
+    document id to."""
+    parts = [fields["kind"]["stringValue"]]
+    if "targetCollection" in fields:
+        parts.append(fields["targetCollection"]["stringValue"])
+        parts.append(fields["targetPostId"]["stringValue"])
+    if "commentId" in fields:
+        parts.append(fields["commentId"]["stringValue"])
+    parts.append(fields["actorId"]["stringValue"])
+    return "_".join(parts)
+
+
+def write_activity(fields, uid, recipient=ALICE, doc_id=None):
     """Commits with createdAt transformed to request.time, which is what the
-    client's serverTimestamp() resolves to and what the create rule requires."""
-    name = f"projects/{PID}/databases/(default)/documents/users/{recipient}/activities/{doc_id}"
+    client's serverTimestamp() resolves to and what the create rule requires.
+
+    The id defaults to the one the rule pins; pass doc_id to write elsewhere."""
+    name = (f"projects/{PID}/databases/(default)/documents"
+            f"/users/{recipient}/activities/{doc_id or stable_id(fields)}")
     body = {"writes": [{
         "update": {"name": name, "fields": fields},
         "updateTransforms": [
@@ -113,68 +129,63 @@ request("PATCH", "/feedPosts/post-alice/comments/comment-alice",
         {"fields": {"authorId": s(ALICE), "text": s("mine")}})
 
 # --- forgery, before Bob has done anything --------------------------------
-code, body = write_activity("forged-like", activity("postLike", "feedPosts", "post-alice"), BOB)
+code, body = write_activity(activity("postLike", "feedPosts", "post-alice"), BOB)
 check("forged postLike without actually liking", code == 200, False, body)
 
-code, body = write_activity("forged-comment",
-                            activity("postComment", "feedPosts", "post-alice", "nope"), BOB)
+code, body = write_activity(activity("postComment", "feedPosts", "post-alice", "nope"), BOB)
 check("forged postComment naming a comment that does not exist", code == 200, False, body)
 
-code, body = write_activity("forged-follow", activity("follow"), BOB)
+code, body = write_activity(activity("follow"), BOB)
 check("forged follow without actually following", code == 200, False, body)
 
-code, body = write_activity("oversize",
-                            activity("follow", preview="x" * 141), BOB)
+code, body = write_activity(activity("follow", preview="x" * 141), BOB)
 check("preview over the 140 cap", code == 200, False, body)
 
-code, body = write_activity("bad-kind", activity("adminAlert"), BOB)
+code, body = write_activity(activity("adminAlert"), BOB)
 check("unknown kind", code == 200, False, body)
 
-code, body = write_activity("self", activity("follow", actor=ALICE), ALICE, recipient=ALICE)
+code, body = write_activity(activity("follow", actor=ALICE), ALICE, recipient=ALICE)
 check("activity addressed to yourself", code == 200, False, body)
 
-code, body = write_activity("wrong-actor", activity("follow", actor=ALICE), BOB)
+code, body = write_activity(activity("follow", actor=ALICE), BOB)
 check("actorId spoofed to someone else", code == 200, False, body)
 
 # --- the earned paths -----------------------------------------------------
 request("PATCH", f"/users/{BOB}", {"fields": {"displayName": s("Bob"),
         "followedUserIds": {"arrayValue": {"values": [s(ALICE)]}}}})
-code, body = write_activity("real-follow", activity("follow"), BOB)
+code, body = write_activity(activity("follow"), BOB)
 check("follow after actually following", code == 200, True, body)
 
 request("PATCH", "/feedPosts/post-alice", {"fields": {
     "authorId": s(ALICE), "comment": s("c"), "storyURL": s("u"), "storyTitle": s("t"),
     "likeCount": {"integerValue": "1"},
     "likedBy": {"arrayValue": {"values": [s(BOB)]}}}})
-code, body = write_activity("real-like", activity("postLike", "feedPosts", "post-alice"), BOB)
+code, body = write_activity(activity("postLike", "feedPosts", "post-alice"), BOB)
 check("postLike after actually liking", code == 200, True, body)
 
 request("PATCH", "/feedPosts/post-alice/comments/comment-bob",
         {"fields": {"authorId": s(BOB), "text": s("nice")}})
-code, body = write_activity("real-comment",
-                            activity("postComment", "feedPosts", "post-alice", "comment-bob"), BOB)
+code, body = write_activity(activity("postComment", "feedPosts", "post-alice", "comment-bob"), BOB)
 check("postComment after actually commenting", code == 200, True, body)
 
-code, body = write_activity("forged-comment-like",
-                            activity("commentLike", "feedPosts", "post-alice", "comment-alice"), BOB)
+code, body = write_activity(activity("commentLike", "feedPosts", "post-alice", "comment-alice"), BOB)
 check("commentLike without actually liking the comment", code == 200, False, body)
 
 request("PATCH", "/feedPosts/post-alice/comments/comment-alice", {"fields": {
     "authorId": s(ALICE), "text": s("mine"),
     "likeCount": {"integerValue": "1"},
     "likedBy": {"arrayValue": {"values": [s(BOB)]}}}})
-code, body = write_activity("real-comment-like",
-                            activity("commentLike", "feedPosts", "post-alice", "comment-alice"), BOB)
+code, body = write_activity(activity("commentLike", "feedPosts", "post-alice", "comment-alice"), BOB)
 check("commentLike after actually liking the comment", code == 200, True, body)
 
 # One earned action must not be replayable under a second document id, or a
 # single like fills the 100-row listener and displaces real activity.
-code, body = write_activity("real-like-replay",
-                            activity("postLike", "feedPosts", "post-alice"), BOB)
+code, body = write_activity(activity("postLike", "feedPosts", "post-alice"), BOB,
+                            doc_id="postLike-copy-2")
 check("earned like replayed under a second document id", code == 200, False, body)
 
-code, body = write_activity("real-comment-replay",
-                            activity("postComment", "feedPosts", "post-alice", "comment-bob"), BOB)
+code, body = write_activity(activity("postComment", "feedPosts", "post-alice", "comment-bob"), BOB,
+                            doc_id="postComment-copy-2")
 check("earned comment replayed under a second document id", code == 200, False, body)
 
 # Bob liked his own post; Alice is not its author, so her inbox must reject it.
@@ -182,30 +193,32 @@ request("PATCH", "/feedPosts/post-bob", {"fields": {
     "authorId": s(BOB), "comment": s("c"), "storyURL": s("u"), "storyTitle": s("t"),
     "likeCount": {"integerValue": "1"},
     "likedBy": {"arrayValue": {"values": [s(BOB)]}}}})
-code, body = write_activity("misaddressed", activity("postLike", "feedPosts", "post-bob"), BOB)
+code, body = write_activity(activity("postLike", "feedPosts", "post-bob"), BOB)
 check("real like, but delivered to a non-author's inbox", code == 200, False, body)
 
 # --- read, mark-as-read, and the unread-reset hole ------------------------
-code, body = request("GET", f"/users/{ALICE}/activities/real-like", uid=BOB)
+LIKE_ROW = stable_id(activity("postLike", "feedPosts", "post-alice"))
+FOLLOW_ROW = stable_id(activity("follow"))
+code, body = request("GET", f"/users/{ALICE}/activities/{LIKE_ROW}", uid=BOB)
 check("actor reading the recipient's inbox", code == 200, False, body)
 
-code, body = request("GET", f"/users/{ALICE}/activities/real-like", uid=ALICE)
+code, body = request("GET", f"/users/{ALICE}/activities/{LIKE_ROW}", uid=ALICE)
 check("recipient reading their own inbox", code == 200, True, body)
 
-code, body = request("PATCH", f"/users/{ALICE}/activities/real-like",
+code, body = request("PATCH", f"/users/{ALICE}/activities/{LIKE_ROW}",
                      {"fields": {"isRead": {"booleanValue": True}}},
                      uid=ALICE, query="?updateMask.fieldPaths=isRead")
 check("recipient marking a row read", code == 200, True, body)
 
-code, body = write_activity("real-like", activity("postLike", "feedPosts", "post-alice"), BOB)
+code, body = write_activity(activity("postLike", "feedPosts", "post-alice"), BOB)
 check("actor resetting a read row back to unread", code == 200, False, body)
 
-code, body = request("PATCH", f"/users/{ALICE}/activities/real-like",
+code, body = request("PATCH", f"/users/{ALICE}/activities/{LIKE_ROW}",
                      {"fields": {"isRead": {"booleanValue": False}}},
                      uid=ALICE, query="?updateMask.fieldPaths=isRead")
 check("recipient marking a row back to unread", code == 200, False, body)
 
-code, body = request("DELETE", f"/users/{ALICE}/activities/real-follow", uid=BOB)
+code, body = request("DELETE", f"/users/{ALICE}/activities/{FOLLOW_ROW}", uid=BOB)
 check("actor withdrawing their own row", code == 200, True, body)
 
 print()

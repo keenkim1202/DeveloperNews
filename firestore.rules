@@ -93,6 +93,23 @@ service cloud.firestore {
             && actor in activityComment(data).get('likedBy', []);
         }
 
+        // The document id an activity is required to occupy, derived entirely
+        // from its own content and mirroring ActivityDocument.stableId.
+        //
+        // Proving the action happened is not enough on its own: the evidence
+        // stays true after the write, so without pinning the id one real like
+        // could be written again under a hundred more ids and bury the
+        // recipient's inbox. Pinning it makes an action worth exactly one row.
+        function expectedActivityId(data) {
+          return data.kind == 'follow'
+            ? data.kind + '_' + data.actorId
+            : (data.kind == 'postLike'
+              ? data.kind + '_' + data.targetCollection + '_' + data.targetPostId
+                + '_' + data.actorId
+              : data.kind + '_' + data.targetCollection + '_' + data.targetPostId
+                + '_' + data.commentId + '_' + data.actorId);
+        }
+
         function activityIsEarned(data, actor) {
           return isEarnedFollow(data, actor)
             || isEarnedPostLike(data, actor)
@@ -110,6 +127,7 @@ service cloud.firestore {
           && request.resource.data.isRead == false
           && request.resource.data.createdAt == request.time
           && activityShapeIsValid(request.resource.data)
+          && activityId == expectedActivityId(request.resource.data)
           && activityIsEarned(request.resource.data, request.auth.uid);
 
         allow update: if request.auth != null && (

@@ -16,14 +16,6 @@ final class ActivityRecorder: ActivityRecording {
         db.collection("users").document(userId).collection("activities")
     }
 
-    func append(_ draft: ActivityDraft) async {
-        guard isDeliverable(draft) else {
-            return
-        }
-        try? await activitiesRef(draft.recipientId)
-            .addDocument(data: ActivityDocument.fields(for: draft))
-    }
-
     func set(_ draft: ActivityDraft) async {
         guard isDeliverable(draft) else {
             return
