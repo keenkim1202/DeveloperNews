@@ -56,6 +56,8 @@ struct ContentView: View {
 
     private func loadContent() async {
         await appState.loadIfNeeded()
+        await appState.refreshDailyDigest()
+        DailyDigestRefresher.schedule()
     }
 
     private func onToastTriggerChange() {
@@ -80,6 +82,7 @@ struct ContentView: View {
         appState.processPendingSharedItems()
         Task {
             await appState.refreshIfStale(maxAge: AppState.feedStaleThreshold)
+            await appState.refreshDailyDigest()
         }
     }
 
@@ -108,7 +111,8 @@ struct ContentView: View {
             communityService: CommunityService(),
             feedPostService: FeedPostService(),
             storyEngagementService: StoryEngagementService(),
-            activityService: ActivityService()))
+            activityService: ActivityService(),
+            notificationScheduler: NotificationScheduler()))
 }
 
 

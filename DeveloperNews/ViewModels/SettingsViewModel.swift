@@ -44,6 +44,9 @@ final class SettingsViewModel {
     var notificationsEnabled: Bool {
         appState.notificationsEnabled
     }
+    var notificationsDeniedBySystem: Bool {
+        appState.notificationsDeniedBySystem
+    }
     var blockedUserIds: Set<String> {
         appState.blockedUserIds
     }
@@ -74,8 +77,12 @@ final class SettingsViewModel {
         appState.setSourceCategory(category, enabled: enabled)
     }
 
-    func setNotificationsEnabled(_ enabled: Bool) {
-        appState.setNotificationsEnabled(enabled)
+    func setNotificationsEnabled(_ enabled: Bool) async {
+        await appState.setNotificationsEnabled(enabled)
+    }
+
+    func syncNotificationAuthorization() async {
+        await appState.syncNotificationAuthorization()
     }
 
     func setTranslationLanguage(_ code: String?) {

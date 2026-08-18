@@ -29,6 +29,7 @@ struct SettingsView: View {
                     }
             }
             .navigationDestination(for: SettingsTabDestination.self, destination: destination)
+            .task(syncNotificationAuthorization)
             .alert(.profileEditName, isPresented: $viewModel.showEditName) {
                 TextField(.profileNamePlaceholder, text: $viewModel.editingName)
                 Button(
@@ -167,13 +168,20 @@ struct SettingsView: View {
             Section {
                 Toggle(.dailyTrendingAlerts, isOn: Binding(
                     get: { viewModel.notificationsEnabled },
-                    set: { viewModel.setNotificationsEnabled($0) }
+                    set: { setNotificationsEnabled($0) }
                 ))
-                Text(.pushDeliveryIsComingSoonYourChoiceIsSavedOnThisDeviceForNow)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                if viewModel.notificationsDeniedBySystem {
+                    Button(action: openSystemSettings) {
+                        Label(.notificationOpenSettings, icon: .globe)
+                    }
+                }
             } header: {
                 Text(.notifications)
+            } footer: {
+                Text(
+                    viewModel.notificationsDeniedBySystem
+                        ? .notificationPermissionDeniedMessage
+                        : .settingsDailyDigestFooter)
             }
 
             Section {
@@ -351,6 +359,18 @@ struct SettingsView: View {
 
     private func toggleTopic(_ topic: Topic) {
         viewModel.toggleTopic(topic)
+    }
+
+    // Catches permission revoked outside the app, which would otherwise leave
+    // a switch that is on and a digest that never arrives.
+    private func syncNotificationAuthorization() async {
+        await viewModel.syncNotificationAuthorization()
+    }
+
+    private func setNotificationsEnabled(_ enabled: Bool) {
+        Task {
+            await viewModel.setNotificationsEnabled(enabled)
+        }
     }
 
     private func openSystemSettings() {

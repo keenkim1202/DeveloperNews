@@ -1055,23 +1055,6 @@
         }
       }
     },
-    "Push delivery is coming soon. Your choice is saved on this device for now.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Push delivery is coming soon. Your choice is saved on this device for now."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "푸시 알림은 곧 제공될 예정입니다. 현재 선택은 이 기기에 저장됩니다."
-          }
-        }
-      }
-    },
     "Questions about this policy can be sent through the feedback link in Settings.": {
       "extractionState": "manual",
       "localizations": {
@@ -3532,6 +3515,91 @@
         }
       }
     },
+    "notification.dailyDigestFallback": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New trending stories are waiting."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새로운 트렌딩 글이 기다리고 있습니다."
+          }
+        }
+      }
+    },
+    "notification.dailyDigestTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today in developer news"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오늘의 개발자 뉴스"
+          }
+        }
+      }
+    },
+    "notification.openSettings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설정 열기"
+          }
+        }
+      }
+    },
+    "notification.permissionDeniedMessage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow notifications for DeveloperNews in the Settings app to get the daily digest."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설정 앱에서 DeveloperNews 알림을 허용하면 일일 요약을 받을 수 있습니다."
+          }
+        }
+      }
+    },
+    "notification.permissionDeniedTitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are turned off"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "알림이 꺼져 있습니다"
+          }
+        }
+      }
+    },
     "profile.addBio": {
       "extractionState": "manual",
       "localizations": {
@@ -4055,6 +4123,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "차단된 사용자"
+          }
+        }
+      }
+    },
+    "settings.dailyDigestFooter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A daily summary at 9 AM, put together on this device. Nothing is sent to a server."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "매일 오전 9시에 이 기기에서 만들어 알려줍니다. 서버로 전송되는 정보는 없습니다."
           }
         }
       }
