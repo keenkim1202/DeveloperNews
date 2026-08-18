@@ -13,6 +13,10 @@ struct Activity: Identifiable, Hashable, Sendable {
     let kind: ActivityKind
     let actorId: String
     let target: ActivityTarget?
+    /// For a reply, the comment being answered. Stored so the security rules
+    /// can check that the recipient is the person actually replied to, rather
+    /// than taking the writer's word for it.
+    let parentCommentId: String?
     /// Short excerpt of what the actor wrote, or of the content they reacted
     /// to, so the row reads on its own without fetching the post.
     let preview: String

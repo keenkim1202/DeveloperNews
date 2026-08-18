@@ -111,6 +111,22 @@ import Testing
         #expect(draft?.kind == .commentReply)
         #expect(draft?.recipientId == "parent-author")
         #expect(draft?.target == .communityPost("p1"))
+        // Carried so the rules can confirm the recipient wrote the parent
+        // rather than trusting the client's choice of recipient.
+        #expect(draft?.parentCommentId == "c1")
+    }
+
+    @Test func onlyARepliesCarriesAParentCommentId() {
+        let comment = CommentService.commentActivityDraft(
+            parentCollection: "feedPosts",
+            postId: "p1",
+            postAuthorId: "post-author",
+            parentComment: nil,
+            actorId: "actor",
+            commentId: "new",
+            text: "Nice")
+
+        #expect(comment?.parentCommentId == nil)
     }
 
     // A reply whose parent has fallen outside the comment listener window has

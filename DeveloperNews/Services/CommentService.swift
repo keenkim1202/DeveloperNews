@@ -147,6 +147,7 @@ final class CommentService: CommentServicing {
             actorId: actorId,
             target: target,
             commentId: commentId,
+            parentCommentId: parentComment?.id,
             preview: text)
     }
 

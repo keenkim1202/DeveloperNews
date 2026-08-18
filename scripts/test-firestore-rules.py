@@ -53,9 +53,11 @@ def s(v):
 
 
 def activity(kind, target_collection=None, target_post=None, comment_id=None,
-             actor=BOB, is_read=False, preview="hi"):
+             actor=BOB, is_read=False, preview="hi", parent_comment_id=None):
     fields = {"kind": s(kind), "actorId": s(actor), "preview": s(preview),
               "isRead": {"booleanValue": is_read}}
+    if parent_comment_id:
+        fields["parentCommentId"] = s(parent_comment_id)
     if target_collection:
         fields["targetCollection"] = s(target_collection)
     if target_post:
@@ -177,6 +179,32 @@ request("PATCH", "/feedPosts/post-alice/comments/comment-alice", {"fields": {
     "likedBy": {"arrayValue": {"values": [s(BOB)]}}}})
 code, body = write_activity(activity("commentLike", "feedPosts", "post-alice", "comment-alice"), BOB)
 check("commentLike after actually liking the comment", code == 200, True, body)
+
+# --- replies name the comment they answer -------------------------------
+# Bob's reply to Alice's comment.
+request("PATCH", "/feedPosts/post-alice/comments/reply-bob", {"fields": {
+    "authorId": s(BOB), "text": s("answering"),
+    "parentCommentId": s("comment-alice")}})
+code, body = write_activity(
+    activity("commentReply", "feedPosts", "post-alice", "reply-bob",
+             parent_comment_id="comment-alice"), BOB)
+check("reply announced to the author of the comment it answers", code == 200, True, body)
+
+# The same real reply, addressed to someone who did not write the parent.
+request("PATCH", f"/users/carol-uid", {"fields": {"displayName": s("Carol"),
+        "followedUserIds": {"arrayValue": {"values": []}}}})
+code, body = write_activity(
+    activity("commentReply", "feedPosts", "post-alice", "reply-bob",
+             parent_comment_id="comment-alice"), BOB, recipient="carol-uid")
+check("reply misaddressed to someone who wrote no parent", code == 200, False, body)
+
+# A reply pointing at a parent it does not actually answer.
+request("PATCH", "/feedPosts/post-alice/comments/comment-carol", {"fields": {
+    "authorId": s(ALICE), "text": s("unrelated")}})
+code, body = write_activity(
+    activity("commentReply", "feedPosts", "post-alice", "comment-bob",
+             parent_comment_id="comment-alice"), BOB)
+check("reply claiming a parent it does not answer", code == 200, False, body)
 
 # One earned action must not be replayable under a second document id, or a
 # single like fills the 100-row listener and displaces real activity.

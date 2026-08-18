@@ -17,6 +17,7 @@ import Testing
             kind: kind,
             actorId: actorId,
             target: target,
+            parentCommentId: nil,
             preview: preview,
             createdAt: .now,
             isRead: isRead)

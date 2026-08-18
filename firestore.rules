@@ -22,7 +22,7 @@ service cloud.firestore {
         function activityShapeIsValid(data) {
           return data.keys().hasOnly([
               'kind', 'actorId', 'preview', 'isRead', 'createdAt',
-              'targetCollection', 'targetPostId', 'commentId'])
+              'targetCollection', 'targetPostId', 'commentId', 'parentCommentId'])
             && data.keys().hasAll(['kind', 'actorId', 'preview', 'isRead', 'createdAt'])
             && data.kind in ['postLike', 'postComment', 'commentReply', 'commentLike', 'follow']
             && data.actorId is string
@@ -38,7 +38,11 @@ service cloud.firestore {
                 && (data.kind == 'postLike'
                   ? !data.keys().hasAny(['commentId'])
                   : data.commentId is string)
-              ));
+              ))
+            // A reply names the comment it answers; nothing else carries one.
+            && (data.kind == 'commentReply'
+              ? data.parentCommentId is string
+              : !data.keys().hasAny(['parentCommentId']));
         }
 
         function activityPost(data) {
@@ -78,13 +82,20 @@ service cloud.firestore {
             && activityPost(data).get('authorId', '') == userId;
         }
 
-        // The recipient is the parent comment's author, and the activity does
-        // not carry the parent id, so this can only prove the actor wrote the
-        // comment it names — not that they replied to this recipient. It still
-        // costs a real comment per forged row.
+        function activityParentComment(data) {
+          return get(
+            /databases/$(database)/documents/$(data.targetCollection)/$(data.targetPostId)/comments/$(data.parentCommentId)).data;
+        }
+
+        // Both halves are checked: the actor wrote the reply, and the reply
+        // answers a comment this recipient wrote. The client picks the
+        // recipient from the parent it had loaded, so without the second half
+        // a reply could be addressed to anyone.
         function isEarnedCommentReply(data, actor) {
           return data.kind == 'commentReply'
-            && activityComment(data).get('authorId', '') == actor;
+            && activityComment(data).get('authorId', '') == actor
+            && activityComment(data).get('parentCommentId', '') == data.parentCommentId
+            && activityParentComment(data).get('authorId', '') == userId;
         }
 
         function isEarnedCommentLike(data, actor) {
