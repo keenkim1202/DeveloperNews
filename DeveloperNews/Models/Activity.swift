@@ -13,6 +13,10 @@ struct Activity: Identifiable, Hashable, Sendable {
     let kind: ActivityKind
     let actorId: String
     let target: ActivityTarget?
+    /// The comment the activity is about: the one just written for a comment
+    /// or reply, the one liked for a comment like. Nil for a post like or a
+    /// follow, which are about no comment.
+    let commentId: String?
     /// For a reply, the comment being answered. Stored so the security rules
     /// can check that the recipient is the person actually replied to, rather
     /// than taking the writer's word for it.

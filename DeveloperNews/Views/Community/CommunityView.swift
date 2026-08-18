@@ -53,8 +53,11 @@ struct CommunityView: View {
     @ViewBuilder
     private func destination(_ dest: CommunityTabDestination) -> some View {
         switch dest {
-        case let .postDetail(postId):
-            CommunityPostDetailView(appState: appState, postId: postId)
+        case let .postDetail(postId, highlightedCommentId):
+            CommunityPostDetailView(
+                appState: appState,
+                postId: postId,
+                highlightedCommentId: highlightedCommentId)
         case let .userProfile(userId):
             UserProfileView(appState: appState, authorId: userId)
         case let .postLinkDetail(postId):
@@ -77,8 +80,11 @@ struct CommunityView: View {
             else {
                 UnavailableDestinationView(reason: .itemNotFound)
             }
-        case let .feedPostDetail(postId):
-            FeedPostDetailView(appState: appState, postId: postId)
+        case let .feedPostDetail(postId, highlightedCommentId):
+            FeedPostDetailView(
+                appState: appState,
+                postId: postId,
+                highlightedCommentId: highlightedCommentId)
         case .userSearch:
             UserSearchView(appState: appState)
         case .activity:

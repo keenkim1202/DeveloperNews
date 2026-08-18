@@ -13,6 +13,7 @@ struct CommentRow: View {
     private let onBlock: (() -> Void)?
     private let onLike: (() -> Void)?
     private let onReply: (() -> Void)?
+    private let isHighlighted: Bool
 
     @State private var showDeleteConfirm = false
     @State private var showReportConfirm = false
@@ -29,6 +30,7 @@ struct CommentRow: View {
         onBlock: (() -> Void)?,
         onLike: (() -> Void)?,
         onReply: (() -> Void)? = nil,
+        isHighlighted: Bool = false,
     ) {
         self.comment = comment
         self.currentUserId = currentUserId
@@ -37,6 +39,7 @@ struct CommentRow: View {
         self.onBlock = onBlock
         self.onLike = onLike
         self.onReply = onReply
+        self.isHighlighted = isHighlighted
     }
 
     private var isOwnComment: Bool {
@@ -89,9 +92,17 @@ struct CommentRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background {
-            DSColor.surface
+            isHighlighted ? DSColor.accent.opacity(0.12) : DSColor.surface
         }
         .clipShape(RoundedRectangle(cornerRadius: 10))
+        // Marks the comment an activity row was about, so arriving in the
+        // middle of a long thread lands on something identifiable.
+        .overlay {
+            if isHighlighted {
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(DSColor.accent, lineWidth: 1.5)
+            }
+        }
         .alert(
             .communityDeleteCommentConfirm,
             isPresented: $showDeleteConfirm) {

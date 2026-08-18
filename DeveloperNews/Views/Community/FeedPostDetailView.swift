@@ -14,15 +14,20 @@ struct FeedPostDetailView: View {
 
     private let appState: AppState
     private let postId: FeedPost.ID
+    /// A comment to scroll to and mark on arrival, set when the push came from
+    /// an activity row about that specific comment.
+    private let highlightedCommentId: String?
 
     @State private var resolution: Resolution = .loading
 
     init(
         appState: AppState,
         postId: FeedPost.ID,
+        highlightedCommentId: String? = nil,
     ) {
         self.appState = appState
         self.postId = postId
+        self.highlightedCommentId = highlightedCommentId
     }
 
     var body: some View {
@@ -32,7 +37,9 @@ struct FeedPostDetailView: View {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             case let .resolved(viewModel):
-                FeedPostDetailContentView(viewModel: viewModel)
+                FeedPostDetailContentView(
+                    viewModel: viewModel,
+                    highlightedCommentId: highlightedCommentId)
             case .missing:
                 UnavailableDestinationView(reason: .postDeleted)
             case .failed:
@@ -76,6 +83,7 @@ struct FeedPostDetailView: View {
 
 private struct FeedPostDetailContentView: View {
     private let viewModel: FeedPostDetailViewModel
+    private let highlightedCommentId: String?
 
     @State private var showReportConfirm = false
     @State private var showBlockConfirm = false
@@ -84,14 +92,19 @@ private struct FeedPostDetailContentView: View {
     @State private var pendingReason: ReportReason?
     @State private var commentText = ""
     @State private var shouldScrollToLatestComment = false
+    @State private var hasScrolledToHighlight = false
     @State private var showEditSheet = false
     @State private var replyingTo: CommunityComment?
     @FocusState private var commentFieldFocused: Bool
 
     @Environment(\.dismiss) private var dismiss
 
-    init(viewModel: FeedPostDetailViewModel) {
+    init(
+        viewModel: FeedPostDetailViewModel,
+        highlightedCommentId: String?,
+    ) {
         self.viewModel = viewModel
+        self.highlightedCommentId = highlightedCommentId
     }
 
     private var currentUserId: String? {
@@ -138,6 +151,7 @@ private struct FeedPostDetailContentView: View {
             .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
             .keenOnChange(of: visibleComments.count) {
                 scrollToLatestComment(proxy)
+                scrollToHighlightedComment(proxy)
             }
             .safeAreaInset(edge: .bottom) {
                 if currentUserId != nil {
@@ -318,7 +332,8 @@ private struct FeedPostDetailContentView: View {
                         onReport: { reportComment(thread.parent, reason: $0) },
                         onBlock: { blockCommentAuthor(thread.parent) },
                         onLike: currentUserId == nil ? nil : { likeComment(thread.parent) },
-                        onReply: currentUserId == nil ? nil : { startReply(thread.parent) })
+                        onReply: currentUserId == nil ? nil : { startReply(thread.parent) },
+                        isHighlighted: thread.parent.id == highlightedCommentId)
                         .id(thread.parent.id)
                     ForEach(thread.replies) { reply in
                         CommentRow(
@@ -327,7 +342,8 @@ private struct FeedPostDetailContentView: View {
                             onDelete: { deleteComment(reply) },
                             onReport: { reportComment(reply, reason: $0) },
                             onBlock: { blockCommentAuthor(reply) },
-                            onLike: currentUserId == nil ? nil : { likeComment(reply) })
+                            onLike: currentUserId == nil ? nil : { likeComment(reply) },
+                            isHighlighted: reply.id == highlightedCommentId)
                             .padding(.leading, 32)
                             .id(reply.id)
                     }
@@ -346,6 +362,22 @@ private struct FeedPostDetailContentView: View {
 
     private func dismissKeyboard() {
         commentFieldFocused = false
+    }
+
+    /// Scrolls to the comment an activity row pointed at, once the comment
+    /// listener has actually delivered it. Runs on the same comment-count
+    /// change as the latest-comment scroll because that is when the rows the
+    /// proxy can reach come into existence, and only once — after that the
+    /// user's own position wins.
+    private func scrollToHighlightedComment(_ proxy: ScrollViewProxy) {
+        guard let highlightedCommentId,
+              !hasScrolledToHighlight,
+              visibleComments.contains(where: { $0.id == highlightedCommentId })
+        else { return }
+        hasScrolledToHighlight = true
+        withAnimation {
+            proxy.scrollTo(highlightedCommentId, anchor: .center)
+        }
     }
 
     private func scrollToLatestComment(_ proxy: ScrollViewProxy) {
