@@ -204,6 +204,9 @@ final class AppState {
             inputs: ReadTracker.Inputs(
                 persistReadItems: { [unowned self] urls, postIds in
                     saveReadItems(readItemURLs: urls, readPostIds: postIds)
+                },
+                persistReadHistory: { [unowned self] history in
+                    saveReadHistory(history)
                 }))
         self.sourceCategoryStore = SourceCategoryStore(
             inputs: SourceCategoryStore.Inputs(
@@ -328,6 +331,14 @@ final class AppState {
 
     func isRead(_ item: ContentItem) -> Bool {
         readTracker.isRead(item)
+    }
+
+    var readHistory: [ReadRecord] {
+        readTracker.readHistory
+    }
+
+    func clearReadHistory() {
+        readTracker.clearHistory()
     }
 
     func markPostAsRead(_ postId: String) {
@@ -565,7 +576,8 @@ final class AppState {
         blockedUserIds = state.blockedUserIds
         readTracker.seedInitialState(
             readItemURLs: state.readItemURLs,
-            readPostIds: state.readPostIds)
+            readPostIds: state.readPostIds,
+            readHistory: state.readHistory)
         translator.targetLanguageCode = state.translationLanguage
         hasSeenIntro = state.hasSeenIntro
         topStoryDismissedAt = state.topStoryDismissedAt
@@ -629,6 +641,12 @@ final class AppState {
         let userIds = blockedUserIds
         enqueuePersistence { store in
             await store.saveBlockedUsers(userIds)
+        }
+    }
+
+    private func saveReadHistory(_ history: [ReadRecord]) {
+        enqueuePersistence { store in
+            await store.saveReadHistory(history)
         }
     }
 

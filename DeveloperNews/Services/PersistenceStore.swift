@@ -21,6 +21,7 @@ actor PersistenceStore {
         static let blockedUserIds = "blockedUserIds"
         static let readItemURLs = "readItemURLs"
         static let readPostIds = "readPostIds"
+        static let readHistory = "readHistory"
         static let translationLanguage = "translationLanguage"
         static let allItems = "allItems"
     }
@@ -41,6 +42,7 @@ actor PersistenceStore {
         var blockedUserIds: Set<String> = []
         var readItemURLs: Set<String> = []
         var readPostIds: Set<String> = []
+        var readHistory: [ReadRecord] = []
         var translationLanguage: String?
         var lastUpdatedAt: Date?
         var hasSeenIntro = false
@@ -100,6 +102,11 @@ actor PersistenceStore {
             state.readItemURLs = Set(storedReadURLs)
         }
 
+        if let historyData = defaults.data(forKey: StorageKey.readHistory),
+           let decoded = try? JSONDecoder().decode([ReadRecord].self, from: historyData) {
+            state.readHistory = decoded
+        }
+
         if let storedReadPosts = defaults.stringArray(forKey: StorageKey.readPostIds) {
             state.readPostIds = Set(storedReadPosts)
         }
@@ -145,6 +152,13 @@ actor PersistenceStore {
         if let encoded = try? JSONEncoder().encode(records) {
             defaults.set(encoded, forKey: StorageKey.savedItemSnapshots)
         }
+    }
+
+    func saveReadHistory(_ history: [ReadRecord]) {
+        guard let encoded = try? JSONEncoder().encode(history) else {
+            return
+        }
+        defaults.set(encoded, forKey: StorageKey.readHistory)
     }
 
     func saveSortOrder(_ order: SavedSortOrder) {

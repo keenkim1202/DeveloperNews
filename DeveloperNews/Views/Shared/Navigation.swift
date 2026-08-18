@@ -29,6 +29,7 @@ enum SavedTabDestination: Hashable {
     case bookmarkDetail(URL)
     case communityPostDetail(CommunityPost.ID)
     case userProfile(userId: String)
+    case readingHistory
 }
 
 enum SettingsTabDestination: Hashable {
