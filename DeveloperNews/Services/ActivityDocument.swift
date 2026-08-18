@@ -26,6 +26,9 @@ enum ActivityDocument {
         if let commentId = draft.commentId {
             data["commentId"] = commentId
         }
+        if let parentCommentId = draft.parentCommentId {
+            data["parentCommentId"] = parentCommentId
+        }
         return data
     }
 
@@ -63,6 +66,8 @@ enum ActivityDocument {
             kind: kind,
             actorId: actorId,
             target: target,
+            commentId: data["commentId"] as? String,
+            parentCommentId: data["parentCommentId"] as? String,
             preview: data["preview"] as? String ?? "",
             // A just-written document reaches the local listener before the
             // server stamps `createdAt`, so fall back to now rather than to a

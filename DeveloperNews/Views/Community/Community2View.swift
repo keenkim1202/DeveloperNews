@@ -187,10 +187,16 @@ struct Community2View: View {
             else {
                 UnavailableDestinationView(reason: .itemNotFound)
             }
-        case let .feedPostDetail(postId):
-            FeedPostDetailView(appState: appState, postId: postId)
-        case let .postDetail(postId):
-            CommunityPostDetailView(appState: appState, postId: postId)
+        case let .feedPostDetail(postId, highlightedCommentId):
+            FeedPostDetailView(
+                appState: appState,
+                postId: postId,
+                highlightedCommentId: highlightedCommentId)
+        case let .postDetail(postId, highlightedCommentId):
+            CommunityPostDetailView(
+                appState: appState,
+                postId: postId,
+                highlightedCommentId: highlightedCommentId)
         case let .postLinkDetail(postId):
             if let post = appState.communityService.post(id: postId),
                let item = post.linkContentItem {

@@ -9,6 +9,7 @@ import Testing
         kind: ActivityKind = .postLike,
         actorId: String = "actor-1",
         target: ActivityTarget? = .feedPost("post-1"),
+        commentId: String? = nil,
         preview: String = "Worth a read",
         isRead: Bool = false,
     ) -> Activity {
@@ -17,6 +18,8 @@ import Testing
             kind: kind,
             actorId: actorId,
             target: target,
+            commentId: commentId,
+            parentCommentId: nil,
             preview: preview,
             createdAt: .now,
             isRead: isRead)
@@ -150,5 +153,25 @@ import Testing
             vm.destination(for: makeActivity(kind: .commentLike, target: .communityPost("c1")))
                 == .postDetail("c1"))
         #expect(vm.destination(for: makeActivity(kind: .postLike, target: nil)) == nil)
+    }
+
+    // A comment activity opens the post scrolled to the comment it was about;
+    // a like or a follow has no comment to point at.
+    @Test func commentActivitiesCarryTheirCommentIntoTheDestination() {
+        let state = VMFixtures.makeAppState(auth: MockAuthServicing(userId: "me"))
+        let vm = ActivityViewModel(appState: state)
+
+        #expect(
+            vm.destination(for: makeActivity(
+                kind: .commentReply, target: .feedPost("f1"), commentId: "c9"))
+                == .feedPostDetail("f1", highlightedCommentId: "c9"))
+        #expect(
+            vm.destination(for: makeActivity(
+                kind: .commentLike, target: .communityPost("c1"), commentId: "c9"))
+                == .postDetail("c1", highlightedCommentId: "c9"))
+        #expect(
+            vm.destination(for: makeActivity(
+                kind: .postLike, target: .feedPost("f1"), commentId: nil))
+                == .feedPostDetail("f1", highlightedCommentId: nil))
     }
 }

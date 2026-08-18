@@ -9,12 +9,12 @@ enum HomeTabDestination: Hashable {
 }
 
 enum CommunityTabDestination: Hashable {
-    case postDetail(CommunityPost.ID)
+    case postDetail(CommunityPost.ID, highlightedCommentId: String? = nil)
     case userProfile(userId: String)
     case postLinkDetail(CommunityPost.ID)
     case followList(FollowListTarget)
     case storyDetail(FeedPostStory)
-    case feedPostDetail(FeedPost.ID)
+    case feedPostDetail(FeedPost.ID, highlightedCommentId: String? = nil)
     case userSearch
     case activity
 }

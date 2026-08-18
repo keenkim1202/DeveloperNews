@@ -85,9 +85,9 @@ final class ActivityViewModel {
         case .postLike, .postComment, .commentReply, .commentLike:
             switch activity.target {
             case let .feedPost(id):
-                return .feedPostDetail(id)
+                return .feedPostDetail(id, highlightedCommentId: activity.commentId)
             case let .communityPost(id):
-                return .postDetail(id)
+                return .postDetail(id, highlightedCommentId: activity.commentId)
             case nil:
                 return nil
             }
