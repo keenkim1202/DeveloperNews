@@ -11,14 +11,21 @@ import Observation
 final class ReadTracker {
     private static let maxReadItems = 5000
 
+    /// History is a browsing aid, not an archive, so it keeps far fewer entries
+    /// than the read-state hashes do — each one carries a title and a URL.
+    private static let maxHistoryItems = 200
+
     private let inputs: Inputs
 
     var readItemURLs: Set<String> = []
     var readPostIds: Set<String> = []
+    /// Newest first.
+    private(set) var readHistory: [ReadRecord] = []
 
     // Side effects supplied at init.
     struct Inputs {
         var persistReadItems: @MainActor (Set<String>, Set<String>) -> Void
+        var persistReadHistory: @MainActor ([ReadRecord]) -> Void
     }
 
     init(inputs: Inputs) {
@@ -28,9 +35,11 @@ final class ReadTracker {
     func seedInitialState(
         readItemURLs: Set<String>,
         readPostIds: Set<String>,
+        readHistory: [ReadRecord] = [],
     ) {
         self.readItemURLs = readItemURLs
         self.readPostIds = readPostIds
+        self.readHistory = readHistory
     }
 
     func markURLAsRead(_ urlString: String) {
@@ -43,6 +52,28 @@ final class ReadTracker {
         readItemURLs.insert(HashUtil.shortHash(item.url.absoluteString))
         trimReadItems()
         saveReadItems()
+        recordInHistory(item)
+    }
+
+    func clearHistory() {
+        readHistory = []
+        inputs.persistReadHistory(readHistory)
+    }
+
+    /// Re-reading moves an article back to the top rather than adding a second
+    /// row, so the list reads as "when I last saw this".
+    private func recordInHistory(_ item: ContentItem) {
+        let record = ReadRecord(
+            url: item.url,
+            title: item.title,
+            sourceName: item.sourceName,
+            readAt: .now)
+        readHistory.removeAll { $0.url == item.url }
+        readHistory.insert(record, at: 0)
+        if readHistory.count > Self.maxHistoryItems {
+            readHistory.removeLast(readHistory.count - Self.maxHistoryItems)
+        }
+        inputs.persistReadHistory(readHistory)
     }
 
     func isRead(_ item: ContentItem) -> Bool {

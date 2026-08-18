@@ -33,6 +33,11 @@ struct SavedView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 12) {
+                        NavigationLink(value: SavedTabDestination.readingHistory) {
+                            Image(systemName: "clock.arrow.circlepath")
+                        }
+                        .accessibilityLabel(Text(.historyTitle))
+
                         Button(action: openAddItem) {
                             Image(.add)
                         }
@@ -81,6 +86,8 @@ struct SavedView: View {
             CommunityPostDetailView(appState: appState, postId: postId)
         case let .userProfile(userId):
             UserProfileView(appState: appState, authorId: userId)
+        case .readingHistory:
+            ReadingHistoryView(appState: appState)
         }
     }
 
