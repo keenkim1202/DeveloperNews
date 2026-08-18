@@ -25,6 +25,7 @@ final class AppState {
     let feedPostService: any FeedPostServicing
     let storyEngagementService: any StoryEngagementServicing
     let activityService: any ActivityServicing
+    let notificationScheduler: any NotificationScheduling
 
     var selectedTopics: Set<Topic> = []
     var focusedTopic: Topic?
@@ -161,6 +162,7 @@ final class AppState {
         feedPostService: any FeedPostServicing,
         storyEngagementService: any StoryEngagementServicing,
         activityService: any ActivityServicing,
+        notificationScheduler: any NotificationScheduling,
         contentSourceClient: (any ContentSourceClient)? = nil,
         persistenceStore: PersistenceStore = PersistenceStore(),
     ) {
@@ -171,6 +173,7 @@ final class AppState {
         self.feedPostService = feedPostService
         self.storyEngagementService = storyEngagementService
         self.activityService = activityService
+        self.notificationScheduler = notificationScheduler
         self.persistenceStore = persistenceStore
         let client = contentSourceClient ?? Self.defaultContentSourceClient()
         self.contentSourceClient = client
@@ -454,12 +457,68 @@ final class AppState {
         }
     }
 
-    func setNotificationsEnabled(_ isEnabled: Bool) {
+    /// True once the user has turned the digest on but iOS has refused to
+    /// deliver it, which the settings screen turns into a prompt to open the
+    /// Settings app. There is nothing the app itself can do about that state.
+    var notificationsDeniedBySystem = false
+
+    func setNotificationsEnabled(_ isEnabled: Bool) async {
         guard notificationsEnabled != isEnabled else {
             return
         }
-        notificationsEnabled = isEnabled
+
+        guard isEnabled else {
+            notificationsEnabled = false
+            notificationsDeniedBySystem = false
+            notificationScheduler.cancelDailyDigest()
+            saveNotificationsEnabled()
+            return
+        }
+
+        // Permission is asked for at the moment it is wanted, rather than on
+        // launch, so the prompt arrives with the reason for it on screen.
+        let authorization = await notificationScheduler.requestAuthorization()
+        guard authorization == .granted else {
+            notificationsDeniedBySystem = true
+            return
+        }
+
+        notificationsDeniedBySystem = false
+        notificationsEnabled = true
         saveNotificationsEnabled()
+        await refreshDailyDigest()
+    }
+
+    /// Re-arms the digest with the current top story.
+    ///
+    /// Called whenever the feed has fresh content, so the body keeps up without
+    /// depending on a background run that iOS may never grant. The scheduled
+    /// notification always exists once the setting is on; a background refresh
+    /// only makes its text newer.
+    func refreshDailyDigest() async {
+        guard notificationsEnabled else {
+            return
+        }
+        let body = personalizedItems.first?.title
+            ?? String(localized: .notificationDailyDigestFallback)
+        await notificationScheduler.scheduleDailyDigest(body: body)
+    }
+
+    /// Reconciles the stored setting with the system's answer at launch. A user
+    /// who revoked permission outside the app would otherwise keep a switch
+    /// that is on and a digest that never arrives.
+    func syncNotificationAuthorization() async {
+        guard notificationsEnabled else {
+            return
+        }
+        guard await notificationScheduler.authorization() == .granted else {
+            notificationsEnabled = false
+            notificationsDeniedBySystem = true
+            notificationScheduler.cancelDailyDigest()
+            saveNotificationsEnabled()
+            return
+        }
+        await refreshDailyDigest()
     }
 
     func processPendingSharedItems() {

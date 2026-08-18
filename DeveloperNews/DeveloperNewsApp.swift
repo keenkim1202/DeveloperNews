@@ -23,6 +23,7 @@ struct DeveloperNewsApp: App {
         let feedPostService = FeedPostService()
         let storyEngagementService = StoryEngagementService()
         let activityService = ActivityService()
+        let notificationScheduler = NotificationScheduler()
         _appState = State(
             initialValue: AppState(
                 translator: translator,
@@ -31,7 +32,13 @@ struct DeveloperNewsApp: App {
                 communityService: communityService,
                 feedPostService: feedPostService,
                 storyEngagementService: storyEngagementService,
-                activityService: activityService))
+                activityService: activityService,
+                notificationScheduler: notificationScheduler))
+
+        // Registration must complete before launch finishes, so it happens here
+        // rather than in a task or an onAppear.
+        let state = _appState.wrappedValue
+        DailyDigestRefresher.register { state }
     }
 
     var body: some Scene {
