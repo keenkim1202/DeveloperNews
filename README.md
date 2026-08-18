@@ -57,7 +57,7 @@ bundle exec fastlane ios bump_build
 - `beta` and `release` require the App Store Connect API Key environment variables above.
 - `bump_build` uses the latest TestFlight build number for the current marketing version plus one and requires the App Store Connect API Key environment variables.
 - archive signing uses App Store Connect API credentials to fetch provisioning profiles and exports with explicit profile mappings.
-- pull requests run `.github/workflows/pr-check.yml`, which executes `bundle exec fastlane ios ci`.
+- pull requests run `.github/workflows/pr-check.yml`, which calls `xcodebuild test` directly rather than going through fastlane. It picks the newest available iPhone simulator and runs the unit tests, which builds the app on the way.
 - pushes to the `release` branch run `.github/workflows/release-beta.yml`, which executes `bundle exec fastlane ios beta`
 - Override the export method with `FL_EXPORT_METHOD` when needed.
 - Override the TestFlight changelog commit count with `FL_CHANGELOG_COMMITS` when needed.

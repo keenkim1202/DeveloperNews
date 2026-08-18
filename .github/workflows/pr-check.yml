@@ -34,12 +34,40 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
 
-      - name: Build
+      # `test` needs a concrete device, unlike the generic destination a build
+      # accepts. Resolved here rather than hardcoded so a runner image that
+      # renames or drops a device model does not silently break the job.
+      - name: Select a simulator
+        id: simulator
+        run: |
+          udid=$(xcrun simctl list devices available --json | python3 -c '
+          import json, sys
+
+          best = None
+          for runtime, devices in json.load(sys.stdin)["devices"].items():
+              if "SimRuntime.iOS-" not in runtime:
+                  continue
+              version = tuple(int(part) for part in runtime.rsplit("iOS-", 1)[1].split("-"))
+              for device in devices:
+                  if device["name"].startswith("iPhone") and (best is None or version > best[0]):
+                      best = (version, device["udid"])
+          if best is None:
+              sys.exit("no iPhone simulator available on this runner")
+          print(best[1])
+          ')
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          xcrun simctl list devices available | grep -F "$udid"
+
+      # Builds and runs the unit tests. `test` compiles the app target on the
+      # way, so this covers what the old build-only step covered.
+      - name: Test
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
         run: |
           xcodebuild \
             -project DeveloperNews.xcodeproj \
             -scheme DeveloperNews \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination "id=$SIMULATOR_UDID" \
             -derivedDataPath fastlane/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
-            build
+            test
