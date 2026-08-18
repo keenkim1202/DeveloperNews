@@ -180,9 +180,12 @@ struct Community2View: View {
         switch dest {
         case let .userProfile(userId):
             UserProfileView(appState: appState, authorId: userId)
-        case let .storyDetail(story):
+        case let .storyDetail(story, highlightedCommentId):
             if let item = story.contentItem {
-                ArticleDetailView(appState: appState, item: item)
+                ArticleDetailView(
+                    appState: appState,
+                    item: item,
+                    highlightedCommentId: highlightedCommentId)
             }
             else {
                 UnavailableDestinationView(reason: .itemNotFound)

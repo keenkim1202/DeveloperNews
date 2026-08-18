@@ -52,7 +52,7 @@ import Testing
     }
 
     @Test func targetRoundTripsThroughItsCollectionName() {
-        let targets: [ActivityTarget] = [.feedPost("p1"), .communityPost("p2")]
+        let targets: [ActivityTarget] = [.feedPost("p1"), .communityPost("p2"), .story("hash")]
 
         for target in targets {
             let restored = ActivityTarget(
@@ -62,8 +62,43 @@ import Testing
         }
     }
 
-    @Test func storyEngagementHasNoTarget() {
-        #expect(ActivityTarget(collectionName: "storyEngagement", postId: "hash") == nil)
+    @Test func anUnknownCollectionHasNoTarget() {
+        #expect(ActivityTarget(collectionName: "reports", postId: "r1") == nil)
+    }
+
+    // A story belongs to nobody, so there is no one to tell about a top-level
+    // comment on it. A reply answers a person and does notify them.
+    @Test func aTopLevelStoryCommentNotifiesNobody() {
+        let draft = CommentService.commentActivityDraft(
+            parentCollection: "storyEngagement",
+            postId: "hash",
+            postAuthorId: "",
+            parentComment: nil,
+            actorId: "actor",
+            commentId: "new",
+            story: ActivityStory(url: "https://example.com/a", title: "A"),
+            text: "Nice")
+
+        #expect(draft == nil)
+    }
+
+    @Test func aReplyToAStoryCommentNotifiesTheCommentAuthor() {
+        let draft = CommentService.commentActivityDraft(
+            parentCollection: "storyEngagement",
+            postId: "hash",
+            postAuthorId: "",
+            parentComment: makeComment(authorId: "parent-author"),
+            actorId: "actor",
+            commentId: "new",
+            story: ActivityStory(url: "https://example.com/a", title: "A"),
+            text: "Agreed")
+
+        #expect(draft?.kind == .commentReply)
+        #expect(draft?.recipientId == "parent-author")
+        #expect(draft?.target == .story("hash"))
+        // The engagement id is a URL hash, so the URL has to travel with the
+        // activity for the route to be rebuildable.
+        #expect(draft?.story?.url == "https://example.com/a")
     }
 
     private func makeComment(
@@ -145,16 +180,4 @@ import Testing
         #expect(draft?.recipientId == "post-author")
     }
 
-    @Test func storyCommentsProduceNoActivity() {
-        let draft = CommentService.commentActivityDraft(
-            parentCollection: "storyEngagement",
-            postId: "hash",
-            postAuthorId: "",
-            parentComment: nil,
-            actorId: "actor",
-            commentId: "new",
-            text: "Nice")
-
-        #expect(draft == nil)
-    }
 }

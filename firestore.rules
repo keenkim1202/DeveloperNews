@@ -18,11 +18,14 @@ service cloud.firestore {
       // recipient's subcollection, and readable only by the recipient.
       match /activities/{activityId} {
         // A follow points at no post and no comment. A post like points at a
-        // post only. Every comment kind points at both.
+        // post only. Every comment kind points at both. A story target carries
+        // the story's URL and title, because the engagement document id is a
+        // hash and the story is not a record anything can read them from.
         function activityShapeIsValid(data) {
           return data.keys().hasOnly([
               'kind', 'actorId', 'preview', 'isRead', 'createdAt',
-              'targetCollection', 'targetPostId', 'commentId', 'parentCommentId'])
+              'targetCollection', 'targetPostId', 'commentId', 'parentCommentId',
+              'storyURL', 'storyTitle'])
             && data.keys().hasAll(['kind', 'actorId', 'preview', 'isRead', 'createdAt'])
             && data.kind in ['postLike', 'postComment', 'commentReply', 'commentLike', 'follow']
             && data.actorId is string
@@ -33,12 +36,23 @@ service cloud.firestore {
               ? !data.keys().hasAny(['targetCollection', 'targetPostId', 'commentId'])
               : (
                 data.keys().hasAll(['targetCollection', 'targetPostId'])
-                && data.targetCollection in ['posts', 'feedPosts']
+                && data.targetCollection in ['posts', 'feedPosts', 'storyEngagement']
                 && data.targetPostId is string
                 && (data.kind == 'postLike'
                   ? !data.keys().hasAny(['commentId'])
                   : data.commentId is string)
               ))
+            // A story has no author, so only the kinds addressed to a person —
+            // a reply, or a like on someone's comment — can target one.
+            && (data.get('targetCollection', '') == 'storyEngagement'
+              ? (
+                data.kind in ['commentReply', 'commentLike']
+                && data.storyURL is string
+                && data.storyURL.size() <= 2000
+                && data.storyTitle is string
+                && data.storyTitle.size() <= 140
+              )
+              : !data.keys().hasAny(['storyURL', 'storyTitle']))
             // A reply names the comment it answers; nothing else carries one.
             && (data.kind == 'commentReply'
               ? data.parentCommentId is string

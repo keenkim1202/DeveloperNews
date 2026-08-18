@@ -18,17 +18,26 @@ struct ArticleDetailView: View {
     @State private var showSaveNote = false
     @State private var showPostComposer = false
     @State private var showComments = false
+    @State private var hasOpenedHighlightedComment = false
+
+    /// A story comment to open the comments sheet on, set when the push came
+    /// from an activity row about that comment. Opening the article alone would
+    /// leave the reader hunting for the comment they were told about.
+    private let highlightedCommentId: String?
 
     init(
         appState: AppState,
         item: ContentItem,
+        highlightedCommentId: String? = nil,
     ) {
+        self.highlightedCommentId = highlightedCommentId
         _viewModel = State(initialValue: ArticleDetailViewModel(
             appState: appState,
             item: item))
         _engagementViewModel = State(initialValue: StoryEngagementViewModel(
             appState: appState,
-            storyURL: item.url.absoluteString))
+            storyURL: item.url.absoluteString,
+            storyTitle: item.title))
         self.appState = appState
         self.item = item
     }
@@ -199,7 +208,19 @@ struct ArticleDetailView: View {
 
     @ViewBuilder
     private var commentsSheet: some View {
-        StoryCommentsSheet(viewModel: engagementViewModel)
+        StoryCommentsSheet(
+            viewModel: engagementViewModel,
+            highlightedCommentId: highlightedCommentId)
+    }
+
+    /// Opens the comments once, on the first appearance, when the screen was
+    /// pushed from an activity about a comment.
+    private func openHighlightedCommentIfNeeded() {
+        guard highlightedCommentId != nil, !hasOpenedHighlightedComment else {
+            return
+        }
+        hasOpenedHighlightedComment = true
+        showComments = true
     }
 
     private func onAppear() {
@@ -210,6 +231,7 @@ struct ArticleDetailView: View {
         Task {
             await engagementViewModel.registerView()
         }
+        openHighlightedCommentIfNeeded()
     }
 
     private func onDisappear() {

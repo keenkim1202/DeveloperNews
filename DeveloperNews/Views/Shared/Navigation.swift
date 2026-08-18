@@ -13,7 +13,7 @@ enum CommunityTabDestination: Hashable {
     case userProfile(userId: String)
     case postLinkDetail(CommunityPost.ID)
     case followList(FollowListTarget)
-    case storyDetail(FeedPostStory)
+    case storyDetail(FeedPostStory, highlightedCommentId: String? = nil)
     case feedPostDetail(FeedPost.ID, highlightedCommentId: String? = nil)
     case userSearch
     case activity

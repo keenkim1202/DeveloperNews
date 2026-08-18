@@ -29,6 +29,10 @@ enum ActivityDocument {
         if let parentCommentId = draft.parentCommentId {
             data["parentCommentId"] = parentCommentId
         }
+        if let story = draft.story {
+            data["storyURL"] = story.url
+            data["storyTitle"] = String(story.title.prefix(maxPreviewLength))
+        }
         return data
     }
 
@@ -67,6 +71,9 @@ enum ActivityDocument {
             actorId: actorId,
             target: target,
             commentId: data["commentId"] as? String,
+            story: (data["storyURL"] as? String).map { url in
+                ActivityStory(url: url, title: data["storyTitle"] as? String ?? "")
+            },
             parentCommentId: data["parentCommentId"] as? String,
             preview: data["preview"] as? String ?? "",
             // A just-written document reaches the local listener before the

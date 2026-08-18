@@ -8,6 +8,7 @@ struct ActivityDraft: Hashable, Sendable {
     let target: ActivityTarget?
     let commentId: String?
     let parentCommentId: String?
+    let story: ActivityStory?
     let preview: String
 
     init(
@@ -17,6 +18,7 @@ struct ActivityDraft: Hashable, Sendable {
         target: ActivityTarget? = nil,
         commentId: String? = nil,
         parentCommentId: String? = nil,
+        story: ActivityStory? = nil,
         preview: String = "",
     ) {
         self.kind = kind
@@ -25,6 +27,7 @@ struct ActivityDraft: Hashable, Sendable {
         self.target = target
         self.commentId = commentId
         self.parentCommentId = parentCommentId
+        self.story = story
         self.preview = preview
     }
 }

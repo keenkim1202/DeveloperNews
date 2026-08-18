@@ -10,21 +10,22 @@ final class CommentService: CommentServicing {
 
     private let db = Firestore.firestore()
     private let parentCollection: String
+    private let activityStory: ActivityStory?
     private let activityRecorder: any ActivityRecording
     @ObservationIgnored
     nonisolated(unsafe) private var listenerRegistration: ListenerRegistration?
 
     init(
         parentCollection: String = "posts",
+        activityStory: ActivityStory? = nil,
         activityRecorder: any ActivityRecording = ActivityRecorder(),
     ) {
         self.parentCollection = parentCollection
+        self.activityStory = activityStory
         self.activityRecorder = activityRecorder
     }
 
-    /// The activity destination for a post in this service's parent
-    /// collection. Nil for `storyEngagement`, whose ids are URL hashes with no
-    /// detail route, which suppresses activity for story comments.
+    /// The activity destination for a post in this service's parent collection.
     private func activityTarget(postId: String) -> ActivityTarget? {
         ActivityTarget(collectionName: parentCollection, postId: postId)
     }
@@ -115,6 +116,7 @@ final class CommentService: CommentServicing {
             parentComment: parentComment,
             actorId: author.uid,
             commentId: newCommentId,
+            story: activityStory,
             text: text)
         else { return }
         // Keyed on the new comment's id, so a second comment on the same post
@@ -136,9 +138,15 @@ final class CommentService: CommentServicing {
         parentComment: CommunityComment?,
         actorId: String,
         commentId: String,
+        story: ActivityStory? = nil,
         text: String,
     ) -> ActivityDraft? {
         guard let target = ActivityTarget(collectionName: parentCollection, postId: postId) else {
+            return nil
+        }
+        // A story belongs to nobody, so a top-level comment on one has no
+        // author to notify. Only a reply, which answers a person, does.
+        if case .story = target, parentComment == nil {
             return nil
         }
         return ActivityDraft(
@@ -148,6 +156,7 @@ final class CommentService: CommentServicing {
             target: target,
             commentId: commentId,
             parentCommentId: parentComment?.id,
+            story: story,
             preview: text)
     }
 
@@ -197,6 +206,7 @@ final class CommentService: CommentServicing {
             actorId: userId,
             target: target,
             commentId: comment.id,
+            story: activityStory,
             preview: comment.text)
         if wasLiked {
             await activityRecorder.clear(draft)
