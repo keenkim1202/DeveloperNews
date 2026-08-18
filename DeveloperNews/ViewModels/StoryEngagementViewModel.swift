@@ -8,14 +8,20 @@ final class StoryEngagementViewModel {
     private let storyURL: String
     private let commentService: any CommentServicing
 
+    /// `commentService` is built here rather than defaulted in the signature,
+    /// because it needs the story title, and a default argument cannot read
+    /// another argument.
     init(
         appState: AppState,
         storyURL: String,
-        commentService: any CommentServicing = CommentService(parentCollection: "storyEngagement"),
+        storyTitle: String,
+        commentService: (any CommentServicing)? = nil,
     ) {
         self.appState = appState
         self.storyURL = storyURL
-        self.commentService = commentService
+        self.commentService = commentService ?? CommentService(
+            parentCollection: "storyEngagement",
+            activityStory: ActivityStory(url: storyURL, title: storyTitle))
     }
 
     private var storyEngagementService: any StoryEngagementServicing {
@@ -125,8 +131,8 @@ final class StoryEngagementViewModel {
         await storyEngagementService.ensureDocument(storyURL: storyURL)
         await commentService.addComment(
             postId: documentId,
-            // A story is nobody's post, so a comment on one has no author to
-            // notify.
+            // A story is nobody's post. A reply still notifies the person it
+            // answers; a top-level comment notifies no one.
             postAuthorId: "",
             text: trimmed,
             author: user,

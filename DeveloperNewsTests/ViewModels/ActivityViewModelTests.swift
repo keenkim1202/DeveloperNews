@@ -10,6 +10,7 @@ import Testing
         actorId: String = "actor-1",
         target: ActivityTarget? = .feedPost("post-1"),
         commentId: String? = nil,
+        story: ActivityStory? = nil,
         preview: String = "Worth a read",
         isRead: Bool = false,
     ) -> Activity {
@@ -19,6 +20,7 @@ import Testing
             actorId: actorId,
             target: target,
             commentId: commentId,
+            story: story,
             parentCommentId: nil,
             preview: preview,
             createdAt: .now,

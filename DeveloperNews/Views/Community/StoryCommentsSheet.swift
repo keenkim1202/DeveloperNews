@@ -5,16 +5,22 @@ import SwiftUI
 // counts stay in sync without spinning up a second listener.
 struct StoryCommentsSheet: View {
     private var viewModel: StoryEngagementViewModel
+    private let highlightedCommentId: String?
 
     @State private var commentText = ""
     @State private var shouldScrollToLatestComment = false
+    @State private var hasScrolledToHighlight = false
     @State private var replyingTo: CommunityComment?
     @FocusState private var commentFieldFocused: Bool
 
     @Environment(\.dismiss) private var dismiss
 
-    init(viewModel: StoryEngagementViewModel) {
+    init(
+        viewModel: StoryEngagementViewModel,
+        highlightedCommentId: String? = nil,
+    ) {
         self.viewModel = viewModel
+        self.highlightedCommentId = highlightedCommentId
     }
 
     private var currentUserId: String? {
@@ -46,6 +52,7 @@ struct StoryCommentsSheet: View {
                 .simultaneousGesture(TapGesture().onEnded(dismissKeyboard))
                 .keenOnChange(of: visibleComments.count) {
                     scrollToLatestComment(proxy)
+                    scrollToHighlightedComment(proxy)
                 }
                 .safeAreaInset(edge: .bottom) {
                     if currentUserId != nil {
@@ -96,7 +103,8 @@ struct StoryCommentsSheet: View {
                         onReport: { reportComment(thread.parent, reason: $0) },
                         onBlock: { blockCommentAuthor(thread.parent) },
                         onLike: currentUserId == nil ? nil : { likeComment(thread.parent) },
-                        onReply: currentUserId == nil ? nil : { startReply(thread.parent) })
+                        onReply: currentUserId == nil ? nil : { startReply(thread.parent) },
+                        isHighlighted: thread.parent.id == highlightedCommentId)
                         .id(thread.parent.id)
                     ForEach(thread.replies) { reply in
                         CommentRow(
@@ -105,7 +113,8 @@ struct StoryCommentsSheet: View {
                             onDelete: { deleteComment(reply) },
                             onReport: { reportComment(reply, reason: $0) },
                             onBlock: { blockCommentAuthor(reply) },
-                            onLike: currentUserId == nil ? nil : { likeComment(reply) })
+                            onLike: currentUserId == nil ? nil : { likeComment(reply) },
+                            isHighlighted: reply.id == highlightedCommentId)
                             .padding(.leading, 32)
                             .id(reply.id)
                     }
@@ -120,6 +129,19 @@ struct StoryCommentsSheet: View {
 
     private func dismissKeyboard() {
         commentFieldFocused = false
+    }
+
+    /// Scrolls to the comment an activity row pointed at, once the listener
+    /// has delivered it. Only once — after that the user's own position wins.
+    private func scrollToHighlightedComment(_ proxy: ScrollViewProxy) {
+        guard let highlightedCommentId,
+              !hasScrolledToHighlight,
+              visibleComments.contains(where: { $0.id == highlightedCommentId })
+        else { return }
+        hasScrolledToHighlight = true
+        withAnimation {
+            proxy.scrollTo(highlightedCommentId, anchor: .center)
+        }
     }
 
     private func scrollToLatestComment(_ proxy: ScrollViewProxy) {

@@ -30,6 +30,7 @@ final class MockActivityServicing: ActivityServicing {
                 actorId: activity.actorId,
                 target: activity.target,
                 commentId: activity.commentId,
+                story: activity.story,
                 parentCommentId: activity.parentCommentId,
                 preview: activity.preview,
                 createdAt: activity.createdAt,

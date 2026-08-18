@@ -88,6 +88,21 @@ final class ActivityViewModel {
                 return .feedPostDetail(id, highlightedCommentId: activity.commentId)
             case let .communityPost(id):
                 return .postDetail(id, highlightedCommentId: activity.commentId)
+            case .story:
+                // The engagement id is a URL hash, so the route is rebuilt from
+                // the story copied onto the activity rather than from the id.
+                guard let story = activity.story else {
+                    return nil
+                }
+                return .storyDetail(
+                    FeedPostStory(
+                        url: story.url,
+                        title: story.title,
+                        sourceName: "",
+                        sourceCategory: .article,
+                        topics: [],
+                        thumbnailURL: nil),
+                    highlightedCommentId: activity.commentId)
             case nil:
                 return nil
             }

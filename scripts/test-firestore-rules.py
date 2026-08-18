@@ -53,11 +53,15 @@ def s(v):
 
 
 def activity(kind, target_collection=None, target_post=None, comment_id=None,
-             actor=BOB, is_read=False, preview="hi", parent_comment_id=None):
+             actor=BOB, is_read=False, preview="hi", parent_comment_id=None,
+             story=None):
     fields = {"kind": s(kind), "actorId": s(actor), "preview": s(preview),
               "isRead": {"booleanValue": is_read}}
     if parent_comment_id:
         fields["parentCommentId"] = s(parent_comment_id)
+    if story:
+        fields["storyURL"] = s(story[0])
+        fields["storyTitle"] = s(story[1])
     if target_collection:
         fields["targetCollection"] = s(target_collection)
     if target_post:
@@ -205,6 +209,62 @@ code, body = write_activity(
     activity("commentReply", "feedPosts", "post-alice", "comment-bob",
              parent_comment_id="comment-alice"), BOB)
 check("reply claiming a parent it does not answer", code == 200, False, body)
+
+# --- story comments -----------------------------------------------------
+# A story is nobody's post, so only a reply or a like on someone's comment can
+# target one. Alice commented on the story; Bob replies and likes.
+STORY = ("https://example.com/story", "A Story")
+request("PATCH", "/storyEngagement/story-hash", {"fields": {
+    "likeCount": {"integerValue": "0"}, "likedBy": {"arrayValue": {"values": []}},
+    "commentCount": {"integerValue": "1"}, "viewCount": {"integerValue": "1"}}})
+request("PATCH", "/storyEngagement/story-hash/comments/story-alice",
+        {"fields": {"authorId": s(ALICE), "text": s("mine"),
+                    "likeCount": {"integerValue": "0"},
+                    "likedBy": {"arrayValue": {"values": []}}}})
+request("PATCH", "/storyEngagement/story-hash/comments/story-bob",
+        {"fields": {"authorId": s(BOB), "text": s("answering"),
+                    "parentCommentId": s("story-alice")}})
+
+code, body = write_activity(
+    activity("commentReply", "storyEngagement", "story-hash", "story-bob",
+             parent_comment_id="story-alice", story=STORY), BOB)
+check("reply to a story comment", code == 200, True, body)
+
+code, body = write_activity(
+    activity("commentLike", "storyEngagement", "story-hash", "story-alice",
+             story=STORY), BOB)
+check("story comment like without actually liking", code == 200, False, body)
+
+request("PATCH", "/storyEngagement/story-hash/comments/story-alice",
+        {"fields": {"authorId": s(ALICE), "text": s("mine"),
+                    "likeCount": {"integerValue": "1"},
+                    "likedBy": {"arrayValue": {"values": [s(BOB)]}}}})
+code, body = write_activity(
+    activity("commentLike", "storyEngagement", "story-hash", "story-alice",
+             story=STORY), BOB)
+check("story comment like after actually liking", code == 200, True, body)
+
+# A story has no author, so these two kinds can never address anyone.
+code, body = write_activity(
+    activity("postComment", "storyEngagement", "story-hash", "story-bob",
+             story=STORY), BOB)
+check("top-level comment on a story, which has no author", code == 200, False, body)
+
+code, body = write_activity(
+    activity("postLike", "storyEngagement", "story-hash", story=STORY), BOB)
+check("like on a story rather than on a comment", code == 200, False, body)
+
+# Without the URL the row could not be turned back into a destination.
+code, body = write_activity(
+    activity("commentReply", "storyEngagement", "story-hash", "story-bob",
+             parent_comment_id="story-alice"), BOB)
+check("story activity missing the story it points at", code == 200, False, body)
+
+# Story fields have no meaning on a post target.
+code, body = write_activity(
+    activity("commentLike", "feedPosts", "post-alice", "comment-alice",
+             story=STORY), BOB)
+check("story fields smuggled onto a post target", code == 200, False, body)
 
 # One earned action must not be replayable under a second document id, or a
 # single like fills the 100-row listener and displaces real activity.

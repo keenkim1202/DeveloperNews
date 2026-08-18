@@ -53,6 +53,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: MockCommentServicing())
         await vm.toggleLike()
 
@@ -69,6 +70,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: MockCommentServicing())
         await vm.toggleLike()
 
@@ -87,6 +89,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: MockCommentServicing())
 
         #expect(vm.isLiked)
@@ -103,6 +106,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: MockCommentServicing())
 
         #expect(vm.isLiked == false)
@@ -117,6 +121,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: MockCommentServicing())
 
         #expect(vm.viewCount == 42)
@@ -131,6 +136,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: MockCommentServicing())
         await vm.registerView()
 
@@ -146,6 +152,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: MockCommentServicing())
         await vm.registerView()
 
@@ -160,6 +167,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: MockCommentServicing())
 
         #expect(vm.commentCount == 5)
@@ -177,6 +185,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: comments)
 
         #expect(vm.visibleComments.map(\.id) == ["c1"])
@@ -190,6 +199,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: comments)
         await vm.startListening()
 
@@ -206,6 +216,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: comments)
         await vm.addComment(text: "hello")
 
@@ -218,6 +229,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: MockCommentServicing())
 
         #expect(vm.canSubmitComment(commentText: "  ") == false)
@@ -231,6 +243,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: comments)
         await vm.reportComment(makeComment(id: "c1", authorId: "author"), reason: .spam)
 
@@ -244,6 +257,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: comments)
         await vm.reportComment(makeComment(id: "c1", authorId: "author"), reason: .inappropriate)
 
@@ -258,6 +272,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: MockCommentServicing())
         vm.blockCommentAuthor(makeComment(id: "c1", authorId: "author"))
 
@@ -271,6 +286,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: comments)
         await vm.toggleCommentLike(makeComment(id: "c1", authorId: "author"))
 
@@ -284,6 +300,7 @@ import Foundation
         let vm = StoryEngagementViewModel(
             appState: appState,
             storyURL: storyURL,
+            storyTitle: "Story",
             commentService: comments)
         await vm.toggleCommentLike(makeComment(id: "c1", authorId: "author"))
 
