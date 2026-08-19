@@ -2074,40 +2074,6 @@
         }
       }
     },
-    "auth.error.providerApple": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This email is registered with Apple. Please sign in with Apple."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple 계정으로 가입된 이메일입니다. Apple 로그인을 사용해주세요."
-          }
-        }
-      }
-    },
-    "auth.error.providerGoogle": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This email is registered with Google. Please sign in with Google."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google 계정으로 가입된 이메일입니다. Google 로그인을 사용해주세요."
-          }
-        }
-      }
-    },
     "auth.error.requiresRecentLogin": {
       "extractionState": "manual",
       "localizations": {
