@@ -500,6 +500,12 @@ final class AppState {
         await refreshDailyDigest()
     }
 
+    /// Publishes the current top stories to the widget's shared container.
+    /// Cheap and idempotent — it no-ops when nothing changed.
+    func refreshWidgetSnapshot() {
+        WidgetSnapshotWriter.write(personalizedItems)
+    }
+
     /// Re-arms the digest with the current top story.
     ///
     /// Called whenever the feed has fresh content, so the body keeps up without
