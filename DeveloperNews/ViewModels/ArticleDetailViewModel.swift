@@ -51,6 +51,14 @@ final class ArticleDetailViewModel {
         translator.makeConfiguration()
     }
 
+    var translationLanguageCode: String? {
+        translator.targetLanguageCode
+    }
+
+    func setTranslationLanguage(_ code: String) {
+        appState.setTranslationLanguage(code)
+    }
+
     // Translates one chunk of extracted page text and returns the id-keyed
     // translations. The live web view JS extraction/injection stays in the view.
     func translateChunk(

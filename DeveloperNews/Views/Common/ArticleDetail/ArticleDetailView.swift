@@ -18,6 +18,7 @@ struct ArticleDetailView: View {
     @State private var showSaveNote = false
     @State private var showPostComposer = false
     @State private var showComments = false
+    @State private var showLanguagePicker = false
     @State private var hasOpenedHighlightedComment = false
 
     /// A story comment to open the comments sheet on, set when the push came
@@ -101,21 +102,19 @@ struct ArticleDetailView: View {
                     }
                 }
             }
-            if viewModel.canTranslate {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: togglePageTranslation) {
-                        if viewModel.isTranslatingPage {
-                            ProgressView()
-                                .controlSize(.small)
-                        }
-                        else {
-                            Image(.translate)
-                                .foregroundStyle(viewModel.isPageTranslated ? DSColor.accent : Color.primary)
-                        }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: togglePageTranslation) {
+                    if viewModel.isTranslatingPage {
+                        ProgressView()
+                            .controlSize(.small)
                     }
-                    .disabled(isLoading || viewModel.isTranslatingPage)
-                    .accessibilityLabel(.translatePage)
+                    else {
+                        Image(.translate)
+                            .foregroundStyle(viewModel.isPageTranslated ? DSColor.accent : Color.primary)
+                    }
                 }
+                .disabled(isLoading || viewModel.isTranslatingPage)
+                .accessibilityLabel(.translatePage)
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: reload) {
@@ -141,6 +140,7 @@ struct ArticleDetailView: View {
         .sheet(isPresented: $showSaveNote) { saveNoteSheet }
         .sheet(isPresented: $showPostComposer) { postComposerSheet }
         .sheet(isPresented: $showComments) { commentsSheet }
+        .sheet(isPresented: $showLanguagePicker) { languagePicker }
     }
 
     private var storyActionBar: some View {
@@ -204,6 +204,39 @@ struct ArticleDetailView: View {
         .frame(maxWidth: .infinity)
         .frame(height: 52)
         .contentShape(Rectangle())
+    }
+
+    private var languagePicker: some View {
+        NavigationStack {
+            List(translationLanguages, id: \.code) { language in
+                Button {
+                    selectTranslationLanguage(language.code)
+                } label: {
+                    HStack {
+                        Text(language.name)
+                            .foregroundStyle(Color.primary)
+                        Spacer()
+                        if language.code == viewModel.translationLanguageCode {
+                            Image(.checkmarkCircleFill)
+                                .foregroundStyle(DSColor.accent)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+            }
+            .navigationTitle(.translateChooseLanguage)
+            .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .top) {
+                Text(.translateChooseLanguageDescription)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(DSColor.background)
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 
     @ViewBuilder
@@ -274,9 +307,22 @@ struct ArticleDetailView: View {
         if viewModel.isPageTranslated {
             restoreOriginalPage()
         }
-        else {
+        else if viewModel.canTranslate {
             pageTranslationTrigger &+= 1
         }
+        else {
+            // No language chosen yet. Asking here rather than hiding the button
+            // is what makes the feature findable at all.
+            showLanguagePicker = true
+        }
+    }
+
+    private func selectTranslationLanguage(_ code: String) {
+        viewModel.setTranslationLanguage(code)
+        showLanguagePicker = false
+        // The tap that opened the picker was a request to translate, so carry
+        // it through instead of making the reader press the button twice.
+        pageTranslationTrigger &+= 1
     }
 
     private func reload() {
