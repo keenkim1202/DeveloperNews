@@ -19,6 +19,7 @@ struct ArticleDetailView: View {
     @State private var showPostComposer = false
     @State private var showComments = false
     @State private var showLanguagePicker = false
+    @State private var showSummary = false
     @State private var hasOpenedHighlightedComment = false
 
     /// A story comment to open the comments sheet on, set when the push came
@@ -143,6 +144,7 @@ struct ArticleDetailView: View {
         .sheet(isPresented: $showPostComposer) { postComposerSheet }
         .sheet(isPresented: $showComments) { commentsSheet }
         .sheet(isPresented: $showLanguagePicker) { languagePicker }
+        .sheet(isPresented: $showSummary) { summarySheet }
     }
 
     private var storyActionBar: some View {
@@ -181,6 +183,21 @@ struct ArticleDetailView: View {
                 .buttonStyle(.plain)
                 .disabled(engagementViewModel.currentUserId == nil)
                 .accessibilityLabel(.feedPostShareAsPost)
+                // Hidden where the model cannot run at all — unsupported
+                // hardware, Apple Intelligence off, or an unsupported region.
+                // That is permanent for the device, so offering the button and
+                // then refusing would be worse than not showing it.
+                if viewModel.isSummaryAvailable {
+                    Button(action: openSummary) {
+                        actionLabel(
+                            icon: .sparkles,
+                            count: nil,
+                            tint: .primary)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isLoading)
+                    .accessibilityLabel(.summaryTitle)
+                }
             }
             .padding(.horizontal, 16)
         }
@@ -375,8 +392,21 @@ struct ArticleDetailView: View {
     /// only if the article is saved. Reuses the extraction the translator uses,
     /// minus the markers it needs to write back into the page.
     private func captureForOffline() async {
-        guard viewModel.shouldCaptureForOffline, let webView = webViewRef else {
+        guard viewModel.shouldCaptureForOffline else {
             return
+        }
+        let paragraphs = await extractParagraphs()
+        guard !paragraphs.isEmpty else {
+            return
+        }
+        viewModel.captureOfflineArticle(paragraphs: paragraphs)
+    }
+
+    /// The page's block text in document order. Shared by the offline capture
+    /// and the summary, so a page is read the same way for both.
+    private func extractParagraphs() async -> [String] {
+        guard let webView = webViewRef else {
+            return []
         }
 
         let extractJS = """
@@ -394,9 +424,31 @@ struct ArticleDetailView: View {
                   contentWorld: .page) as? String,
               let data = json.data(using: .utf8),
               let paragraphs = try? JSONDecoder().decode([String].self, from: data)
-        else { return }
+        else { return [] }
 
-        viewModel.captureOfflineArticle(paragraphs: paragraphs)
+        return paragraphs
+    }
+
+    private var summarySheet: some View {
+        ArticleSummarySheet(state: viewModel.summaryState, onRetry: retrySummary)
+    }
+
+    private func openSummary() {
+        showSummary = true
+        Task {
+            await summarizeArticle()
+        }
+    }
+
+    private func retrySummary() {
+        viewModel.resetSummary()
+        Task {
+            await summarizeArticle()
+        }
+    }
+
+    private func summarizeArticle() async {
+        await viewModel.summarize(paragraphs: await extractParagraphs())
     }
 
     @ViewBuilder

@@ -27,6 +27,7 @@ final class AppState {
     let storyEngagementService: any StoryEngagementServicing
     let activityService: any ActivityServicing
     let notificationScheduler: any NotificationScheduling
+    let articleSummarizer: any ArticleSummarizing
 
     var selectedTopics: Set<Topic> = []
     var focusedTopic: Topic?
@@ -164,6 +165,7 @@ final class AppState {
         storyEngagementService: any StoryEngagementServicing,
         activityService: any ActivityServicing,
         notificationScheduler: any NotificationScheduling,
+        articleSummarizer: any ArticleSummarizing,
         contentSourceClient: (any ContentSourceClient)? = nil,
         persistenceStore: PersistenceStore = PersistenceStore(),
     ) {
@@ -175,6 +177,7 @@ final class AppState {
         self.storyEngagementService = storyEngagementService
         self.activityService = activityService
         self.notificationScheduler = notificationScheduler
+        self.articleSummarizer = articleSummarizer
         self.persistenceStore = persistenceStore
         let client = contentSourceClient ?? Self.defaultContentSourceClient()
         self.contentSourceClient = client

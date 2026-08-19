@@ -51,6 +51,53 @@ final class ArticleDetailViewModel {
         translator.makeConfiguration()
     }
 
+    /// Where the summary is in its lifecycle. Held per article, so reopening
+    /// the sheet shows the summary already written rather than running the
+    /// model again.
+    enum SummaryState: Equatable {
+        case idle
+        case loading
+        case ready([String])
+        case failed(ArticleSummaryError)
+    }
+
+    private(set) var summaryState: SummaryState = .idle
+
+    /// False when the model cannot run on this device at all. Permanent, so the
+    /// entry point is hidden rather than offered and then refused.
+    var isSummaryAvailable: Bool {
+        appState.articleSummarizer.isAvailable
+    }
+
+    func summarize(paragraphs: [String]) async {
+        if case .loading = summaryState {
+            return
+        }
+        if case .ready = summaryState {
+            return
+        }
+
+        summaryState = .loading
+        do {
+            let lines = try await appState.articleSummarizer.summarize(
+                title: item.title,
+                paragraphs: paragraphs)
+            summaryState = .ready(lines)
+        }
+        catch let error as ArticleSummaryError {
+            summaryState = .failed(error)
+        }
+        catch {
+            summaryState = .failed(.failed)
+        }
+    }
+
+    /// Drops a finished summary so the next request runs again, which is what
+    /// the retry button needs.
+    func resetSummary() {
+        summaryState = .idle
+    }
+
     var offlineArticle: OfflineArticle? {
         appState.offlineArticle(for: item.url)
     }
