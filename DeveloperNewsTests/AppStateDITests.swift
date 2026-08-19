@@ -15,6 +15,7 @@ import Foundation
         storyEngagement: MockStoryEngagementServicing = MockStoryEngagementServicing(),
         activity: MockActivityServicing = MockActivityServicing(),
         notifications: MockNotificationScheduling = MockNotificationScheduling(),
+        summarizer: MockArticleSummarizing = MockArticleSummarizing(),
         translator: MockTranslating = MockTranslating(),
     ) -> AppState {
         AppState(
@@ -26,6 +27,7 @@ import Foundation
             storyEngagementService: storyEngagement,
             activityService: activity,
             notificationScheduler: notifications,
+            articleSummarizer: summarizer,
             persistenceStore: VMFixtures.makeIsolatedPersistenceStore())
     }
 

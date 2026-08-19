@@ -24,6 +24,7 @@ struct DeveloperNewsApp: App {
         let storyEngagementService = StoryEngagementService()
         let activityService = ActivityService()
         let notificationScheduler = NotificationScheduler()
+        let articleSummarizer = ArticleSummarizer()
         _appState = State(
             initialValue: AppState(
                 translator: translator,
@@ -33,7 +34,8 @@ struct DeveloperNewsApp: App {
                 feedPostService: feedPostService,
                 storyEngagementService: storyEngagementService,
                 activityService: activityService,
-                notificationScheduler: notificationScheduler))
+                notificationScheduler: notificationScheduler,
+                articleSummarizer: articleSummarizer))
 
         // Registration must complete before launch finishes, so it happens here
         // rather than in a task or an onAppear.

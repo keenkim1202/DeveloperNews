@@ -126,7 +126,8 @@ struct ContentView: View {
             feedPostService: FeedPostService(),
             storyEngagementService: StoryEngagementService(),
             activityService: ActivityService(),
-            notificationScheduler: NotificationScheduler()))
+            notificationScheduler: NotificationScheduler(),
+            articleSummarizer: ArticleSummarizer()))
 }
 
 
