@@ -4,6 +4,7 @@ import SwiftUI
 // StoryEngagementViewModel with ArticleDetailView so the comment listener and
 // counts stay in sync without spinning up a second listener.
 struct StoryCommentsSheet: View {
+    private let appState: AppState
     private var viewModel: StoryEngagementViewModel
     private let highlightedCommentId: String?
 
@@ -15,12 +16,22 @@ struct StoryCommentsSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    @State private var showSignIn = false
+    @State private var signInViewModel: SignInViewModel
+
     init(
+        appState: AppState,
         viewModel: StoryEngagementViewModel,
         highlightedCommentId: String? = nil,
     ) {
+        self.appState = appState
         self.viewModel = viewModel
         self.highlightedCommentId = highlightedCommentId
+        _signInViewModel = State(initialValue: SignInViewModel(appState: appState))
+    }
+
+    private func openSignIn() {
+        showSignIn = true
     }
 
     private var currentUserId: String? {
@@ -65,6 +76,12 @@ struct StoryCommentsSheet: View {
                             replyingToName: replyingTo?.authorName,
                             onCancelReply: cancelReply)
                     }
+                    else {
+                        CommentSignInPrompt(onSignIn: openSignIn)
+                    }
+                }
+                .sheet(isPresented: $showSignIn) {
+                    SignInView(appState: appState, viewModel: signInViewModel)
                 }
                 .navigationTitle(Text(.communityComments))
                 .navigationBarTitleDisplayMode(.inline)

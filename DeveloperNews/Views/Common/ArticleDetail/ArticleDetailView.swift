@@ -261,6 +261,7 @@ struct ArticleDetailView: View {
     @ViewBuilder
     private var commentsSheet: some View {
         StoryCommentsSheet(
+            appState: appState,
             viewModel: engagementViewModel,
             highlightedCommentId: highlightedCommentId)
     }
