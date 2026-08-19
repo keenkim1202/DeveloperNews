@@ -125,7 +125,7 @@ final class ArticleDetailViewModel {
     func translateChunk(
         _ chunk: [PageTextEntry],
         using session: TranslationSession,
-    ) async -> [String: String] {
+    ) async throws -> [String: String] {
         let requests = chunk.map {
             TranslationSession.Request(
                 sourceText: $0.text,
@@ -133,15 +133,13 @@ final class ArticleDetailViewModel {
         }
 
         var translations: [String: String] = [:]
-        do {
-            for try await response in session.translate(batch: requests) {
-                if let id = response.clientIdentifier {
-                    translations[id] = response.targetText
-                }
+        // Throws rather than reporting an empty result, so the caller can tell
+        // "this chunk had nothing to translate" apart from "the session is
+        // gone" and stop instead of asking again.
+        for try await response in session.translate(batch: requests) {
+            if let id = response.clientIdentifier {
+                translations[id] = response.targetText
             }
-        }
-        catch {
-            return [:]
         }
         return translations
     }
