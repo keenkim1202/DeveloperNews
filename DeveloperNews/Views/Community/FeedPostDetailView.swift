@@ -38,6 +38,7 @@ struct FeedPostDetailView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             case let .resolved(viewModel):
                 FeedPostDetailContentView(
+                    appState: appState,
                     viewModel: viewModel,
                     highlightedCommentId: highlightedCommentId)
             case .missing:
@@ -82,6 +83,7 @@ struct FeedPostDetailView: View {
 }
 
 private struct FeedPostDetailContentView: View {
+    private let appState: AppState
     private let viewModel: FeedPostDetailViewModel
     private let highlightedCommentId: String?
 
@@ -99,12 +101,22 @@ private struct FeedPostDetailContentView: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    @State private var signInViewModel: SignInViewModel
+    @State private var showSignIn = false
+
     init(
+        appState: AppState,
         viewModel: FeedPostDetailViewModel,
         highlightedCommentId: String?,
     ) {
+        self.appState = appState
         self.viewModel = viewModel
         self.highlightedCommentId = highlightedCommentId
+        _signInViewModel = State(initialValue: SignInViewModel(appState: appState))
+    }
+
+    private func openSignIn() {
+        showSignIn = true
     }
 
     private var currentUserId: String? {
@@ -164,6 +176,12 @@ private struct FeedPostDetailContentView: View {
                         replyingToName: replyingTo?.authorName,
                         onCancelReply: cancelReply)
                 }
+                else {
+                    CommentSignInPrompt(onSignIn: openSignIn)
+                }
+            }
+            .sheet(isPresented: $showSignIn) {
+                SignInView(appState: appState, viewModel: signInViewModel)
             }
             .toolbar {
                 if currentUserId != nil {

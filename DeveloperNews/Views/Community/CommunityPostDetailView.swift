@@ -101,6 +101,8 @@ struct CommunityPostDetailContentView: View {
     @State private var commentText = ""
     @State private var shouldScrollToLatestComment = false
     @State private var hasScrolledToHighlight = false
+    @State private var showSignIn = false
+    @State private var signInViewModel: SignInViewModel
     @State private var replyingTo: CommunityComment?
     @FocusState private var commentFieldFocused: Bool
 
@@ -114,6 +116,7 @@ struct CommunityPostDetailContentView: View {
         self.appState = appState
         self.post = post
         self.highlightedCommentId = highlightedCommentId
+        _signInViewModel = State(initialValue: SignInViewModel(appState: appState))
         _viewModel = State(initialValue: CommunityPostDetailViewModel(
             appState: appState,
             post: post))
@@ -327,6 +330,12 @@ struct CommunityPostDetailContentView: View {
                     replyingToName: replyingTo?.authorName,
                     onCancelReply: cancelReply)
             }
+            else {
+                CommentSignInPrompt(onSignIn: openSignIn)
+            }
+        }
+        .sheet(isPresented: $showSignIn) {
+            SignInView(appState: appState, viewModel: signInViewModel)
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
@@ -553,6 +562,10 @@ struct CommunityPostDetailContentView: View {
 
     private func confirmBlockUser() {
         showBlockConfirm = true
+    }
+
+    private func openSignIn() {
+        showSignIn = true
     }
 
     private func openEditPost() {
