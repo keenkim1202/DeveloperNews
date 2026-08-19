@@ -10,7 +10,12 @@ final class MockTranslating: Translating {
     var translatedTitles: [URL: String] = [:]
     var translatedSummaries: [URL: String] = [:]
     var targetLanguageCode: String?
-    var canTranslate = false
+
+    // Derived rather than stored, matching ContentTranslator, so a test that
+    // sets a language sees the same availability the app would.
+    var canTranslate: Bool {
+        targetLanguageCode != nil
+    }
 
     func makeConfiguration() -> TranslationSession.Configuration? {
         nil
