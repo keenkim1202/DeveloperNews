@@ -184,6 +184,22 @@ struct SettingsView: View {
                         : .settingsDailyDigestFooter)
             }
 
+            // Says why summaries are or are not available here. Without it, a
+            // reader whose device cannot run them has no way to tell the
+            // feature apart from a bug.
+            Section {
+                if viewModel.canActOnSummaryAvailability {
+                    Button(action: openSystemSettings) {
+                        summaryStatusRow
+                    }
+                }
+                else {
+                    summaryStatusRow
+                }
+            } footer: {
+                Text(.settingsSummaryFooter)
+            }
+
             Section {
                 Button(action: openSystemSettings) {
                     HStack {
@@ -365,6 +381,34 @@ struct SettingsView: View {
     // a switch that is on and a digest that never arrives.
     private func syncNotificationAuthorization() async {
         await viewModel.syncNotificationAuthorization()
+    }
+
+    private var summaryStatusRow: some View {
+        HStack {
+            Label(.settingsSummaryStatus, icon: .sparkles)
+            Spacer()
+            Text(summaryStatusText)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            if viewModel.canActOnSummaryAvailability {
+                Image(.chevronForward)
+                    .font(.footnote)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    private var summaryStatusText: LocalizedStringResource {
+        switch viewModel.summaryAvailability {
+        case .available:
+            .settingsSummaryAvailable
+        case .appleIntelligenceOff:
+            .summaryAppleIntelligenceOff
+        case .modelNotReady:
+            .summaryModelNotReady
+        case .deviceNotEligible:
+            .summaryDeviceNotEligible
+        }
     }
 
     private func setNotificationsEnabled(_ enabled: Bool) {

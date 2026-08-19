@@ -3,7 +3,7 @@ import Foundation
 
 @MainActor
 final class MockArticleSummarizing: ArticleSummarizing {
-    var isAvailable = true
+    var availability: SummaryAvailability = .available
     /// What `summarize` resolves to. Defaults to a usable summary so a test
     /// only has to set this when it cares about the failure paths.
     var result: Result<[String], ArticleSummaryError> = .success(["First point", "Second point"])

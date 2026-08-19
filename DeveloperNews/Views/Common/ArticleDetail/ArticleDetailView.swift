@@ -187,7 +187,7 @@ struct ArticleDetailView: View {
                 // hardware, Apple Intelligence off, or an unsupported region.
                 // That is permanent for the device, so offering the button and
                 // then refusing would be worse than not showing it.
-                if viewModel.isSummaryAvailable {
+                if viewModel.isSummaryEntryPointVisible {
                     Button(action: openSummary) {
                         actionLabel(
                             icon: .sparkles,
