@@ -42,7 +42,19 @@ struct ContentView: View {
         .keenOnChange(of: appState.toastTrigger, perform: onToastTriggerChange)
         .keenOnChange(of: scenePhase, perform: onScenePhaseChange)
         .keenOnChange(of: appState.authService.isSignedIn, perform: onIsSignedInChange)
+        .onOpenURL(perform: openDeepLink)
         .onAppear(perform: onAppear)
+    }
+
+    /// Opens a widget tap in the reader. The story came from the feed the app
+    /// itself published, so `resolveItem` finds it; a link that no longer
+    /// resolves lands on the existing unavailable-destination screen.
+    private func openDeepLink(_ url: URL) {
+        guard let articleURL = DeepLink.articleURL(from: url) else {
+            return
+        }
+        appState.currentTab = .home
+        navigation.home = [.articleDetail(articleURL)]
     }
 
     private func onAppear() {
@@ -56,6 +68,7 @@ struct ContentView: View {
 
     private func loadContent() async {
         await appState.loadIfNeeded()
+        appState.refreshWidgetSnapshot()
         await appState.refreshDailyDigest()
         DailyDigestRefresher.schedule()
     }
@@ -82,6 +95,7 @@ struct ContentView: View {
         appState.processPendingSharedItems()
         Task {
             await appState.refreshIfStale(maxAge: AppState.feedStaleThreshold)
+            appState.refreshWidgetSnapshot()
             await appState.refreshDailyDigest()
         }
     }
