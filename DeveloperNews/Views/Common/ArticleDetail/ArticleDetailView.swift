@@ -13,7 +13,7 @@ struct ArticleDetailView: View {
     @State private var loadProgress: Double = 0
     @State private var reloadTrigger = 0
     @State private var webViewRef: WKWebView?
-    @State private var pageTranslationTrigger = 0
+    @State private var translationConfiguration: TranslationSession.Configuration?
     @State private var showEditNote = false
     @State private var showSaveNote = false
     @State private var showPostComposer = false
@@ -88,13 +88,10 @@ struct ArticleDetailView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: isLoading)
         .overlay {
-            if let config = viewModel.makeTranslationConfiguration(), pageTranslationTrigger > 0 {
-                Color.clear
-                    .id(pageTranslationTrigger)
-                    .translationTask(config) { session in
-                        await translateWebPage(using: session)
-                    }
-            }
+            Color.clear
+                .translationTask(translationConfiguration) { session in
+                    await translateWebPage(using: session)
+                }
         }
         .toolbar {
             if viewModel.isSaved {
@@ -313,7 +310,7 @@ struct ArticleDetailView: View {
             restoreOriginalPage()
         }
         else if viewModel.canTranslate {
-            pageTranslationTrigger &+= 1
+            startPageTranslation()
         }
         else {
             // No language chosen yet. Asking here rather than hiding the button
@@ -327,7 +324,26 @@ struct ArticleDetailView: View {
         showLanguagePicker = false
         // The tap that opened the picker was a request to translate, so carry
         // it through instead of making the reader press the button twice.
-        pageTranslationTrigger &+= 1
+        startPageTranslation()
+    }
+
+    /// Runs the translation task, or runs it again.
+    ///
+    /// `invalidate()` is how the framework restarts a session for the same
+    /// languages. Assigning a freshly built configuration instead would also
+    /// restart it, but doing that on every render is what made the required
+    /// downloads sheet appear twice — dismissing it changed state, the body
+    /// re-evaluated, and a new configuration started the task over.
+    private func startPageTranslation() {
+        guard let fresh = viewModel.makeTranslationConfiguration() else {
+            return
+        }
+        if let existing = translationConfiguration, existing.target == fresh.target {
+            translationConfiguration?.invalidate()
+        }
+        else {
+            translationConfiguration = fresh
+        }
     }
 
     private func reload() {
@@ -425,6 +441,7 @@ struct ArticleDetailView: View {
             return
         }
 
+        var appliedAnyTranslation = false
         let chunkSize = 15
         for chunkStart in stride(from: 0, to: entries.count, by: chunkSize) {
             let chunkEnd = min(chunkStart + chunkSize, entries.count)
@@ -443,10 +460,14 @@ struct ArticleDetailView: View {
                 injectJS,
                 arguments: ["translations": translations],
                 contentWorld: .page)
+            appliedAnyTranslation = true
         }
 
         viewModel.isTranslatingPage = false
-        viewModel.isPageTranslated = true
+        // A cancelled download leaves every chunk empty. Reporting that as
+        // translated turned the button on for a page still in English, and the
+        // next tap then tried to restore text that was never replaced.
+        viewModel.isPageTranslated = appliedAnyTranslation
     }
 
     private func restoreOriginalPage() {
