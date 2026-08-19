@@ -3689,6 +3689,57 @@
         }
       }
     },
+    "offline.capturedAt": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@에 저장됨"
+          }
+        }
+      }
+    },
+    "offline.description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The page could not be loaded, so this is the text saved when you last read it."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "페이지를 불러오지 못해, 마지막으로 읽었을 때 저장해 둔 본문을 보여줍니다."
+          }
+        }
+      }
+    },
+    "offline.readingOffline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved copy"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "저장된 사본"
+          }
+        }
+      }
+    },
     "profile.addBio": {
       "extractionState": "manual",
       "localizations": {

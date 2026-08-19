@@ -62,7 +62,10 @@ struct ArticleDetailView: View {
                     .transition(.opacity)
             }
 
-            if let message = loadError {
+            if loadError != nil, let offline = viewModel.offlineArticle {
+                OfflineArticleView(article: offline)
+            }
+            else if let message = loadError {
                 ContentUnavailableView {
                     Label(.couldNotLoadArticle, icon: .networkError)
                 } description: {
@@ -134,6 +137,8 @@ struct ArticleDetailView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        .keenOnChange(of: isLoading, perform: onIsLoadingChange)
+        .keenOnChange(of: viewModel.isSaved, perform: onIsSavedChange)
         .onAppear(perform: onAppear)
         .onDisappear(perform: onDisappear)
         .sheet(isPresented: $showEditNote) { noteEditorSheet }
@@ -327,6 +332,55 @@ struct ArticleDetailView: View {
 
     private func reload() {
         reloadTrigger &+= 1
+    }
+
+    // Bookmarking while reading is the usual order, and the page is already
+    // rendered by then, so the capture happens right away rather than waiting
+    // for the article to be opened a second time.
+    private func onIsSavedChange(_ saved: Bool) {
+        guard saved else {
+            return
+        }
+        Task {
+            await captureForOffline()
+        }
+    }
+
+    private func onIsLoadingChange(_ loading: Bool) {
+        guard !loading, loadError == nil else {
+            return
+        }
+        Task {
+            await captureForOffline()
+        }
+    }
+
+    /// Reads the page's block text and hands it to the store, which keeps it
+    /// only if the article is saved. Reuses the extraction the translator uses,
+    /// minus the markers it needs to write back into the page.
+    private func captureForOffline() async {
+        guard viewModel.shouldCaptureForOffline, let webView = webViewRef else {
+            return
+        }
+
+        let extractJS = """
+        var els=document.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li,blockquote,figcaption');
+        var r=[];
+        for(var i=0;i<els.length;i++){
+            var t=els[i].innerText.trim();
+            if(t.length>0&&t.length<5000){ r.push(t); }
+        }
+        return JSON.stringify(r);
+        """
+
+        guard let json = try? await webView.callAsyncJavaScript(
+                  extractJS,
+                  contentWorld: .page) as? String,
+              let data = json.data(using: .utf8),
+              let paragraphs = try? JSONDecoder().decode([String].self, from: data)
+        else { return }
+
+        viewModel.captureOfflineArticle(paragraphs: paragraphs)
     }
 
     @ViewBuilder
