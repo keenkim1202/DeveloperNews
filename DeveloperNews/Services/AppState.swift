@@ -17,6 +17,7 @@ final class AppState {
     private(set) var savedItemsStore: SavedItemsStore!
     private(set) var readTracker: ReadTracker!
     private(set) var sourceCategoryStore: SourceCategoryStore!
+    private(set) var offlineArticleStore: OfflineArticleStore!
 
     let translator: any Translating
     let authService: any AuthServicing
@@ -208,6 +209,11 @@ final class AppState {
                 persistReadHistory: { [unowned self] history in
                     saveReadHistory(history)
                 }))
+        self.offlineArticleStore = OfflineArticleStore(
+            inputs: OfflineArticleStore.Inputs(
+                persistOfflineArticles: { [unowned self] articles in
+                    saveOfflineArticles(articles)
+                }))
         self.sourceCategoryStore = SourceCategoryStore(
             inputs: SourceCategoryStore.Inputs(
                 resetPagination: { [unowned self] in resetPagination() },
@@ -305,6 +311,7 @@ final class AppState {
 
     func removeSavedItem(at url: URL) {
         savedItemsStore.removeSavedItem(at: url)
+        offlineArticleStore.removeArticle(for: url)
     }
 
 
@@ -431,6 +438,37 @@ final class AppState {
 
     func toggleSaved(_ item: ContentItem) {
         savedItemsStore.toggleSaved(item)
+        // Unsaving gives back the space its captured text was using.
+        if !isSaved(item) {
+            offlineArticleStore.removeArticle(for: item.url)
+        }
+    }
+
+    // MARK: - Offline reading
+
+    func offlineArticle(for url: URL) -> OfflineArticle? {
+        offlineArticleStore.article(for: url)
+    }
+
+    func hasOfflineArticle(for url: URL) -> Bool {
+        offlineArticleStore.hasArticle(for: url)
+    }
+
+    /// Keeps the readable text of a saved article. Called once the page has
+    /// rendered, which is the only moment the text is available without
+    /// fetching and parsing the page a second time.
+    func captureOfflineArticle(
+        _ item: ContentItem,
+        paragraphs: [String],
+    ) {
+        guard isSaved(item) else {
+            return
+        }
+        offlineArticleStore.store(
+            url: item.url,
+            title: item.title,
+            sourceName: item.sourceName,
+            paragraphs: paragraphs)
     }
 
     func setSavedSortOrder(_ order: SavedSortOrder) {
@@ -580,6 +618,7 @@ final class AppState {
         sourceCategoryStore.seedInitialState(
             disabledSourceCategories: state.disabledSourceCategories)
         blockedUserIds = state.blockedUserIds
+        offlineArticleStore.seedInitialState(state.offlineArticles)
         readTracker.seedInitialState(
             readItemURLs: state.readItemURLs,
             readPostIds: state.readPostIds,
@@ -647,6 +686,12 @@ final class AppState {
         let userIds = blockedUserIds
         enqueuePersistence { store in
             await store.saveBlockedUsers(userIds)
+        }
+    }
+
+    private func saveOfflineArticles(_ articles: [OfflineArticle]) {
+        enqueuePersistence { store in
+            await store.saveOfflineArticles(articles)
         }
     }
 

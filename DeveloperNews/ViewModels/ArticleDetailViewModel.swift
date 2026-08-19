@@ -51,6 +51,20 @@ final class ArticleDetailViewModel {
         translator.makeConfiguration()
     }
 
+    var offlineArticle: OfflineArticle? {
+        appState.offlineArticle(for: item.url)
+    }
+
+    /// Only saved articles are captured, and only once — a page that has
+    /// already been stored is not re-extracted on every visit.
+    var shouldCaptureForOffline: Bool {
+        appState.isSaved(item) && !appState.hasOfflineArticle(for: item.url)
+    }
+
+    func captureOfflineArticle(paragraphs: [String]) {
+        appState.captureOfflineArticle(item, paragraphs: paragraphs)
+    }
+
     var translationLanguageCode: String? {
         translator.targetLanguageCode
     }
