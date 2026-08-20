@@ -499,7 +499,17 @@ struct ArticleDetailView: View {
         for chunkStart in stride(from: 0, to: entries.count, by: chunkSize) {
             let chunkEnd = min(chunkStart + chunkSize, entries.count)
             let chunk = Array(entries[chunkStart..<chunkEnd])
-            let translations = await viewModel.translateChunk(chunk, using: session)
+            let translations: [String: String]
+            do {
+                translations = try await viewModel.translateChunk(chunk, using: session)
+            }
+            catch {
+                // The session is gone — most often because the reader dismissed
+                // the language download. Carrying on asked the next chunk to
+                // translate, which put the download prompt straight back up,
+                // once per remaining chunk.
+                break
+            }
 
             guard !translations.isEmpty else { continue }
 
