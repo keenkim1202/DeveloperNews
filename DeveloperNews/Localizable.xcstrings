@@ -4301,6 +4301,57 @@
         }
       }
     },
+    "settings.summaryAvailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "사용 가능"
+          }
+        }
+      }
+    },
+    "settings.summaryFooter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summaries are written by Apple Intelligence on this device, which needs a supported iPhone with it switched on."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "요약은 이 기기의 Apple Intelligence가 만듭니다. 지원 기기에서 기능이 켜져 있어야 합니다."
+          }
+        }
+      }
+    },
+    "settings.summaryStatus": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI summary"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 요약"
+          }
+        }
+      }
+    },
     "settings.translation": {
       "extractionState": "manual",
       "localizations": {
@@ -4471,6 +4522,40 @@
         }
       }
     },
+    "summary.appleIntelligenceOff": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn on Apple Intelligence in Settings to use summaries."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설정에서 Apple Intelligence를 켜면 요약을 사용할 수 있습니다."
+          }
+        }
+      }
+    },
+    "summary.deviceNotEligible": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This device does not support on-device summaries."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 기기는 온디바이스 요약을 지원하지 않습니다."
+          }
+        }
+      }
+    },
     "summary.failed": {
       "extractionState": "manual",
       "localizations": {
@@ -4505,6 +4590,23 @@
         }
       }
     },
+    "summary.modelNotReady": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model is still downloading. Try again in a little while."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "모델을 내려받는 중입니다. 잠시 후 다시 시도해 주세요."
+          }
+        }
+      }
+    },
     "summary.notEnoughText": {
       "extractionState": "manual",
       "localizations": {
@@ -4535,6 +4637,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "이 기기에서 만들어집니다. 어디에도 전송되지 않습니다."
+          }
+        }
+      }
+    },
+    "summary.openSettings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설정 열기"
           }
         }
       }

@@ -17,21 +17,39 @@ struct ArticleSummarySheet: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                switch state {
-                case .idle, .loading:
-                    loading
-                case let .ready(lines):
-                    summary(lines)
-                case let .failed(error):
-                    failure(for: error)
-                }
-            }
-            .navigationTitle(.summaryTitle)
-            .navigationBarTitleDisplayMode(.inline)
+            ArticleSummaryContent(state: state, onRetry: onRetry)
+                .navigationTitle(.summaryTitle)
+                .navigationBarTitleDisplayMode(.inline)
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+    }
+}
+
+/// The sheet's contents, separated from the sheet itself so it can be rendered
+/// on its own — `ImageRenderer` cannot draw a `NavigationStack` or the
+/// presentation modifiers wrapped around it.
+struct ArticleSummaryContent: View {
+    private let state: ArticleDetailViewModel.SummaryState
+    private let onRetry: () -> Void
+
+    init(
+        state: ArticleDetailViewModel.SummaryState,
+        onRetry: @escaping () -> Void,
+    ) {
+        self.state = state
+        self.onRetry = onRetry
+    }
+
+    var body: some View {
+        switch state {
+        case .idle, .loading:
+            loading
+        case let .ready(lines):
+            summary(lines)
+        case let .failed(error):
+            failure(for: error)
+        }
     }
 
     private var loading: some View {
@@ -71,15 +89,47 @@ struct ArticleSummarySheet: View {
         ContentUnavailableView {
             Label(.summaryTitle, icon: .sparkles)
         } description: {
-            Text(error == .notEnoughText ? .summaryNotEnoughText : .summaryFailed)
+            Text(Self.message(for: error))
         } actions: {
-            if error != .notEnoughText {
+            switch error {
+            case .appleIntelligenceOff:
+                // The one case the reader can fix, so it gets a way to fix it.
+                Button(action: openSystemSettings) {
+                    Text(.summaryOpenSettings)
+                        .fontWeight(.semibold)
+                }
+                .buttonStyle(.borderedProminent)
+            case .modelNotReady, .failed:
                 Button(action: onRetry) {
                     Text(.summaryRetry)
                         .fontWeight(.semibold)
                 }
                 .buttonStyle(.borderedProminent)
+            case .notEnoughText, .unavailable:
+                // Nothing to retry and nothing to change.
+                EmptyView()
             }
+        }
+    }
+
+    private static func message(for error: ArticleSummaryError) -> LocalizedStringResource {
+        switch error {
+        case .notEnoughText:
+            .summaryNotEnoughText
+        case .appleIntelligenceOff:
+            .summaryAppleIntelligenceOff
+        case .modelNotReady:
+            .summaryModelNotReady
+        case .unavailable:
+            .summaryDeviceNotEligible
+        case .failed:
+            .summaryFailed
+        }
+    }
+
+    private func openSystemSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
         }
     }
 }

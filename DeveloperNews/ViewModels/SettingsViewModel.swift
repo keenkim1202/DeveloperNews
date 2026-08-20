@@ -85,6 +85,17 @@ final class SettingsViewModel {
         await appState.syncNotificationAuthorization()
     }
 
+    var summaryAvailability: SummaryAvailability {
+        appState.articleSummarizer.availability
+    }
+
+    /// True only where the reader can act on the status — turning Apple
+    /// Intelligence on. Ineligible hardware and a download in progress are
+    /// stated and left alone.
+    var canActOnSummaryAvailability: Bool {
+        summaryAvailability == .appleIntelligenceOff
+    }
+
     func setTranslationLanguage(_ code: String?) {
         appState.setTranslationLanguage(code)
     }

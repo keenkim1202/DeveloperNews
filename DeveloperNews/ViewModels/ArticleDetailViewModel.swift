@@ -63,10 +63,19 @@ final class ArticleDetailViewModel {
 
     private(set) var summaryState: SummaryState = .idle
 
-    /// False when the model cannot run on this device at all. Permanent, so the
-    /// entry point is hidden rather than offered and then refused.
-    var isSummaryAvailable: Bool {
-        appState.articleSummarizer.isAvailable
+    var summaryAvailability: SummaryAvailability {
+        appState.articleSummarizer.availability
+    }
+
+    /// Shown unless the device can never run the model.
+    ///
+    /// A switch the reader can flip, or a download that is still finishing, are
+    /// both worth a button — hiding those means someone one tap from the
+    /// feature never learns it exists. Hardware that will never support it is
+    /// the one case where a button would only ever disappoint, and Settings
+    /// carries that explanation instead.
+    var isSummaryEntryPointVisible: Bool {
+        summaryAvailability != .deviceNotEligible
     }
 
     func summarize(paragraphs: [String]) async {
@@ -75,6 +84,20 @@ final class ArticleDetailViewModel {
         }
         if case .ready = summaryState {
             return
+        }
+
+        switch summaryAvailability {
+        case .appleIntelligenceOff:
+            summaryState = .failed(.appleIntelligenceOff)
+            return
+        case .modelNotReady:
+            summaryState = .failed(.modelNotReady)
+            return
+        case .deviceNotEligible:
+            summaryState = .failed(.unavailable)
+            return
+        case .available:
+            break
         }
 
         summaryState = .loading

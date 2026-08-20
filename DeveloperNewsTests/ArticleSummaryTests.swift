@@ -56,11 +56,43 @@ import Testing
         #expect(viewModel.summaryState == .failed(.notEnoughText))
     }
 
-    @Test func theEntryPointFollowsWhetherTheModelCanRunHere() {
-        let summarizer = MockArticleSummarizing()
-        summarizer.isAvailable = false
+    // Only hardware that can never run the model hides the button. A switch the
+    // reader can flip, or a download still finishing, both keep it — hiding
+    // those means someone one tap away never learns the feature exists.
+    @Test func onlyIneligibleHardwareHidesTheEntryPoint() {
+        let cases: [(SummaryAvailability, Bool)] = [
+            (.available, true),
+            (.appleIntelligenceOff, true),
+            (.modelNotReady, true),
+            (.deviceNotEligible, false),
+        ]
 
-        #expect(!makeViewModel(summarizer: summarizer).isSummaryAvailable)
+        for (availability, isVisible) in cases {
+            let summarizer = MockArticleSummarizing()
+            summarizer.availability = availability
+            #expect(makeViewModel(summarizer: summarizer).isSummaryEntryPointVisible == isVisible)
+        }
+    }
+
+    // Each reason reaches the sheet as itself, because the sheet offers a
+    // different way out for each one.
+    @Test func eachReasonSurfacesAsItsOwnOutcome() async {
+        let cases: [(SummaryAvailability, ArticleSummaryError)] = [
+            (.appleIntelligenceOff, .appleIntelligenceOff),
+            (.modelNotReady, .modelNotReady),
+            (.deviceNotEligible, .unavailable),
+        ]
+
+        for (availability, expected) in cases {
+            let summarizer = MockArticleSummarizing()
+            summarizer.availability = availability
+            let viewModel = makeViewModel(summarizer: summarizer)
+
+            await viewModel.summarize(paragraphs: ["body"])
+
+            #expect(viewModel.summaryState == .failed(expected))
+            #expect(summarizer.requests.isEmpty)
+        }
     }
 
     // Models drift between plain lines and bulleted ones, so the markers are

@@ -15,12 +15,16 @@ final class ArticleSummarizer: ArticleSummarizing {
     opinions, and do not repeat the headline.
     """
 
-    var isAvailable: Bool {
+    var availability: SummaryAvailability {
         switch SystemLanguageModel.default.availability {
         case .available:
-            true
+            .available
+        case .unavailable(.appleIntelligenceNotEnabled):
+            .appleIntelligenceOff
+        case .unavailable(.modelNotReady):
+            .modelNotReady
         default:
-            false
+            .deviceNotEligible
         }
     }
 
@@ -28,7 +32,7 @@ final class ArticleSummarizer: ArticleSummarizing {
         title: String,
         paragraphs: [String],
     ) async throws -> [String] {
-        guard isAvailable else {
+        guard availability == .available else {
             throw ArticleSummaryError.unavailable
         }
 
