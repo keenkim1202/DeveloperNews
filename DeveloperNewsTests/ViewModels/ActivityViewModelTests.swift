@@ -176,4 +176,70 @@ import Testing
                 kind: .postLike, target: .feedPost("f1"), commentId: nil))
                 == .feedPostDetail("f1", highlightedCommentId: nil))
     }
+
+    // Hiding a blocked row is not enough: it still occupies one of the rows the
+    // listener loads, so real notifications fall off the bottom.
+    @Test func syncDeletesRowsFromBlockedActors() async {
+        let activity = MockActivityServicing()
+        activity.activities = [
+            makeActivity(id: "a", actorId: "blocked"),
+            makeActivity(id: "b", actorId: "allowed"),
+        ]
+        let state = VMFixtures.makeAppState(
+            auth: MockAuthServicing(userId: "me"),
+            activity: activity)
+        state.blockUser("blocked")
+        let vm = ActivityViewModel(appState: state)
+
+        await vm.sync()
+
+        #expect(activity.deletedActivityIds == [["a"]])
+        #expect(activity.activities.map(\.id) == ["b"])
+    }
+
+    @Test func syncWithNothingBlockedDeletesNothing() async {
+        let activity = MockActivityServicing()
+        activity.activities = [makeActivity(id: "a", actorId: "allowed")]
+        let state = VMFixtures.makeAppState(
+            auth: MockAuthServicing(userId: "me"),
+            activity: activity)
+        let vm = ActivityViewModel(appState: state)
+
+        await vm.sync()
+
+        #expect(activity.deletedActivityIds.isEmpty)
+    }
+
+    @Test func deleteRemovesOnlyThatRow() async {
+        let activity = MockActivityServicing()
+        activity.activities = [
+            makeActivity(id: "a"),
+            makeActivity(id: "b"),
+        ]
+        let state = VMFixtures.makeAppState(
+            auth: MockAuthServicing(userId: "me"),
+            activity: activity)
+        let vm = ActivityViewModel(appState: state)
+
+        await vm.delete(activity.activities[0])
+
+        #expect(activity.deletedActivityIds == [["a"]])
+        #expect(vm.activities.map(\.id) == ["b"])
+    }
+
+    @Test func loadMoreIsOfferedOnlyWhileTheServiceHasMore() {
+        let activity = MockActivityServicing()
+        let state = VMFixtures.makeAppState(
+            auth: MockAuthServicing(userId: "me"),
+            activity: activity)
+        let vm = ActivityViewModel(appState: state)
+
+        #expect(!vm.canLoadMore)
+
+        activity.canLoadMore = true
+        #expect(vm.canLoadMore)
+
+        vm.loadMore()
+        #expect(activity.loadMoreCallCount == 1)
+    }
 }

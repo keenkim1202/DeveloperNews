@@ -1,0 +1,87 @@
+name: Firestore Rules
+
+on:
+  pull_request:
+    paths:
+      - firestore.rules
+      - scripts/test-firestore-rules.py
+      - .github/workflows/firestore-rules.yml
+  push:
+    branches:
+      - develop
+    paths:
+      - firestore.rules
+  workflow_dispatch:
+
+concurrency:
+  group: firestore-rules-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Nothing in the app build exercises the rules — they are the only thing
+  # standing between an inbox and forged rows, and a client cannot check them.
+  # The probe runs against the emulator, where a denial is observable.
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # The Firestore emulator is a Java process.
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install the Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Run the rules probe
+        run: firebase emulators:exec --only firestore "python3 scripts/test-firestore-rules.py"
+
+  # Deploying by hand is how the rules and the client drift apart: a merged
+  # feature whose rules are still the old ones fails closed, and the writes it
+  # makes are swallowed rather than reported.
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install the Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Write the service account key
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "FIREBASE_SERVICE_ACCOUNT is not set. Add the service account JSON as a repository secret." >&2
+            exit 1
+          fi
+          KEY_PATH="$RUNNER_TEMP/firebase-service-account.json"
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$KEY_PATH"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$KEY_PATH" >> "$GITHUB_ENV"
+
+      # Rules land ahead of the build that ships them, so one that requires a
+      # field the released app does not write yet breaks that app. Keep rules
+      # changes backward compatible with what is in the store.
+      - name: Deploy the rules
+        run: firebase deploy --only firestore:rules --non-interactive

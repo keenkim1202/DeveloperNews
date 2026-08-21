@@ -32,6 +32,14 @@ final class ActivityViewModel {
         activities.isEmpty
     }
 
+    var canLoadMore: Bool {
+        appState.activityService.canLoadMore
+    }
+
+    func loadMore() {
+        appState.activityService.loadMore()
+    }
+
     func isUnread(_ activity: Activity) -> Bool {
         unreadOnOpen.contains(activity.id)
     }
@@ -40,18 +48,15 @@ final class ActivityViewModel {
         actorsById[activity.actorId]
     }
 
-    /// Brings the screen up to date with whatever the listener currently holds.
-    ///
-    /// Called on appear and again on every change to the activity list, because
-    /// the listener is live: its first snapshot can land after the screen is
-    /// already up, and new activities arrive while the user is looking at it.
-    /// Doing this once on appear left those rows unnamed and, worse, left them
-    /// unread so the badge never cleared.
+    /// Brings the screen up to date with whatever the listener holds. Runs on
+    /// appear and on every change: the listener is live, and rows landing after
+    /// the screen is up would otherwise stay unnamed and unread, badge still lit.
     func sync() async {
         // Recorded before the await so rows the user has actually seen keep
         // their highlight after everything is marked read, and extended rather
         // than replaced so a row that arrives mid-session is highlighted too.
         unreadOnOpen.formUnion(activities.filter { !$0.isRead }.map(\.id))
+        await purgeBlockedActivities()
         await resolveActors()
         await appState.activityService.markAllAsRead()
         if let message = appState.activityService.errorMessage {
@@ -59,11 +64,29 @@ final class ActivityViewModel {
         }
     }
 
-    /// Fills in the actors' current names and emoji. Activities store only an
-    /// id, so this is what turns "someone" into a name.
-    ///
-    /// Ids that resolve to nothing — a deleted account — are remembered as
-    /// attempted so a repeating `sync` does not refetch them every time.
+    /// Drops rows from a blocked actor. The list hides them, but a hidden row
+    /// still occupies the window the listener loads, pushing real ones out.
+    /// Blocking is local, so this runs on every sync, not once at block time.
+    private func purgeBlockedActivities() async {
+        let blockedIds = appState.activityService.activities
+            .filter { appState.blockedUserIds.contains($0.actorId) }
+            .map(\.id)
+        guard !blockedIds.isEmpty else {
+            return
+        }
+        await appState.activityService.delete(activityIds: blockedIds)
+    }
+
+    func delete(_ activity: Activity) async {
+        await appState.activityService.delete(activityIds: [activity.id])
+        if let message = appState.activityService.errorMessage {
+            appState.presentError(message)
+        }
+    }
+
+    /// Fills in the actors' names and emoji — an activity stores only an id.
+    /// An id that resolves to nothing (a deleted account) is remembered as
+    /// attempted, so a repeating `sync` does not refetch it every time.
     func resolveActors() async {
         let missing = Set(activities.map(\.actorId)).subtracting(attemptedActorIds)
         guard !missing.isEmpty else {

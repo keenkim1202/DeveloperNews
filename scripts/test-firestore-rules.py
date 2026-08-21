@@ -9,8 +9,8 @@ Run it from the repo root, with a JDK on PATH:
     PATH="/opt/homebrew/opt/openjdk/bin:$PATH" \\
       firebase emulators:exec --only firestore "python3 scripts/test-firestore-rules.py"
 
-Not wired into CI, which has no emulator. Run it by hand whenever the
-activities rules change — every denial it checks is one a client cannot be
+Runs in CI on any change to the rules (.github/workflows/firestore-rules.yml),
+and the deploy is gated on it. Every denial it checks is one a client cannot be
 trusted to enforce.
 """
 import base64, json, sys, urllib.request, urllib.error
@@ -20,6 +20,7 @@ BASE = f"http://127.0.0.1:8080/v1/projects/{PID}/databases/(default)/documents"
 
 ALICE = "alice-uid"   # post author / notification recipient
 BOB = "bob-uid"       # actor
+CAROL = "carol-uid"   # bystander, party to nothing
 
 
 def token(uid):
@@ -308,6 +309,14 @@ check("recipient marking a row back to unread", code == 200, False, body)
 
 code, body = request("DELETE", f"/users/{ALICE}/activities/{FOLLOW_ROW}", uid=BOB)
 check("actor withdrawing their own row", code == 200, True, body)
+
+# Dismissing a row is the reader's own housekeeping, so the recipient deletes
+# and nobody else does.
+code, body = request("DELETE", f"/users/{ALICE}/activities/{LIKE_ROW}", uid=CAROL)
+check("bystander deleting someone else's row", code == 200, False, body)
+
+code, body = request("DELETE", f"/users/{ALICE}/activities/{LIKE_ROW}", uid=ALICE)
+check("recipient dismissing a row from their own inbox", code == 200, True, body)
 
 print()
 print(f"{sum(results)}/{len(results)} passed")
