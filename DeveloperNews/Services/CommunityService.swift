@@ -237,11 +237,6 @@ final class CommunityService: CommunityServicing {
         }
     }
 
-    func filteredPosts(excludingUserIds blockedIds: Set<String>) -> [CommunityPost] {
-        guard !blockedIds.isEmpty else { return posts }
-        return posts.filter { !blockedIds.contains($0.authorId) }
-    }
-
     func deleteUserContent(uid: String) async throws {
         let ownPosts = try await postsRef
             .whereField("authorId", isEqualTo: uid)
