@@ -144,9 +144,8 @@ final class StoryEngagementService: StoryEngagementServicing {
         return result
     }
 
-    // Counts a view at most once per device per calendar day, with the dedup map
-    // in UserDefaults. The marker is set only on success, so a failed write
-    // retries on a later session or day.
+    // At most one view per device per calendar day. The marker is set only on
+    // success, so a failed write retries on a later session or day.
     func registerView(storyURL: String) async {
         errorMessage = nil
 

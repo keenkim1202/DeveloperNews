@@ -287,10 +287,8 @@ final class AuthService: AuthServicing {
 
     /// Maps a Firebase Auth or system NSError into a localized, user-facing message.
     ///
-    /// Deliberately says nothing about which provider an address is registered
-    /// with. Firebase removed the lookup that made that possible, because
-    /// answering it is email enumeration — it tells anyone who asks whether an
-    /// address has an account and how it signs in.
+    /// Says nothing about which provider an address is registered with: that is
+    /// email enumeration, and Firebase removed the lookup for the same reason.
     private func localizedAuthError(
         from error: Error,
         attemptedEmail: String?,

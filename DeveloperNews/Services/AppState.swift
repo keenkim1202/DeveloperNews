@@ -412,10 +412,9 @@ final class AppState {
 
         do {
             try await communityService.deleteUserContent(uid: uid)
-            // Before the profile document, since deleting it does not take the
-            // activities subcollection with it. Rows this user wrote into other
-            // inboxes are not reachable from here — the read rule scopes an
-            // inbox to its owner — so those are left naming a gone account.
+            // Before the profile document, which does not take its activities
+            // subcollection with it. Rows written into other inboxes stay: the
+            // read rule scopes an inbox to its owner.
             try await activityService.deleteInbox(userId: uid)
             try await profileService.deleteOwnProfile(uid: uid)
         }
