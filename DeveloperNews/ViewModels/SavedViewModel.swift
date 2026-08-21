@@ -14,6 +14,36 @@ final class SavedViewModel {
         self.appState = appState
     }
 
+    var lastUpdatedAt: Date? {
+        appState.lastUpdatedAt
+    }
+
+    var translator: any Translating {
+        appState.translator
+    }
+
+    func isRead(_ item: ContentItem) -> Bool {
+        appState.isRead(item)
+    }
+
+    func authorEmoji(for authorId: String) -> String? {
+        appState.communityService.authorEmoji(for: authorId)
+    }
+
+    /// The community post a `.following` saved item stands for, if it is still loaded.
+    func followingPost(for item: ContentItem) -> CommunityPost? {
+        guard item.sourceCategory == .following,
+              let postId = item.url.pathComponents.last
+        else {
+            return nil
+        }
+        return appState.communityService.post(id: postId)
+    }
+
+    func destination(for item: ContentItem) -> SavedTabDestination {
+        SavedTabDestination.forFeedItem(item, communityService: appState.communityService)
+    }
+
     var savedItems: [ContentItem] {
         appState.savedItems
     }

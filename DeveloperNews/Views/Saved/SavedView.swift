@@ -91,17 +91,6 @@ struct SavedView: View {
         }
     }
 
-    private func destinationFor(_ item: ContentItem) -> SavedTabDestination {
-        SavedTabDestination.forFeedItem(item, communityService: appState.communityService)
-    }
-
-    private func followingPost(for item: ContentItem) -> CommunityPost? {
-        guard item.sourceCategory == .following,
-              let postId = item.url.pathComponents.last
-        else { return nil }
-        return appState.communityService.posts.first { $0.id == postId }
-    }
-
     private func navigateToProfile(_ userId: String) {
         navigation(.saved(.userProfile(userId: userId)))
     }
@@ -134,14 +123,14 @@ struct SavedView: View {
         }
         else {
             FeedSectionListView(
-                translator: appState.translator,
-                lastUpdatedAt: appState.lastUpdatedAt,
-                isRead: { appState.isRead($0) },
-                followingPost: followingPost(for:),
-                authorEmoji: { appState.communityService.authorEmoji(for: $0) },
+                translator: viewModel.translator,
+                lastUpdatedAt: viewModel.lastUpdatedAt,
+                isRead: { viewModel.isRead($0) },
+                followingPost: viewModel.followingPost(for:),
+                authorEmoji: { viewModel.authorEmoji(for: $0) },
                 articleItems: viewModel.matchingArticleItems,
                 discussionItems: viewModel.matchingDiscussionItems,
-                destinationFor: destinationFor,
+                destinationFor: viewModel.destination(for:),
                 onAuthorTap: navigateToProfile,
                 showsSummary: false,
                 scrollToTopTrigger: viewModel.scrollToTopTrigger)

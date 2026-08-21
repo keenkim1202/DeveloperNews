@@ -144,10 +144,9 @@ final class StoryEngagementService: StoryEngagementServicing {
         return result
     }
 
-    // Counts a view at most once per device per calendar day. Dedup state lives
-    // in UserDefaults; the Firestore increment runs only when today's view has
-    // not been recorded yet, and the local marker is set only on success so a
-    // failed write retries on a later session or day.
+    // Counts a view at most once per device per calendar day, with the dedup map
+    // in UserDefaults. The marker is set only on success, so a failed write
+    // retries on a later session or day.
     func registerView(storyURL: String) async {
         errorMessage = nil
 
@@ -155,12 +154,7 @@ final class StoryEngagementService: StoryEngagementServicing {
         let today = Self.dayFormatter.string(from: Date())
 
         let defaults = UserDefaults.standard
-        var viewedDays = defaults.dictionary(forKey: Self.viewedDaysKey) as? [String: String] ?? [:]
-
-        // Prune stale entries so the map never grows beyond today's views.
-        viewedDays = viewedDays.filter { _, day in
-            day == today
-        }
+        let viewedDays = defaults.dictionary(forKey: Self.viewedDaysKey) as? [String: String] ?? [:]
 
         if viewedDays[docId] == today {
             return
@@ -168,8 +162,16 @@ final class StoryEngagementService: StoryEngagementServicing {
 
         do {
             try await Self.incrementViewCount(db, storyURL: storyURL)
-            viewedDays[docId] = today
-            defaults.set(viewedDays, forKey: Self.viewedDaysKey)
+
+            // Re-read after the await: writing back the pre-await snapshot would
+            // drop a marker another story wrote meanwhile and count it twice.
+            // The filter also keeps the map from growing past today.
+            var updated = (defaults.dictionary(forKey: Self.viewedDaysKey) as? [String: String] ?? [:])
+                .filter { _, day in
+                    day == today
+                }
+            updated[docId] = today
+            defaults.set(updated, forKey: Self.viewedDaysKey)
         }
         catch {
             errorMessage = error.localizedDescription

@@ -76,17 +76,6 @@ struct HomeView: View {
         }
     }
 
-    private func destinationFor(_ item: ContentItem) -> HomeTabDestination {
-        HomeTabDestination.forFeedItem(item, communityService: appState.communityService)
-    }
-
-    private func followingPost(for item: ContentItem) -> CommunityPost? {
-        guard item.sourceCategory == .following,
-              let postId = item.url.pathComponents.last
-        else { return nil }
-        return appState.communityService.posts.first { $0.id == postId }
-    }
-
     private func navigateToProfile(_ userId: String) {
         navigation(.home(.userProfile(userId: userId)))
     }
@@ -134,14 +123,14 @@ struct HomeView: View {
         }
         else {
             FeedSectionListView(
-                translator: appState.translator,
-                lastUpdatedAt: appState.lastUpdatedAt,
-                isRead: { appState.isRead($0) },
-                followingPost: followingPost(for:),
-                authorEmoji: { appState.communityService.authorEmoji(for: $0) },
+                translator: viewModel.translator,
+                lastUpdatedAt: viewModel.lastUpdatedAt,
+                isRead: { viewModel.isRead($0) },
+                followingPost: viewModel.followingPost(for:),
+                authorEmoji: { viewModel.authorEmoji(for: $0) },
                 articleItems: viewModel.articlesExcludingTopStory,
                 discussionItems: viewModel.discussionsExcludingTopStory,
-                destinationFor: destinationFor,
+                destinationFor: viewModel.destination(for:),
                 onAuthorTap: navigateToProfile,
                 inAppEngagement: viewModel.engagement(for:),
                 hasMore: viewModel.hasMorePages,
@@ -150,10 +139,10 @@ struct HomeView: View {
                 topContent: viewModel.topItem.map { item in
                     AnyView(
                         HomeTopStoryCard(
-                            translator: appState.translator,
+                            translator: viewModel.translator,
                             item: item,
-                            destination: destinationFor(item),
-                            onHide: { appState.dismissTopStory() },
+                            destination: viewModel.destination(for: item),
+                            onHide: { viewModel.dismissTopStory() },
                             storyEngagement: viewModel.engagement(for: item))
                             .padding(.horizontal, 2)
                             .padding(.vertical, 4))

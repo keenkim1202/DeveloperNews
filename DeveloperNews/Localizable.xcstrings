@@ -3689,6 +3689,23 @@
         }
       }
     },
+    "notification.scheduleFailed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't schedule the daily digest"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "데일리 요약 알림을 예약하지 못했어요"
+          }
+        }
+      }
+    },
     "offline.capturedAt": {
       "extractionState": "manual",
       "localizations": {

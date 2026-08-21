@@ -39,7 +39,8 @@ final class NotificationScheduler: NotificationScheduling {
         }
     }
 
-    func scheduleDailyDigest(body: String) async {
+    @discardableResult
+    func scheduleDailyDigest(body: String) async -> Bool {
         cancelDailyDigest()
 
         let content = UNMutableNotificationContent()
@@ -56,7 +57,13 @@ final class NotificationScheduler: NotificationScheduling {
             content: content,
             trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: true))
 
-        try? await center.add(request)
+        do {
+            try await center.add(request)
+            return true
+        }
+        catch {
+            return false
+        }
     }
 
     func cancelDailyDigest() {

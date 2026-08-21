@@ -10,7 +10,16 @@ enum CommunityServiceError: Error {
 @Observable
 @MainActor
 final class CommunityService: CommunityServicing {
-    private(set) var posts: [CommunityPost] = []
+    private(set) var posts: [CommunityPost] = [] {
+        didSet {
+            postsByID = Dictionary(
+                posts.map { ($0.id, $0) },
+                uniquingKeysWith: { first, _ in first })
+        }
+    }
+
+    // Lookup index for post(id:), which detail rows call once per row.
+    private var postsByID: [CommunityPost.ID: CommunityPost] = [:]
     private(set) var isLoading = false
     private(set) var errorMessage: String?
     private(set) var authorEmojiCache: [String: String] = [:]
@@ -31,7 +40,7 @@ final class CommunityService: CommunityServicing {
     /// Looks up a `CommunityPost` by id in the currently loaded posts.
     /// Returns nil if the post has been deleted or is not yet loaded.
     func post(id: CommunityPost.ID) -> CommunityPost? {
-        posts.first { $0.id == id }
+        postsByID[id]
     }
 
     func fetchPost(id: CommunityPost.ID) async throws -> CommunityPost? {

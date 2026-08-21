@@ -234,6 +234,17 @@ private struct ParsedRSSItem {
 }
 
 private final class RSSFeedParser: NSObject, XMLParserDelegate {
+
+    // Compiled once: these patterns are literals and every feed item runs them.
+    private static let paragraphRegex = try! NSRegularExpression(
+        pattern: #"<p[^>]*>([\s\S]*?)</p>"#,
+        options: .caseInsensitive)
+    private static let imageSourceRegex = try! NSRegularExpression(
+        pattern: #"<img[^>]+src=["']([^"']+)["']"#,
+        options: .caseInsensitive)
+    private static let decimalEntityRegex = try! NSRegularExpression(pattern: #"&#(\d+);"#)
+    private static let hexEntityRegex = try! NSRegularExpression(pattern: #"&#x([0-9a-fA-F]+);"#)
+
     private enum Element: String {
         case item
         case entry
@@ -487,13 +498,8 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
             return nil
         }
 
-        let pattern = #"<p[^>]*>([\s\S]*?)</p>"#
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else {
-            return nil
-        }
-
         let range = NSRange(html.startIndex..., in: html)
-        let matches = regex.matches(in: html, range: range)
+        let matches = Self.paragraphRegex.matches(in: html, range: range)
 
         for match in matches {
             guard
@@ -533,10 +539,8 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
             return nil
         }
 
-        let pattern = #"<img[^>]+src=["']([^"']+)["']"#
         guard
-            let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
-            let match = regex.firstMatch(in: html, range: NSRange(html.startIndex..., in: html)),
+            let match = Self.imageSourceRegex.firstMatch(in: html, range: NSRange(html.startIndex..., in: html)),
             match.numberOfRanges >= 2,
             let range = Range(match.range(at: 1), in: html)
         else {
@@ -599,15 +603,11 @@ private final class RSSFeedParser: NSObject, XMLParserDelegate {
         prefix: String,
         radix: Int,
     ) -> String {
-        let pattern: String
+        let regex: NSRegularExpression
         switch radix {
-        case 10: pattern = #"&#(\d+);"#
-        case 16: pattern = #"&#x([0-9a-fA-F]+);"#
+        case 10: regex = Self.decimalEntityRegex
+        case 16: regex = Self.hexEntityRegex
         default: return string
-        }
-
-        guard let regex = try? NSRegularExpression(pattern: pattern) else {
-            return string
         }
 
         let nsString = string as NSString

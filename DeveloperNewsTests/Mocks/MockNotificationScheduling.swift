@@ -22,8 +22,12 @@ final class MockNotificationScheduling: NotificationScheduling {
         return authorizationResult
     }
 
-    func scheduleDailyDigest(body: String) async {
+    var scheduleSucceeds = true
+
+    @discardableResult
+    func scheduleDailyDigest(body: String) async -> Bool {
         scheduledBodies.append(body)
+        return scheduleSucceeds
     }
 
     func cancelDailyDigest() {

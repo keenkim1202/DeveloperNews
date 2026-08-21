@@ -20,8 +20,10 @@ protocol NotificationScheduling {
     func requestAuthorization() async -> NotificationAuthorization
 
     /// Replaces any previously scheduled digest with one carrying this body.
-    /// Repeats daily at a fixed local hour.
-    func scheduleDailyDigest(body: String) async
+    /// Repeats daily at a fixed local hour. Returns whether the request was
+    /// accepted, so a caller that just turned the setting on can undo it.
+    @discardableResult
+    func scheduleDailyDigest(body: String) async -> Bool
 
     func cancelDailyDigest()
 }

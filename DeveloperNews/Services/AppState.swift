@@ -401,6 +401,15 @@ final class AppState {
         profileService.stopListening()
         stopListeningForActivities()
 
+        // Deletion failed partway, so the account still exists and its screens
+        // need live data again.
+        func restoreListeners() {
+            if let user = authService.user {
+                profileService.startListening(for: user)
+            }
+            startListeningForActivities()
+        }
+
         do {
             try await communityService.deleteUserContent(uid: uid)
             // Before the profile document, since deleting it does not take the
@@ -411,6 +420,7 @@ final class AppState {
             try await profileService.deleteOwnProfile(uid: uid)
         }
         catch {
+            restoreListeners()
             authService.setErrorMessage(error.localizedDescription)
             return .failed
         }
@@ -537,8 +547,17 @@ final class AppState {
 
         notificationsDeniedBySystem = false
         notificationsEnabled = true
+
+        // The switch is only persisted once iOS has actually taken the request.
+        // Leaving it on after a rejected schedule would promise a digest that
+        // never arrives, with nothing on screen to say so.
+        guard await refreshDailyDigest() else {
+            notificationsEnabled = false
+            presentError(String(localized: .notificationScheduleFailed))
+            return
+        }
+
         saveNotificationsEnabled()
-        await refreshDailyDigest()
     }
 
     /// Publishes the current top stories to the widget's shared container.
@@ -547,19 +566,17 @@ final class AppState {
         WidgetSnapshotWriter.write(personalizedItems)
     }
 
-    /// Re-arms the digest with the current top story.
-    ///
-    /// Called whenever the feed has fresh content, so the body keeps up without
-    /// depending on a background run that iOS may never grant. The scheduled
-    /// notification always exists once the setting is on; a background refresh
-    /// only makes its text newer.
-    func refreshDailyDigest() async {
+    /// Re-arms the digest with the current top story. Called on every fresh feed
+    /// so the body keeps up without a background run iOS may never grant — the
+    /// notification already exists, a refresh only makes its text newer.
+    @discardableResult
+    func refreshDailyDigest() async -> Bool {
         guard notificationsEnabled else {
-            return
+            return false
         }
         let body = personalizedItems.first?.title
             ?? String(localized: .notificationDailyDigestFallback)
-        await notificationScheduler.scheduleDailyDigest(body: body)
+        return await notificationScheduler.scheduleDailyDigest(body: body)
     }
 
     /// Reconciles the stored setting with the system's answer at launch. A user
@@ -585,6 +602,8 @@ final class AppState {
               !pending.isEmpty
         else { return }
 
+        var consumedKeys: Set<String> = []
+
         for entry in pending {
             guard let urlString = entry["url"], let url = URL(string: urlString) else { continue }
             let title = entry["title"] ?? urlString
@@ -605,9 +624,26 @@ final class AppState {
                 topics: topics,
                 trendScore: 0)
             addSavedItem(item)
+            consumedKeys.insert(entry["id"] ?? urlString)
         }
 
-        defaults.removeObject(forKey: "pendingSharedItems")
+        // Drops only what was consumed: the extension is a separate process and
+        // can append between the read above and this write.
+        // ponytail: still a read-modify-write, so a simultaneous append can be
+        // lost. NSFileCoordinator over a shared-container file if that matters.
+        let remaining = (defaults.array(forKey: "pendingSharedItems") as? [[String: String]] ?? [])
+            .filter { entry in
+                guard let urlString = entry["url"] else {
+                    return false
+                }
+                return !consumedKeys.contains(entry["id"] ?? urlString)
+            }
+        if remaining.isEmpty {
+            defaults.removeObject(forKey: "pendingSharedItems")
+        }
+        else {
+            defaults.set(remaining, forKey: "pendingSharedItems")
+        }
     }
 
     private func loadPersistedState() {
