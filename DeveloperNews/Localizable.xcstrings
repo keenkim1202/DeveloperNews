@@ -1683,6 +1683,23 @@
         }
       }
     },
+    "activity.delete": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "삭제"
+          }
+        }
+      }
+    },
     "activity.empty": {
       "extractionState": "manual",
       "localizations": {

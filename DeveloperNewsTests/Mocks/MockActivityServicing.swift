@@ -10,10 +10,23 @@ final class MockActivityServicing: ActivityServicing {
     private(set) var didStopListening = false
     private(set) var markAllAsReadCallCount = 0
     private(set) var deletedInboxUserIds: [String] = []
+    private(set) var deletedActivityIds: [[Activity.ID]] = []
+    private(set) var loadMoreCallCount = 0
+    var canLoadMore = false
     var deleteInboxError: (any Error)?
 
     func startListening(userId: String) {
         listeningUserIds.append(userId)
+    }
+
+    func loadMore() {
+        loadMoreCallCount += 1
+    }
+
+    func delete(activityIds: [Activity.ID]) async {
+        deletedActivityIds.append(activityIds)
+        let removed = Set(activityIds)
+        activities.removeAll { removed.contains($0.id) }
     }
 
     func stopListening() {
