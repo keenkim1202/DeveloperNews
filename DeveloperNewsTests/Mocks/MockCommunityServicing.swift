@@ -85,10 +85,6 @@ final class MockCommunityServicing: CommunityServicing {
         authorEmojiCache[authorId]
     }
 
-    func filteredPosts(excludingUserIds blockedIds: Set<String>) -> [CommunityPost] {
-        posts.filter { !blockedIds.contains($0.authorId) }
-    }
-
     func deleteUserContent(uid: String) async throws {
     }
 

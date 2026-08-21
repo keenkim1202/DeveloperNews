@@ -51,8 +51,7 @@ final class Community2ViewModel {
         }
     }
 
-    // Hide posts authored by blocked users from both feeds, mirroring how
-    // CommunityViewModel filters its post list.
+    // Hide posts authored by blocked users from both feeds.
     private var visiblePosts: [FeedPost] {
         posts.filter { !appState.blockedUserIds.contains($0.authorId) }
     }

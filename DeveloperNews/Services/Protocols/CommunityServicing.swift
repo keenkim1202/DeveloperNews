@@ -56,8 +56,6 @@ protocol CommunityServicing {
 
     func authorEmoji(for authorId: String) -> String?
 
-    func filteredPosts(excludingUserIds blockedIds: Set<String>) -> [CommunityPost]
-
     func deleteUserContent(uid: String) async throws
 
     func toggleLike(
