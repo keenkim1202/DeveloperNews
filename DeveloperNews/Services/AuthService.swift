@@ -51,6 +51,13 @@ final class AuthService: AuthServicing {
 
     @discardableResult
     func signInWithApple() async -> Bool {
+        // A second tap while the first sheet is still up would overwrite the
+        // delegate the in-flight request is waiting on, and its continuation
+        // would never resume.
+        guard appleSignInDelegate == nil else {
+            return false
+        }
+
         isLoading = true
         errorMessage = nil
         defer {
@@ -124,8 +131,12 @@ final class AuthService: AuthServicing {
 
             GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
 
-            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                  let rootViewController = windowScene.windows.first?.rootViewController
+            // connectedScenes is a Set, so `.first` is whichever element the
+            // hash order yields, not the one on screen.
+            guard let windowScene = UIApplication.shared.connectedScenes
+                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+                let rootViewController = (windowScene.windows.first(where: \.isKeyWindow)
+                    ?? windowScene.windows.first)?.rootViewController
             else {
                 throw AuthError.missingRootViewController
             }
@@ -276,10 +287,8 @@ final class AuthService: AuthServicing {
 
     /// Maps a Firebase Auth or system NSError into a localized, user-facing message.
     ///
-    /// Deliberately says nothing about which provider an address is registered
-    /// with. Firebase removed the lookup that made that possible, because
-    /// answering it is email enumeration — it tells anyone who asks whether an
-    /// address has an account and how it signs in.
+    /// Says nothing about which provider an address is registered with: that is
+    /// email enumeration, and Firebase removed the lookup for the same reason.
     private func localizedAuthError(
         from error: Error,
         attemptedEmail: String?,

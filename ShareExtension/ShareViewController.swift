@@ -212,15 +212,22 @@ class ShareViewController: UIViewController {
         let title = titleField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? url
         let description = descriptionField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
-        let defaults = UserDefaults(suiteName: appGroupID)
-        var pending = defaults?.array(forKey: pendingShareKey) as? [[String: String]] ?? []
+        // Without the app group there is nowhere to write, so the save has to
+        // report failure rather than claim success it cannot deliver.
+        guard let defaults = UserDefaults(suiteName: appGroupID) else {
+            showSaveFailure()
+            return
+        }
+
+        var pending = defaults.array(forKey: pendingShareKey) as? [[String: String]] ?? []
         pending.append([
+            "id": UUID().uuidString,
             "url": url,
             "title": title.isEmpty ? url : title,
             "description": description,
             "topics": Array(selectedTopics).joined(separator: ","),
         ])
-        defaults?.set(pending, forKey: pendingShareKey)
+        defaults.set(pending, forKey: pendingShareKey)
 
         saveButton.setTitle("✓ Saved", for: .normal)
         saveButton.isEnabled = false
@@ -228,6 +235,13 @@ class ShareViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.close()
         }
+    }
+
+    private func showSaveFailure() {
+        saveButton.setTitle("Save failed", for: .normal)
+        saveButton.backgroundColor = .systemRed
+        urlLabel.text = "Sharing is unavailable. Reinstall the app and try again."
+        urlLabel.textColor = .systemRed
     }
 
     @objc private func cancelTapped() {

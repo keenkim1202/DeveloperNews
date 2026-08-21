@@ -20,7 +20,7 @@ struct BlockedUsersView: View {
             }
             else {
                 List {
-                    ForEach(Array(appState.blockedUserIds), id: \.self) { userId in
+                    ForEach(appState.blockedUserIds.sorted(), id: \.self) { userId in
                         blockedUserRow(userId)
                     }
                 }
