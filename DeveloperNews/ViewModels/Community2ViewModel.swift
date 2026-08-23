@@ -51,6 +51,10 @@ final class Community2ViewModel {
         }
     }
 
+    var scrollToTopTrigger: Int {
+        appState.communityScrollToTopTrigger
+    }
+
     // Hide posts authored by blocked users from both feeds.
     private var visiblePosts: [FeedPost] {
         posts.filter { !appState.blockedUserIds.contains($0.authorId) }
