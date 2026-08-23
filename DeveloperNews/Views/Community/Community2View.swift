@@ -143,22 +143,32 @@ struct Community2View: View {
         _ posts: [FeedPost],
         refresh: @escaping @Sendable () async -> Void,
     ) -> some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(posts) { post in
-                    FeedPostRow(
-                        post: post,
-                        currentUserId: appState.authService.userId,
-                        onTap: { navigateToDetail(post) },
-                        onAuthorTap: { navigateToProfile(post) },
-                        onLike: { toggleLike(post) })
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                    Divider()
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(posts) { post in
+                        FeedPostRow(
+                            post: post,
+                            currentUserId: appState.authService.userId,
+                            onTap: { navigateToDetail(post) },
+                            onAuthorTap: { navigateToProfile(post) },
+                            onLike: { toggleLike(post) })
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                        Divider()
+                    }
+                }
+            }
+            .refreshable(action: refresh)
+            .keenOnChange(of: viewModel.scrollToTopTrigger) {
+                guard let first = posts.first?.id else {
+                    return
+                }
+                withAnimation {
+                    proxy.scrollTo(first, anchor: .top)
                 }
             }
         }
-        .refreshable(action: refresh)
     }
 
     // Empty-state content has no scrollable list to host pull-to-refresh, so
