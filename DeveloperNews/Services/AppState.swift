@@ -466,6 +466,10 @@ final class AppState {
         offlineArticleStore.hasArticle(for: url)
     }
 
+    func offlineBodyContains(_ needle: String, url: URL) -> Bool {
+        offlineArticleStore.bodyContains(needle, url: url)
+    }
+
     /// Keeps the readable text of a saved article. Called once the page has
     /// rendered, which is the only moment the text is available without
     /// fetching and parsing the page a second time.
