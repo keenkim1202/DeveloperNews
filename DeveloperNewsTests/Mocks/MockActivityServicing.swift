@@ -15,6 +15,14 @@ final class MockActivityServicing: ActivityServicing {
     var canLoadMore = false
     var deleteInboxError: (any Error)?
 
+    /// Set to make the next `delete` fail the way the live service does — with
+    /// a message left on `errorMessage` rather than a thrown error.
+    var deleteFailureMessage: String?
+
+    func clearError() {
+        errorMessage = nil
+    }
+
     func startListening(userId: String) {
         listeningUserIds.append(userId)
     }
@@ -25,6 +33,10 @@ final class MockActivityServicing: ActivityServicing {
 
     func delete(activityIds: [Activity.ID]) async {
         deletedActivityIds.append(activityIds)
+        if let deleteFailureMessage {
+            errorMessage = deleteFailureMessage
+            return
+        }
         let removed = Set(activityIds)
         activities.removeAll { removed.contains($0.id) }
     }

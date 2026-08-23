@@ -42,6 +42,13 @@ final class ActivityService: ActivityServicing {
         attachListener()
     }
 
+    /// Other services clear `errorMessage` on entry to each call. This one
+    /// cannot: the listener writes to the same field with no call in flight and
+    /// the screen closed, so entry-clearing would swallow failures unseen.
+    func clearError() {
+        errorMessage = nil
+    }
+
     func stopListening() {
         listenerRegistration?.remove()
         listenerRegistration = nil
