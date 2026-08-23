@@ -88,10 +88,14 @@ final class SavedViewModel {
         let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return items }
         let needle = query.lowercased()
+        // Captured body text is checked last: it is the only field that is not
+        // already in memory as a short string, and the cheap ones settle most
+        // queries before it is reached.
         return items.filter {
             $0.title.lowercased().contains(needle) ||
             $0.summary.lowercased().contains(needle) ||
-            $0.sourceName.lowercased().contains(needle)
+            $0.sourceName.lowercased().contains(needle) ||
+            appState.offlineBodyContains(needle, url: $0.url)
         }
     }
 

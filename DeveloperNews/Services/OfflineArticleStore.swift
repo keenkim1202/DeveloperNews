@@ -1,11 +1,9 @@
 import Foundation
 import Observation
 
-/// Holds the captured text of saved articles.
-///
-/// Only saved articles are kept. Capturing everything opened would grow without
-/// the reader ever asking for it, and bookmarking is the signal that something
-/// is meant to be come back to.
+/// Holds the captured text of saved articles. Only saved ones: capturing
+/// everything opened would grow without the reader ever asking for it, and
+/// bookmarking is the signal that something is meant to be come back to.
 @Observable
 @MainActor
 final class OfflineArticleStore {
@@ -21,6 +19,17 @@ final class OfflineArticleStore {
 
     private(set) var articlesByURL: [URL: OfflineArticle] = [:]
 
+    /// How much of a capture is searchable. The extractor allows 5,000
+    /// characters a block and this store 400 blocks, so an unbounded index
+    /// could hold two hundred million. Past this an article's tail is missed.
+    private static let maxSearchTextBytes = 20_000
+
+    /// Lowercased body text, built on the first search that needs it — search
+    /// runs on every keystroke. Not observed: it fills during a view body
+    /// evaluation, where an observed write re-renders the view that caused it.
+    @ObservationIgnored
+    private var searchTextByURL: [URL: String] = [:]
+
     struct Inputs {
         var persistOfflineArticles: @MainActor ([OfflineArticle]) -> Void
     }
@@ -33,6 +42,7 @@ final class OfflineArticleStore {
         articlesByURL = Dictionary(
             articles.map { ($0.url, $0) },
             uniquingKeysWith: { first, _ in first })
+        searchTextByURL = [:]
     }
 
     func article(for url: URL) -> OfflineArticle? {
@@ -41,6 +51,38 @@ final class OfflineArticleStore {
 
     func hasArticle(for url: URL) -> Bool {
         articlesByURL[url]?.isReadable ?? false
+    }
+
+    /// Whether the captured text contains `needle`, which the caller has
+    /// already lowercased. The text is on the device for offline reading either
+    /// way; without this a saved article is findable only by its title.
+    func bodyContains(_ needle: String, url: URL) -> Bool {
+        guard let text = searchText(for: url) else {
+            return false
+        }
+        return text.contains(needle)
+    }
+
+    private func searchText(for url: URL) -> String? {
+        if let cached = searchTextByURL[url] {
+            return cached
+        }
+        guard let article = articlesByURL[url] else {
+            return nil
+        }
+        // Built a block at a time rather than joined and then trimmed, so the
+        // whole capture is never materialised at once. The result can overrun
+        // the budget by the last block it took, which the block cap bounds.
+        var text = ""
+        for paragraph in article.paragraphs {
+            text += paragraph.lowercased()
+            text += " "
+            if text.utf8.count >= Self.maxSearchTextBytes {
+                break
+            }
+        }
+        searchTextByURL[url] = text
+        return text
     }
 
     /// Stores a capture, replacing any earlier one for the same article so a
@@ -66,6 +108,7 @@ final class OfflineArticleStore {
             sourceName: sourceName,
             paragraphs: cleaned,
             capturedAt: .now)
+        searchTextByURL[url] = nil
         trim()
         persist()
     }
@@ -76,6 +119,7 @@ final class OfflineArticleStore {
         guard articlesByURL.removeValue(forKey: url) != nil else {
             return
         }
+        searchTextByURL[url] = nil
         persist()
     }
 
@@ -89,6 +133,7 @@ final class OfflineArticleStore {
         articlesByURL = Dictionary(
             keep.map { ($0.url, $0) },
             uniquingKeysWith: { first, _ in first })
+        searchTextByURL = searchTextByURL.filter { articlesByURL[$0.key] != nil }
     }
 
     private func persist() {

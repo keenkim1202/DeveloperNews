@@ -29,6 +29,59 @@ import Foundation
         #expect(!topics.contains(.android))
     }
 
+    // The captured text is on the device for offline reading either way. Without
+    // searching it, an article is findable only by remembering its title.
+    @Test func searchFilterMatchesCapturedArticleText() async {
+        let appState = VMFixtures.makeAppState()
+        let item = VMFixtures.makeItem(title: "Weekly roundup", summary: "x", sourceName: "Blog")
+        seed(appState, [item])
+        appState.captureOfflineArticle(item, paragraphs: ["A note on structured concurrency."])
+        let vm = SavedViewModel(appState: appState)
+
+        vm.searchQuery = "structured concurrency"
+        #expect(vm.matchingArticleItems.map(\.title) == ["Weekly roundup"])
+
+        vm.searchQuery = "nothing in this article"
+        #expect(vm.matchingArticleItems.isEmpty)
+    }
+
+    // A capture is replaced when the page is read again, so the text searched
+    // has to be the current one.
+    @Test func searchFilterUsesTheLatestCapture() async {
+        let appState = VMFixtures.makeAppState()
+        let item = VMFixtures.makeItem(title: "Weekly roundup", summary: "x", sourceName: "Blog")
+        seed(appState, [item])
+        appState.captureOfflineArticle(item, paragraphs: ["First capture about actors."])
+        let vm = SavedViewModel(appState: appState)
+
+        vm.searchQuery = "actors"
+        #expect(vm.matchingArticleItems.count == 1)
+
+        appState.captureOfflineArticle(item, paragraphs: ["Rewritten, now about macros."])
+        #expect(vm.matchingArticleItems.isEmpty)
+
+        vm.searchQuery = "macros"
+        #expect(vm.matchingArticleItems.count == 1)
+    }
+
+    // Only the head of a capture is indexed. Without a bound, a full library of
+    // long articles would be joined and lowercased on the main actor the first
+    // time a query matched none of them.
+    @Test func searchFilterOnlyReachesTheIndexedHeadOfACapture() async {
+        let appState = VMFixtures.makeAppState()
+        let item = VMFixtures.makeItem(title: "Long read", summary: "x", sourceName: "Blog")
+        seed(appState, [item])
+        let filler = Array(repeating: String(repeating: "a", count: 1000), count: 30)
+        appState.captureOfflineArticle(item, paragraphs: filler + ["buried needle"])
+        let vm = SavedViewModel(appState: appState)
+
+        vm.searchQuery = "buried needle"
+        #expect(vm.matchingArticleItems.isEmpty)
+
+        vm.searchQuery = "aaa"
+        #expect(vm.matchingArticleItems.count == 1)
+    }
+
     @Test func searchFilterMatchesTitleSummaryAndSource() async {
         let appState = VMFixtures.makeAppState()
         seed(appState, [
