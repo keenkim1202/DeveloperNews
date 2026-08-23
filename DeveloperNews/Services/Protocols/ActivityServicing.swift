@@ -10,6 +10,9 @@ protocol ActivityServicing {
     /// Whether the inbox holds rows older than the ones currently loaded.
     var canLoadMore: Bool { get }
 
+    /// Drops the last failure once the screen has shown it.
+    func clearError()
+
     func startListening(userId: String)
     func stopListening()
 

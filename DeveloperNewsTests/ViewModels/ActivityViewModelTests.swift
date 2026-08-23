@@ -242,4 +242,42 @@ import Testing
         vm.loadMore()
         #expect(activity.loadMoreCallCount == 1)
     }
+
+    // The listener fails on its own schedule, with the screen closed and no
+    // call in flight. Nothing else reports it, so the next sync has to — an
+    // inbox left empty by a failed read must not read as an empty inbox.
+    @Test func aListenerFailureIsReportedOnTheNextSync() async {
+        let activity = MockActivityServicing()
+        activity.errorMessage = "permission denied"
+        let state = VMFixtures.makeAppState(
+            auth: MockAuthServicing(userId: "me"),
+            activity: activity)
+        let vm = ActivityViewModel(appState: state)
+
+        await vm.sync()
+        #expect(state.toastTrigger == 1)
+        #expect(state.toastMessage == "permission denied")
+
+        await vm.sync()
+        #expect(state.toastTrigger == 1)
+    }
+
+    // Shown once and not one sync longer: left in place, the same failure is
+    // re-reported every time the screen syncs.
+    @Test func aFailedDeleteIsReportedOnceAndNotAgain() async {
+        let activity = MockActivityServicing()
+        activity.activities = [makeActivity(id: "a")]
+        activity.deleteFailureMessage = "could not reach the server"
+        let state = VMFixtures.makeAppState(
+            auth: MockAuthServicing(userId: "me"),
+            activity: activity)
+        let vm = ActivityViewModel(appState: state)
+
+        await vm.delete(activity.activities[0])
+        #expect(state.toastTrigger == 1)
+        #expect(state.toastMessage == "could not reach the server")
+
+        await vm.sync()
+        #expect(state.toastTrigger == 1)
+    }
 }

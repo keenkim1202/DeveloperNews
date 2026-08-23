@@ -59,9 +59,18 @@ final class ActivityViewModel {
         await purgeBlockedActivities()
         await resolveActors()
         await appState.activityService.markAllAsRead()
-        if let message = appState.activityService.errorMessage {
-            appState.presentError(message)
+        presentServiceError()
+    }
+
+    /// Shows the service's last failure once, then clears it. It may come from
+    /// the call that just returned or from the listener, which fails with the
+    /// screen closed; clearing is what stops it reappearing on every sync.
+    private func presentServiceError() {
+        guard let message = appState.activityService.errorMessage else {
+            return
         }
+        appState.presentError(message)
+        appState.activityService.clearError()
     }
 
     /// Drops rows from a blocked actor. The list hides them, but a hidden row
@@ -75,13 +84,12 @@ final class ActivityViewModel {
             return
         }
         await appState.activityService.delete(activityIds: blockedIds)
+        presentServiceError()
     }
 
     func delete(_ activity: Activity) async {
         await appState.activityService.delete(activityIds: [activity.id])
-        if let message = appState.activityService.errorMessage {
-            appState.presentError(message)
-        }
+        presentServiceError()
     }
 
     /// Fills in the actors' names and emoji — an activity stores only an id.
