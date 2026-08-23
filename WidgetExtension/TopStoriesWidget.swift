@@ -40,10 +40,15 @@ struct TopStoriesWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: TopStoriesProvider()) { entry in
             TopStoriesWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Top Stories")
         .description("What is trending across your sources right now.")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies([
+            .systemSmall,
+            .systemMedium,
+            .systemLarge,
+            .accessoryRectangular,
+            .accessoryInline,
+        ])
     }
 }
