@@ -7,11 +7,14 @@ struct TopStoriesWidgetView: View {
     let entry: TopStoriesEntry
 
     /// Small shows one story and leans on its title; the taller families trade
-    /// that emphasis for a list.
+    /// that emphasis for a list. The Lock Screen families get less room than
+    /// any of them.
     private var visibleCount: Int {
         switch family {
-        case .systemSmall:
+        case .accessoryInline, .systemSmall:
             1
+        case .accessoryRectangular:
+            2
         case .systemMedium:
             3
         default:
@@ -23,7 +26,63 @@ struct TopStoriesWidgetView: View {
         Array(entry.stories.prefix(visibleCount))
     }
 
+    private var isAccessory: Bool {
+        family == .accessoryInline || family == .accessoryRectangular
+    }
+
+    /// The Lock Screen tints the widget to match the wallpaper, so a fill of
+    /// our own reads as a grey slab sitting on top of it.
+    private var background: AnyShapeStyle {
+        isAccessory ? AnyShapeStyle(.clear) : AnyShapeStyle(.fill.tertiary)
+    }
+
+    /// `Link` is a home-screen affordance; a Lock Screen widget has one tap
+    /// target and it comes from `widgetURL`.
+    private var accessoryLinkURL: URL? {
+        isAccessory ? stories.first?.linkURL : nil
+    }
+
     var body: some View {
+        content
+            .containerBackground(background, for: .widget)
+            .widgetURL(accessoryLinkURL)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch family {
+        case .accessoryInline:
+            Text(stories.first?.title ?? "Open DeveloperNews")
+        case .accessoryRectangular:
+            rectangular
+        default:
+            homeScreen
+        }
+    }
+
+    private var rectangular: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text("Top Stories")
+                .font(.caption2.weight(.semibold))
+                .widgetAccentable()
+            if stories.isEmpty {
+                Text("Open DeveloperNews to load today's stories.")
+                    .font(.caption2)
+                    .lineLimit(2)
+            }
+            else {
+                ForEach(stories) { story in
+                    Text(story.title)
+                        .font(.caption2)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var homeScreen: some View {
         if stories.isEmpty {
             emptyState
         }
