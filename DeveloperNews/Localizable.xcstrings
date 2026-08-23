@@ -940,6 +940,23 @@
         }
       }
     },
+    "No stories yet. Open DeveloperNews once to load them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No stories yet. Open DeveloperNews once to load them."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아직 불러온 소식이 없습니다. DeveloperNews를 한 번 열어주세요."
+          }
+        }
+      }
+    },
     "Notifications": {
       "extractionState": "manual",
       "localizations": {
@@ -1004,6 +1021,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "다른 곳에서 열기"
+          }
+        }
+      }
+    },
+    "Open the top story": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the top story"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "인기 소식 열기"
+          }
+        }
+      }
+    },
+    "Opens the story trending across your sources right now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens the story trending across your sources right now."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금 여러 소스에서 가장 많이 읽히는 소식을 엽니다."
           }
         }
       }

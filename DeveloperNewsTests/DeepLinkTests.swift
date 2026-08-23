@@ -22,6 +22,17 @@ import Testing
         #expect(parsed?.absoluteString == article)
     }
 
+    // The App Intents build the link with `articleLink`, so this end has to
+    // survive the same parser the widget's copy goes through.
+    @Test func buildsALinkItsOwnParserAccepts() {
+        let article = URL(string: "https://example.com/a?ref=feed&x=1")!
+
+        let link = DeepLink.articleLink(to: article)
+
+        #expect(link?.scheme == "devnews")
+        #expect(DeepLink.articleURL(from: link!) == article)
+    }
+
     @Test func rejectsOtherSchemesAndHosts() {
         #expect(DeepLink.articleURL(from: URL(string: "https://example.com/a")!) == nil)
         #expect(DeepLink.articleURL(from: URL(string: "devnews://profile?url=https://a.com")!) == nil)
