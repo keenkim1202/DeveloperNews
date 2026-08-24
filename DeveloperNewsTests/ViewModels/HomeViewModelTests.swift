@@ -66,6 +66,29 @@ import Foundation
         #expect(titles == ["SwiftUI"])
     }
 
+    @Test func searchIncludesMatchesBeyondTheVisiblePage() async {
+        let engagementService = MockStoryEngagementServicing()
+        var items = (0..<FeedStore.pageSize).map { index in
+            VMFixtures.makeItem(title: "Visible \(index)", trendScore: 100 - index)
+        }
+        let match = VMFixtures.makeItem(title: "Needle", trendScore: 0)
+        items.append(match)
+        let appState = VMFixtures.makeAppState(
+            storyEngagement: engagementService,
+            contentSourceClient: StubContentSourceClient(items: items))
+        await appState.reload()
+        let vm = HomeViewModel(appState: appState)
+
+        #expect(!appState.pagedArticleItems.contains { $0.title == "Needle" })
+
+        vm.searchQuery = "needle"
+        await vm.loadEngagements()
+
+        #expect(vm.filteredArticleItems.map(\.title) == ["Needle"])
+        #expect(!vm.hasMorePages)
+        #expect(engagementService.fetchedBatches.last == [match.url.absoluteString])
+    }
+
     @Test func loadEngagementsKeysByURLAndMergesAcrossCalls() async {
         let shown = VMFixtures.makeItem(title: "Shown", trendScore: 50)
         let unknown = VMFixtures.makeItem(title: "Unknown", trendScore: 1)
@@ -109,6 +132,24 @@ import Foundation
         await vm.loadEngagements()
         #expect(vm.engagement(for: shown) == engagement)
         #expect(vm.engagement(for: other) == otherEngagement)
+    }
+
+    @Test func searchEngagementsAreFetchedInServiceSizedBatches() async {
+        let engagementService = MockStoryEngagementServicing()
+        let items = (0..<65).map { index in
+            VMFixtures.makeItem(title: "Needle \(index)", trendScore: 100 - index)
+        }
+        let appState = VMFixtures.makeAppState(
+            storyEngagement: engagementService,
+            contentSourceClient: StubContentSourceClient(items: items))
+        await appState.reload()
+        let vm = HomeViewModel(appState: appState)
+        vm.searchQuery = "needle"
+
+        await vm.loadEngagements()
+
+        #expect(engagementService.fetchedBatches.map(\.count) == [30, 30, 5])
+        #expect(Set(engagementService.fetchedBatches.flatMap { $0 }) == Set(items.map { $0.url.absoluteString }))
     }
 
     @Test func engagementReturnsZeroNonNilForUnfetchedItem() async {

@@ -25,6 +25,7 @@ actor PersistenceStore {
         static let offlineArticles = "offlineArticles"
         static let translationLanguage = "translationLanguage"
         static let allItems = "allItems"
+        static let importedShareReceiptIDs = "importedShareReceiptIDs"
     }
 
     struct SavedRecord: Codable {
@@ -50,6 +51,7 @@ actor PersistenceStore {
         var hasSeenIntro = false
         var topStoryDismissedAt: Date?
         var allItems: [ContentItem] = []
+        var importedShareReceiptIDs: Set<String> = []
     }
 
     // UserDefaults is thread-safe but not Sendable, so this handle is safe to touch
@@ -139,6 +141,11 @@ actor PersistenceStore {
             state.allItems = decoded
         }
 
+        if let storedReceiptIDs = defaults.stringArray(
+            forKey: StorageKey.importedShareReceiptIDs) {
+            state.importedShareReceiptIDs = Set(storedReceiptIDs)
+        }
+
         return state
     }
 
@@ -220,5 +227,9 @@ actor PersistenceStore {
         if let encoded = try? JSONEncoder().encode(items) {
             defaults.set(encoded, forKey: StorageKey.allItems)
         }
+    }
+
+    func saveImportedShareReceiptIDs(_ ids: Set<String>) {
+        defaults.set(Array(ids), forKey: StorageKey.importedShareReceiptIDs)
     }
 }

@@ -63,7 +63,9 @@ struct ContentView: View {
         }
         appState.communityService.startListening()
         appState.startListeningForActivities()
-        appState.processPendingSharedItems()
+        Task {
+            await appState.processPendingSharedItems()
+        }
     }
 
     private func loadContent() async {
@@ -92,8 +94,8 @@ struct ContentView: View {
         guard newPhase == .active, appState.isOnboardingComplete else {
             return
         }
-        appState.processPendingSharedItems()
         Task {
+            await appState.processPendingSharedItems()
             await appState.refreshIfStale(maxAge: AppState.feedStaleThreshold)
             appState.refreshWidgetSnapshot()
             await appState.refreshDailyDigest()
@@ -201,4 +203,3 @@ struct MainTabView: View {
         }
     }
 }
-
