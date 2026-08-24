@@ -12,6 +12,10 @@ final class AppState {
     private let contentSourceClient: any ContentSourceClient
     private let persistenceStore: PersistenceStore
     private var persistenceChain: Task<Void, Never> = Task {}
+    private var isProcessingPendingSharedItems = false
+    private var importedShareReceiptIDs: Set<String> = []
+    private var importedShareReceiptIDsAtLaunch: Set<String> = []
+    private var processedPendingShareIDs: Set<String> = []
 
     private(set) var feedStore: FeedStore!
     private(set) var savedItemsStore: SavedItemsStore!
@@ -315,6 +319,7 @@ final class AppState {
     func removeSavedItem(at url: URL) {
         savedItemsStore.removeSavedItem(at: url)
         offlineArticleStore.removeArticle(for: url)
+        discardPendingSharedItem(for: url)
     }
 
 
@@ -453,6 +458,7 @@ final class AppState {
         // Unsaving gives back the space its captured text was using.
         if !isSaved(item) {
             offlineArticleStore.removeArticle(for: item.url)
+            discardPendingSharedItem(for: item.url)
         }
     }
 
@@ -599,13 +605,39 @@ final class AppState {
         await refreshDailyDigest()
     }
 
-    func processPendingSharedItems() {
-        let defaults = UserDefaults(suiteName: "group.keen-onit.DeveloperNews") ?? .standard
-        guard let pending = defaults.array(forKey: "pendingSharedItems") as? [[String: String]],
-              !pending.isEmpty
-        else { return }
+    func processPendingSharedItems() async {
+        guard !isProcessingPendingSharedItems else { return }
+        isProcessingPendingSharedItems = true
+        defer { isProcessingPendingSharedItems = false }
 
-        var consumedKeys: Set<String> = []
+        let defaults = UserDefaults(suiteName: "group.keen-onit.DeveloperNews") ?? .standard
+        let legacyPending = defaults.array(forKey: "pendingSharedItems") as? [[String: String]] ?? []
+        let queue = PendingSharedItemQueue(
+            appGroupIdentifier: "group.keen-onit.DeveloperNews")
+        let queuedPending = (try? queue?.read()) ?? []
+
+        // A receipt is persisted after the corresponding bookmark write. Only
+        // that exact share entry can therefore be acknowledged on a later launch.
+        let confirmedQueued = queuedPending.filter(wasImported)
+        let confirmedLegacy = legacyPending.filter(wasImported)
+        let confirmedIDs = Set(
+            (confirmedLegacy + confirmedQueued).compactMap(pendingShareIdentity))
+        let pending = (legacyPending + queuedPending).filter { entry in
+            guard let id = pendingShareIdentity(entry), !confirmedIDs.contains(id) else {
+                return false
+            }
+            return processedPendingShareIDs.insert(id).inserted
+        }
+
+        try? queue?.acknowledge(confirmedQueued)
+        removeConfirmedLegacyEntries(
+            confirmedLegacy,
+            from: defaults)
+
+        if !confirmedIDs.isEmpty {
+            importedShareReceiptIDs.subtract(confirmedIDs)
+            saveImportedShareReceiptIDs()
+        }
 
         for entry in pending {
             guard let urlString = entry["url"], let url = URL(string: urlString) else { continue }
@@ -627,20 +659,69 @@ final class AppState {
                 topics: topics,
                 trendScore: 0)
             addSavedItem(item)
-            consumedKeys.insert(entry["id"] ?? urlString)
-        }
-
-        // Drops only what was consumed: the extension is a separate process and
-        // can append between the read above and this write.
-        // ponytail: still a read-modify-write, so a simultaneous append can be
-        // lost. NSFileCoordinator over a shared-container file if that matters.
-        let remaining = (defaults.array(forKey: "pendingSharedItems") as? [[String: String]] ?? [])
-            .filter { entry in
-                guard let urlString = entry["url"] else {
-                    return false
-                }
-                return !consumedKeys.contains(entry["id"] ?? urlString)
+            if let id = pendingShareIdentity(entry) {
+                importedShareReceiptIDs.insert(id)
+                saveImportedShareReceiptIDs()
             }
+        }
+    }
+
+    private func wasImported(_ entry: [String: String]) -> Bool {
+        guard let id = pendingShareIdentity(entry) else { return false }
+        return importedShareReceiptIDsAtLaunch.contains(id)
+    }
+
+    private func pendingShareIdentity(_ entry: [String: String]) -> String? {
+        entry["id"] ?? entry["url"]
+    }
+
+    private func discardPendingSharedItem(for url: URL) {
+        let defaults = UserDefaults(suiteName: "group.keen-onit.DeveloperNews") ?? .standard
+        let queue = PendingSharedItemQueue(
+            appGroupIdentifier: "group.keen-onit.DeveloperNews")
+        let queued = (try? queue?.read()) ?? []
+
+        let pending = defaults.array(forKey: "pendingSharedItems") as? [[String: String]] ?? []
+        var discardedIDs = Set(
+            pending
+                .filter { $0["url"] == url.absoluteString }
+                .compactMap(pendingShareIdentity))
+        do {
+            try queue?.acknowledge(url: url)
+            discardedIDs.formUnion(
+                queued
+                    .filter { $0["url"] == url.absoluteString }
+                    .compactMap(pendingShareIdentity))
+        }
+        catch {
+            // Preserve the receipt so a failed queue deletion cannot re-import
+            // this bookmark on the next launch.
+        }
+        if !discardedIDs.isEmpty {
+            importedShareReceiptIDs.subtract(discardedIDs)
+            saveImportedShareReceiptIDs()
+        }
+        let remaining = pending.filter { $0["url"] != url.absoluteString }
+        if remaining.isEmpty {
+            defaults.removeObject(forKey: "pendingSharedItems")
+        }
+        else if remaining.count != pending.count {
+            defaults.set(remaining, forKey: "pendingSharedItems")
+        }
+    }
+
+    private func removeConfirmedLegacyEntries(
+        _ confirmed: [[String: String]],
+        from defaults: UserDefaults,
+    ) {
+        let confirmedIDs = Set(confirmed.compactMap(pendingShareIdentity))
+        guard !confirmedIDs.isEmpty else { return }
+
+        let current = defaults.array(forKey: "pendingSharedItems") as? [[String: String]] ?? []
+        let remaining = current.filter { entry in
+            guard let id = pendingShareIdentity(entry) else { return true }
+            return !confirmedIDs.contains(id)
+        }
         if remaining.isEmpty {
             defaults.removeObject(forKey: "pendingSharedItems")
         }
@@ -656,6 +737,8 @@ final class AppState {
             snapshots: state.savedItemSnapshots,
             timestamps: state.savedItemTimestampsByURL,
             sortOrder: state.savedSortOrder)
+        importedShareReceiptIDs = state.importedShareReceiptIDs
+        importedShareReceiptIDsAtLaunch = state.importedShareReceiptIDs
         notificationsEnabled = state.notificationsEnabled
         sourceCategoryStore.seedInitialState(
             disabledSourceCategories: state.disabledSourceCategories)
@@ -764,6 +847,13 @@ final class AppState {
     private func saveLastUpdatedAt(_ date: Date?) {
         enqueuePersistence { store in
             await store.saveLastUpdatedAt(date)
+        }
+    }
+
+    private func saveImportedShareReceiptIDs() {
+        let ids = importedShareReceiptIDs
+        enqueuePersistence { store in
+            await store.saveImportedShareReceiptIDs(ids)
         }
     }
 

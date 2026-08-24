@@ -4,7 +4,6 @@ import UniformTypeIdentifiers
 class ShareViewController: UIViewController {
 
     private let appGroupID = "group.keen-onit.DeveloperNews"
-    private let pendingShareKey = "pendingSharedItems"
 
     private var sharedURL: String?
 
@@ -212,22 +211,24 @@ class ShareViewController: UIViewController {
         let title = titleField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? url
         let description = descriptionField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
-        // Without the app group there is nowhere to write, so the save has to
-        // report failure rather than claim success it cannot deliver.
-        guard let defaults = UserDefaults(suiteName: appGroupID) else {
+        guard let queue = SharePendingItemQueue(appGroupIdentifier: appGroupID) else {
             showSaveFailure()
             return
         }
 
-        var pending = defaults.array(forKey: pendingShareKey) as? [[String: String]] ?? []
-        pending.append([
-            "id": UUID().uuidString,
-            "url": url,
-            "title": title.isEmpty ? url : title,
-            "description": description,
-            "topics": Array(selectedTopics).joined(separator: ","),
-        ])
-        defaults.set(pending, forKey: pendingShareKey)
+        do {
+            try queue.append([
+                "id": UUID().uuidString,
+                "url": url,
+                "title": title.isEmpty ? url : title,
+                "description": description,
+                "topics": Array(selectedTopics).joined(separator: ","),
+            ])
+        }
+        catch {
+            showSaveFailure()
+            return
+        }
 
         saveButton.setTitle("✓ Saved", for: .normal)
         saveButton.isEnabled = false
@@ -254,6 +255,61 @@ class ShareViewController: UIViewController {
 
     private func close() {
         extensionContext?.completeRequest(returningItems: nil)
+    }
+}
+
+/// Share Extension side of the coordinated file queue. The main app owns the
+/// matching reader; both processes coordinate against the same container URL.
+private struct SharePendingItemQueue {
+    typealias Entry = [String: String]
+
+    private let fileURL: URL
+
+    init?(appGroupIdentifier: String) {
+        guard let containerURL = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: appGroupIdentifier)
+        else {
+            return nil
+        }
+        fileURL = containerURL.appendingPathComponent(
+            "pending-shared-items.json",
+            isDirectory: false)
+    }
+
+    func append(_ entry: Entry) throws {
+        let coordinator = NSFileCoordinator(filePresenter: nil)
+        var coordinationError: NSError?
+        var operationError: Error?
+
+        coordinator.coordinate(
+            writingItemAt: fileURL,
+            options: .forMerging,
+            error: &coordinationError
+        ) { coordinatedURL in
+            do {
+                let existing: [Entry]
+                if FileManager.default.fileExists(atPath: coordinatedURL.path) {
+                    existing = try JSONDecoder().decode(
+                        [Entry].self,
+                        from: Data(contentsOf: coordinatedURL))
+                }
+                else {
+                    existing = []
+                }
+                let data = try JSONEncoder().encode(existing + [entry])
+                try data.write(to: coordinatedURL, options: .atomic)
+            }
+            catch {
+                operationError = error
+            }
+        }
+
+        if let coordinationError {
+            throw coordinationError
+        }
+        if let operationError {
+            throw operationError
+        }
     }
 }
 

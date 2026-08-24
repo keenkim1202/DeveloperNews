@@ -1,15 +1,6 @@
 import Foundation
 @testable import DeveloperNews
 
-// Note on PersistenceStore: it is intentionally not tested here. Its init
-// hardcodes `UserDefaults(suiteName: "group.keen-onit.DeveloperNews")`, so a
-// round-trip test would read and write the app group's shared defaults and
-// pollute state that other tests and the running app observe. There is no seam
-// to inject a throwaway UserDefaults suite without changing production code,
-// which this task forbids. Cleanly testing its write/load round-trip would
-// require a UserDefaults-injection refactor (e.g. `init(defaults:)`); until
-// then it is skipped.
-
 // Shared helpers for constructing stores directly in store unit tests.
 @MainActor
 enum StoreTestSupport {

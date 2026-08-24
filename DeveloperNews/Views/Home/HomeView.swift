@@ -38,11 +38,26 @@ struct HomeView: View {
             .refreshable(action: reload)
             .keenOnChange(of: viewModel.personalizedItems.count, perform: onFeedItemsChange)
             .task(loadEngagements)
+            .task(id: viewModel.searchQuery, loadSearchEngagements)
         }
     }
 
     @Sendable
     private func loadEngagements() async {
+        await viewModel.loadEngagements()
+    }
+
+    @Sendable
+    private func loadSearchEngagements() async {
+        let query = viewModel.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return }
+
+        do {
+            try await Task.sleep(for: .milliseconds(300))
+        }
+        catch {
+            return
+        }
         await viewModel.loadEngagements()
     }
 

@@ -4,6 +4,8 @@ import Observation
 @Observable
 @MainActor
 final class HomeViewModel {
+    private static let engagementBatchSize = 30
+
     private let appState: AppState
 
     var searchQuery = ""
@@ -32,7 +34,7 @@ final class HomeViewModel {
         appState.selectedTopics
     }
     var hasMorePages: Bool {
-        appState.hasMorePages
+        searchQueryIsEmpty && appState.hasMorePages
     }
     var scrollToTopTrigger: Int {
         appState.homeScrollToTopTrigger
@@ -58,11 +60,15 @@ final class HomeViewModel {
     }
 
     var filteredArticleItems: [ContentItem] {
-        searchFiltered(appState.pagedArticleItems)
+        searchQueryIsEmpty
+            ? appState.pagedArticleItems
+            : searchFiltered(appState.articleItems)
     }
 
     var filteredDiscussionItems: [ContentItem] {
-        searchFiltered(appState.pagedDiscussionItems)
+        searchQueryIsEmpty
+            ? appState.pagedDiscussionItems
+            : searchFiltered(appState.discussionItems)
     }
 
     var articlesExcludingTopStory: [ContentItem] {
@@ -88,8 +94,8 @@ final class HomeViewModel {
     }
 
     // Read-only enrichment: fetch in-app counts for the currently displayed
-    // items and merge them in. Never blocks the feed; the service caps the batch
-    // at 30 URLs, so items beyond that simply show no in-app counts.
+    // items and merge them in. Never blocks the feed; requests are chunked to
+    // respect the service's 30-URL bound when a search exposes the full feed.
     func loadEngagements() async {
         var displayed = articlesExcludingTopStory + discussionsExcludingTopStory
         if let top = topItem {
@@ -106,9 +112,14 @@ final class HomeViewModel {
         }
         guard !urls.isEmpty else { return }
 
-        let fetched = await appState.storyEngagementService.fetchEngagements(storyURLs: urls)
-        storyEngagements.merge(fetched) { _, new in
-            new
+        for start in stride(from: 0, to: urls.count, by: Self.engagementBatchSize) {
+            guard !Task.isCancelled else { return }
+            let end = min(start + Self.engagementBatchSize, urls.count)
+            let fetched = await appState.storyEngagementService.fetchEngagements(
+                storyURLs: Array(urls[start..<end]))
+            storyEngagements.merge(fetched) { _, new in
+                new
+            }
         }
     }
 
@@ -176,5 +187,9 @@ final class HomeViewModel {
             $0.summary.lowercased().contains(needle) ||
             $0.sourceName.lowercased().contains(needle)
         }
+    }
+
+    private var searchQueryIsEmpty: Bool {
+        searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
