@@ -27,11 +27,15 @@ It also has a small community layer on top, so a story can be discussed rather t
 - Share Extension — save an article from Safari or any other app
 - Opening a bookmarked article keeps its text, so it still opens on a train with no signal.
   One saved from the Share Extension and never opened has nothing to show yet
+- That kept text is searchable, so a saved article can be found by a phrase from its body
+  rather than only by its title
 - Reading history, newest first, for the article you did not think to save
 
-**Widget and notifications**
+**Widget, notifications, and Shortcuts**
 
-- Home screen widget in three sizes; a tap opens the story in the app's reader rather than Safari
+- Home screen widget in three sizes, plus the Lock Screen and StandBy. A tap opens the story
+  in the app's reader rather than Safari
+- Ask Siri for the top story, or run the same thing from Spotlight and the Shortcuts app
 - A daily notification with the story at the top of your feed
 
 **Community**
@@ -127,9 +131,11 @@ cannot be replayed into a hundred inbox rows.
 `scripts/test-firestore-rules.py` exercises those rules against the Firestore emulator.
 Each of its 33 checks is a denial a client cannot be trusted to make itself.
 
-`.github/workflows/firestore-rules.yml` runs it on any pull request that touches the rules, and
-the deploy to Firebase is gated on it passing, so the rules and the code that needs them land
-together. To run it locally:
+`.github/workflows/firestore-rules.yml` runs it on any pull request that touches the rules.
+The deploy to Firebase is gated on it passing, so the rules and the code that needs them land
+together.
+
+To run it locally:
 
 ```bash
 firebase emulators:exec --only firestore "python3 scripts/test-firestore-rules.py"
@@ -150,6 +156,7 @@ firebase emulators:exec --only firestore "python3 scripts/test-firestore-rules.p
 | **Notifications** | UserNotifications, with BackgroundTasks keeping the daily digest current |
 | **Tests** | Swift Testing |
 | **Extensions** | Share Extension, Widget Extension |
+| **System** | App Intents — Siri, Spotlight, Shortcuts |
 | **CI/CD** | GitHub Actions, fastlane |
 
 ## Requirements
