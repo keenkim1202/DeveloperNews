@@ -5,7 +5,7 @@ import Foundation
 @MainActor
 final class MockFeedPostServicing: FeedPostServicing {
     var errorMessage: String?
-    var creationToken = 0
+    var changeToken = 0
 
     var recentPosts: [FeedPost] = []
     var authorPosts: [FeedPost] = []
@@ -30,7 +30,7 @@ final class MockFeedPostServicing: FeedPostServicing {
         authorEmoji: String?,
     ) async {
         createdComments.append(comment)
-        creationToken += 1
+        changeToken += 1
     }
 
     func toggleLike(
@@ -50,6 +50,7 @@ final class MockFeedPostServicing: FeedPostServicing {
 
     func deletePost(_ post: FeedPost) async {
         deletedPostIds.append(post.id)
+        changeToken += 1
     }
 
     func reportPost(

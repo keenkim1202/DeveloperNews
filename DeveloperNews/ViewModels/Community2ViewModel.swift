@@ -22,7 +22,7 @@ final class Community2ViewModel {
     private(set) var isLoadingFollowing = false
     private(set) var hasLoaded = false
     private(set) var hasLoadedFollowing = false
-    private var loadedCreationToken = 0
+    private var loadedChangeToken = 0
 
     var tab: Tab = .discover
     var mode: Mode = .trending
@@ -130,7 +130,7 @@ final class Community2ViewModel {
     // created since the last load (possibly from another screen). Keeps tab
     // re-entry cheap while still surfacing a just-published post.
     func loadIfNeeded() async {
-        if hasLoaded, loadedCreationToken == appState.feedPostService.creationToken {
+        if hasLoaded, loadedChangeToken == appState.feedPostService.changeToken {
             return
         }
         await load()
@@ -141,7 +141,7 @@ final class Community2ViewModel {
             return
         }
         isLoading = true
-        loadedCreationToken = appState.feedPostService.creationToken
+        loadedChangeToken = appState.feedPostService.changeToken
         posts = await appState.feedPostService.fetchRecentPosts(limit: Self.fetchLimit)
         isLoading = false
         hasLoaded = true

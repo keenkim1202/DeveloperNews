@@ -127,6 +127,23 @@ final class FeedPostDetailViewModel {
         currentPost = Self.applyLikeToggle(currentPost, userId: uid)
     }
 
+    /// Removes the reader's own post.
+    ///
+    /// Returns whether it went, so the screen only closes on a delete that
+    /// actually happened — dismissing on a failure would look like success.
+    @discardableResult
+    func deletePost() async -> Bool {
+        guard isAuthor else {
+            return false
+        }
+        await feedPostService.deletePost(currentPost)
+        if let message = feedPostService.errorMessage {
+            appState.presentError(message)
+            return false
+        }
+        return true
+    }
+
     func updateComment(_ text: String) async {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,

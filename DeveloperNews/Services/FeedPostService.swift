@@ -11,7 +11,11 @@ enum FeedPostServiceError: Error {
 @MainActor
 final class FeedPostService: FeedPostServicing {
     private(set) var errorMessage: String?
-    private(set) var creationToken = 0
+    /// Bumped whenever the collection changes under a loaded feed — a post
+    /// created, edited or deleted. `Community2ViewModel` skips a refetch while
+    /// this is unchanged, so a screen that mutates a post has to move it or the
+    /// feed behind it keeps showing what was there before.
+    private(set) var changeToken = 0
 
     private let db = Firestore.firestore()
     private let activityRecorder: any ActivityRecording
@@ -56,7 +60,7 @@ final class FeedPostService: FeedPostServicing {
 
         do {
             try await feedPostsRef.addDocument(data: data)
-            creationToken += 1
+            changeToken += 1
         }
         catch {
             errorMessage = error.localizedDescription
@@ -120,6 +124,7 @@ final class FeedPostService: FeedPostServicing {
                 "comment": comment,
                 "updatedAt": FieldValue.serverTimestamp(),
             ])
+            changeToken += 1
         }
         catch {
             errorMessage = error.localizedDescription
@@ -127,8 +132,10 @@ final class FeedPostService: FeedPostServicing {
     }
 
     func deletePost(_ post: FeedPost) async {
+        errorMessage = nil
         do {
             try await feedPostsRef.document(post.id).delete()
+            changeToken += 1
         }
         catch {
             errorMessage = error.localizedDescription

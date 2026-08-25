@@ -96,6 +96,7 @@ private struct FeedPostDetailContentView: View {
     @State private var shouldScrollToLatestComment = false
     @State private var hasScrolledToHighlight = false
     @State private var showEditSheet = false
+    @State private var showDeleteConfirm = false
     @State private var replyingTo: CommunityComment?
     @FocusState private var commentFieldFocused: Bool
 
@@ -220,6 +221,15 @@ private struct FeedPostDetailContentView: View {
                     action: submitPendingReport)
             }
             .alert(
+                .communityDeleteConfirm,
+                isPresented: $showDeleteConfirm) {
+                Button("Cancel", role: .cancel) {}
+                Button(
+                    "Delete",
+                    role: .destructive,
+                    action: deletePost)
+            }
+            .alert(
                 .communityBlockConfirmTitle,
                 isPresented: $showBlockConfirm) {
                 Button("Cancel", role: .cancel) {}
@@ -236,6 +246,10 @@ private struct FeedPostDetailContentView: View {
     private var authorMenu: some View {
         Menu {
             Button(.communityEditPost, action: openEdit)
+            Button(
+                .communityDeletePost,
+                role: .destructive,
+                action: confirmDelete)
         } label: {
             Image(.more)
         }
@@ -465,6 +479,18 @@ private struct FeedPostDetailContentView: View {
     private func toggleLike() {
         Task {
             await viewModel.toggleLike()
+        }
+    }
+
+    private func confirmDelete() {
+        showDeleteConfirm = true
+    }
+
+    private func deletePost() {
+        Task {
+            if await viewModel.deletePost() {
+                dismiss()
+            }
         }
     }
 
