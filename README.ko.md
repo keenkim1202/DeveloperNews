@@ -26,11 +26,13 @@ DeveloperNews는 5개 플랫폼과 RSS 피드 30개에서 글을 모아 트렌�
 - Share Extension — Safari를 비롯한 어느 앱에서든 글 저장
 - 앱에서 연 북마크는 본문까지 남아, 신호가 없는 지하철에서도 열림
 - Share Extension으로 저장만 한 글의 본문은 앱에서 한 번 연 뒤에 생김
+- 남겨둔 본문도 검색 대상이라, 제목이 기억나지 않아도 본문의 한 구절로 찾기
 - 저장해둘 생각을 못 한 글까지 되찾는 읽은 글 기록, 최신순
 
-**위젯과 알림**
+**위젯·알림·단축어**
 
-- 세 가지 크기의 홈 화면 위젯, 탭하면 사파리가 아니라 앱의 리더로 열림
+- 세 가지 크기의 홈 화면 위젯, 잠금화면과 StandBy까지. 탭하면 사파리가 아니라 앱의 리더로 열림
+- Siri에게 인기 소식을 물어보거나, Spotlight과 단축어 앱에서 같은 것을 실행
 - 피드 맨 위 소식을 하루 한 번 알림으로
 
 **커뮤니티**
@@ -94,7 +96,8 @@ GitHub은 별, Reddit은 업보트, Hacker News는 포인트다.
 | `SourceCategoryStore` | 켜져 있는 소스 |
 
 화면은 뷰모델을 거친다.
-서비스는 프로토콜(`AuthServicing`, `CommunityServicing`, `FeedPostServicing`, `ActivityServicing` 등) 뒤에 있고, 덕분에 테스트에서는 `AppState` 전체를 목으로 조립할 수 있다.
+서비스는 프로토콜(`AuthServicing`, `CommunityServicing`, `FeedPostServicing`, `ActivityServicing` 등)
+뒤에 있고, 덕분에 테스트에서는 `AppState` 전체를 목으로 조립할 수 있다.
 
 ### 커뮤니티와 실시간
 
@@ -118,8 +121,9 @@ GitHub은 별, Reddit은 업보트, Hacker News는 포인트다.
 `scripts/test-firestore-rules.py`가 이 규칙을 Firestore 에뮬레이터에 대고 검증한다.
 33개 항목 모두 클라이언트에게 맡길 수 없는 거부다.
 
-`.github/workflows/firestore-rules.yml`이 규칙을 건드린 PR마다 이걸 돌리고, Firebase 배포는 그 통과를 조건으로 걸어두었다.
-규칙과 그걸 필요로 하는 코드가 따로 놀지 않게 하기 위해서다.
+`.github/workflows/firestore-rules.yml`이 규칙을 건드린 PR마다 이걸 돌리고, Firebase 배포는 그 통과를
+조건으로 걸어두었다. 규칙과 그걸 필요로 하는 코드가 따로 놀지 않게 하기 위해서다.
+
 로컬에서 돌릴 때는 이렇게 한다.
 
 ```bash
@@ -141,6 +145,7 @@ firebase emulators:exec --only firestore "python3 scripts/test-firestore-rules.p
 | **알림** | UserNotifications, BackgroundTasks로 일일 다이제스트 갱신 |
 | **테스트** | Swift Testing |
 | **익스텐션** | Share Extension, Widget Extension |
+| **시스템 연동** | App Intents — Siri, Spotlight, 단축어 |
 | **CI/CD** | GitHub Actions, fastlane |
 
 ## 요구 사항
