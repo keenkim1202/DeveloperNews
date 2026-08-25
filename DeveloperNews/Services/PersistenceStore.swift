@@ -24,6 +24,7 @@ actor PersistenceStore {
         static let readHistory = "readHistory"
         static let offlineArticles = "offlineArticles"
         static let translationLanguage = "translationLanguage"
+        static let readerTextSize = "readerTextSize"
         static let allItems = "allItems"
         static let importedShareReceiptIDs = "importedShareReceiptIDs"
     }
@@ -47,6 +48,7 @@ actor PersistenceStore {
         var readHistory: [ReadRecord] = []
         var offlineArticles: [OfflineArticle] = []
         var translationLanguage: String?
+        var readerTextSize: ReaderTextSize = .standard
         var lastUpdatedAt: Date?
         var hasSeenIntro = false
         var topStoryDismissedAt: Date?
@@ -118,6 +120,11 @@ actor PersistenceStore {
 
         if let storedReadPosts = defaults.stringArray(forKey: StorageKey.readPostIds) {
             state.readPostIds = Set(storedReadPosts)
+        }
+
+        if let storedTextSize = defaults.string(forKey: StorageKey.readerTextSize),
+           let size = ReaderTextSize(rawValue: storedTextSize) {
+            state.readerTextSize = size
         }
 
         if let storedLang = defaults.string(forKey: StorageKey.translationLanguage) {
@@ -209,6 +216,10 @@ actor PersistenceStore {
 
     func saveTranslationLanguage(_ code: String?) {
         defaults.set(code, forKey: StorageKey.translationLanguage)
+    }
+
+    func saveReaderTextSize(_ size: ReaderTextSize) {
+        defaults.set(size.rawValue, forKey: StorageKey.readerTextSize)
     }
 
     func saveLastUpdatedAt(_ date: Date?) {

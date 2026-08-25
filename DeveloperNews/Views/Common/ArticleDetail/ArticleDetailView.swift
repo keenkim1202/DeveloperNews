@@ -52,7 +52,8 @@ struct ArticleDetailView: View {
                 loadError: $loadError,
                 progress: $loadProgress,
                 webViewRef: $webViewRef,
-                reloadTrigger: reloadTrigger)
+                reloadTrigger: reloadTrigger,
+                textScale: viewModel.readerTextScale)
             .opacity(loadError == nil ? 1 : 0)
 
             if isLoading && loadProgress < 1 {
@@ -64,7 +65,7 @@ struct ArticleDetailView: View {
             }
 
             if loadError != nil, let offline = viewModel.offlineArticle {
-                OfflineArticleView(article: offline)
+                OfflineArticleView(article: offline, textScale: viewModel.readerTextScale)
             }
             else if let message = loadError {
                 ContentUnavailableView {

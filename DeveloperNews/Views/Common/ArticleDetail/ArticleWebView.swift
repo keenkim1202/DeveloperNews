@@ -10,6 +10,7 @@ struct ArticleWebView: UIViewRepresentable {
     private let progress: Binding<Double>
     private let webViewRef: Binding<WKWebView?>
     private let reloadTrigger: Int
+    private let textScale: Double
 
     init(
         url: URL,
@@ -18,6 +19,7 @@ struct ArticleWebView: UIViewRepresentable {
         progress: Binding<Double>,
         webViewRef: Binding<WKWebView?>,
         reloadTrigger: Int,
+        textScale: Double,
     ) {
         self.url = url
         self.isLoading = isLoading
@@ -25,6 +27,7 @@ struct ArticleWebView: UIViewRepresentable {
         self.progress = progress
         self.webViewRef = webViewRef
         self.reloadTrigger = reloadTrigger
+        self.textScale = textScale
     }
 
     func makeCoordinator() -> Coordinator {
@@ -50,6 +53,13 @@ struct ArticleWebView: UIViewRepresentable {
         _ webView: WKWebView,
         context: Context,
     ) {
+        // Page zoom rather than a stylesheet: the reader's text size setting
+        // has to work on a page we did not write, and injected CSS is a fight
+        // with whatever the site already does.
+        if webView.pageZoom != textScale {
+            webView.pageZoom = textScale
+        }
+
         if context.coordinator.loadedURL != url {
             context.coordinator.loadedURL = url
             context.coordinator.lastReloadTrigger = reloadTrigger

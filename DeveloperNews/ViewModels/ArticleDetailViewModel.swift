@@ -127,6 +127,10 @@ final class ArticleDetailViewModel {
 
     /// Only saved articles are captured, and only once — a page that has
     /// already been stored is not re-extracted on every visit.
+    var readerTextScale: Double {
+        appState.readerTextSize.scale
+    }
+
     var shouldCaptureForOffline: Bool {
         appState.isSaved(item) && !appState.hasOfflineArticle(for: item.url)
     }

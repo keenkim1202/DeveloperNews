@@ -6,9 +6,19 @@ import SwiftUI
 /// second rendering of the site.
 struct OfflineArticleView: View {
     private let article: OfflineArticle
+    private let textScale: Double
 
-    init(article: OfflineArticle) {
+    /// Scaled by Dynamic Type first, then by the reader's own setting, so the
+    /// two compose instead of one overriding the other.
+    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
+    @ScaledMetric(relativeTo: .title2) private var titleSize: CGFloat = 22
+
+    init(
+        article: OfflineArticle,
+        textScale: Double,
+    ) {
         self.article = article
+        self.textScale = textScale
     }
 
     var body: some View {
@@ -16,14 +26,14 @@ struct OfflineArticleView: View {
             VStack(alignment: .leading, spacing: 16) {
                 banner
                 Text(article.title)
-                    .font(.title2.weight(.semibold))
+                    .font(.system(size: titleSize * textScale, weight: .semibold))
                 Text(article.sourceName)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Divider()
                 ForEach(Array(article.paragraphs.enumerated()), id: \.offset) { _, paragraph in
                     Text(paragraph)
-                        .font(.body)
+                        .font(.system(size: bodySize * textScale))
                         .textSelection(.enabled)
                 }
             }
