@@ -1,5 +1,27 @@
 import Foundation
 import Observation
+import UIKit
+
+enum AppIconChoice: String, CaseIterable, Identifiable {
+    case standard
+    case lavender
+
+    var id: Self { self }
+
+    var alternateIconName: String? {
+        switch self {
+        case .standard: nil
+        case .lavender: "AppIconLavender"
+        }
+    }
+
+    var title: LocalizedStringResource {
+        switch self {
+        case .standard: "Retro Sunset"
+        case .lavender: "Lavender Acid"
+        }
+    }
+}
 
 @Observable
 @MainActor
@@ -15,9 +37,11 @@ final class SettingsViewModel {
     var editingName = ""
     var editingEmoji = ""
     var editingBio = ""
+    private(set) var selectedAppIcon: AppIconChoice
 
     init(appState: AppState) {
         self.appState = appState
+        selectedAppIcon = Self.currentAppIcon
     }
 
     var isSignedIn: Bool {
@@ -106,6 +130,26 @@ final class SettingsViewModel {
 
     func setReaderTextSize(_ size: ReaderTextSize) {
         appState.setReaderTextSize(size)
+    }
+
+    func setAppIcon(_ choice: AppIconChoice) async {
+        guard UIApplication.shared.supportsAlternateIcons,
+              choice != selectedAppIcon
+        else { return }
+
+        do {
+            try await UIApplication.shared.setAlternateIconName(choice.alternateIconName)
+            selectedAppIcon = choice
+        }
+        catch {
+            selectedAppIcon = Self.currentAppIcon
+        }
+    }
+
+    private static var currentAppIcon: AppIconChoice {
+        UIApplication.shared.alternateIconName == AppIconChoice.lavender.alternateIconName
+            ? .lavender
+            : .standard
     }
 
     func resetTopics() {

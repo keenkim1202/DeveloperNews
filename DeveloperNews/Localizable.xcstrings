@@ -220,6 +220,23 @@
         }
       }
     },
+    "App Icon": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Icon"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱 아이콘"
+          }
+        }
+      }
+    },
     "Article web view": {
       "extractionState": "manual",
       "localizations": {
@@ -781,6 +798,23 @@
         }
       }
     },
+    "Lavender Acid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lavender Acid"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "라벤더 애시드"
+          }
+        }
+      }
+    },
     "Limitation of liability": {
       "extractionState": "manual",
       "localizations": {
@@ -1140,6 +1174,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Reddit"
+          }
+        }
+      }
+    },
+    "Retro Sunset": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retro Sunset"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "레트로 선셋"
           }
         }
       }
