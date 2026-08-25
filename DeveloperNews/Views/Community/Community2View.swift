@@ -33,10 +33,15 @@ struct Community2View: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: openUserSearch) {
-                        Image(systemName: "magnifyingglass")
+                        Image(.community)
                     }
+                    .accessibilityLabel(Text(.userSearchTitle))
                 }
             }
+            .searchable(
+                text: $viewModel.searchQuery,
+                placement: .navigationBarDrawer(displayMode: .automatic),
+                prompt: Text(.communitySearchPrompt))
             .navigationDestination(for: CommunityTabDestination.self, destination: destination)
             .keenOnChange(of: viewModel.tab, perform: onTabChange)
             .onAppear(perform: onAppear)
@@ -98,6 +103,9 @@ struct Community2View: View {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        else if viewModel.isSearching && viewModel.displayedPosts.isEmpty {
+            ContentUnavailableView.search(text: viewModel.searchQuery)
+        }
         else if viewModel.hasNoPosts {
             refreshableEmptyState(refresh: refresh) {
                 ContentUnavailableView {
@@ -125,6 +133,9 @@ struct Community2View: View {
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        else if viewModel.isSearching && viewModel.displayedFollowingPosts.isEmpty {
+            ContentUnavailableView.search(text: viewModel.searchQuery)
+        }
         else if viewModel.hasNoFollowingPosts {
             refreshableEmptyState(refresh: refreshFollowing) {
                 ContentUnavailableView {
@@ -135,7 +146,7 @@ struct Community2View: View {
             }
         }
         else {
-            feedList(viewModel.visibleFollowingPosts, refresh: refreshFollowing)
+            feedList(viewModel.displayedFollowingPosts, refresh: refreshFollowing)
         }
     }
 
