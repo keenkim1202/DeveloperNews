@@ -236,6 +236,16 @@ struct SettingsView: View {
                 } label: {
                     Label(.settingsTranslation, icon: .translate)
                 }
+                Picker(selection: Binding(
+                    get: { viewModel.selectedAppIcon },
+                    set: { setAppIcon($0) }
+                )) {
+                    ForEach(AppIconChoice.allCases) { choice in
+                        Text(choice.title).tag(choice)
+                    }
+                } label: {
+                    Label("App Icon", systemImage: "app.dashed")
+                }
                 Button(
                     .resetTopicSelection,
                     role: .destructive,
@@ -442,6 +452,12 @@ struct SettingsView: View {
     private func setNotificationsEnabled(_ enabled: Bool) {
         Task {
             await viewModel.setNotificationsEnabled(enabled)
+        }
+    }
+
+    private func setAppIcon(_ choice: AppIconChoice) {
+        Task {
+            await viewModel.setAppIcon(choice)
         }
     }
 
