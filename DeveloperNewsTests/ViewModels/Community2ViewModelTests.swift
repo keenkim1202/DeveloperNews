@@ -334,9 +334,31 @@ import Foundation
         await vm.loadIfNeeded()
 
         // Simulate a post created from another screen, bumping the token.
-        feedPost.creationToken += 1
+        feedPost.changeToken += 1
         await vm.loadIfNeeded()
 
         #expect(feedPost.fetchedRecentLimits == [200, 200])
+    }
+
+    // The feed skips a refetch while the token is unchanged, so a post deleted
+    // from its detail screen would still be sitting in the list behind it.
+    @Test func deletingAPostMakesTheLoadedFeedStale() async {
+        let feedPost = MockFeedPostServicing()
+        let post = VMFixtures.makeFeedPost(id: "gone")
+        feedPost.recentPosts = [post]
+        let vm = Community2ViewModel(appState: VMFixtures.makeAppState(feedPost: feedPost))
+        await vm.loadIfNeeded()
+        #expect(feedPost.fetchedRecentLimits.count == 1)
+
+        // Loading again without a change is the case the token exists to skip.
+        await vm.loadIfNeeded()
+        #expect(feedPost.fetchedRecentLimits.count == 1)
+
+        await feedPost.deletePost(post)
+        feedPost.recentPosts = []
+        await vm.loadIfNeeded()
+
+        #expect(feedPost.fetchedRecentLimits.count == 2)
+        #expect(vm.recentPosts.isEmpty)
     }
 }

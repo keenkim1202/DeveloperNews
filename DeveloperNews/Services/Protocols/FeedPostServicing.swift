@@ -7,7 +7,7 @@ protocol FeedPostServicing {
 
     // Bumped whenever a post is created so feeds can detect they are stale
     // and reload, even when the create happened from another screen.
-    var creationToken: Int { get }
+    var changeToken: Int { get }
 
     func createPost(
         comment: String,

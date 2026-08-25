@@ -228,4 +228,60 @@ import Foundation
 
         await Task.yield()
     }
+
+    @Test func theAuthorCanDeleteTheirOwnPost() async {
+        let feedPost = MockFeedPostServicing()
+        let appState = VMFixtures.makeAppState(
+            auth: MockAuthServicing(userId: "me"),
+            feedPost: feedPost)
+        let post = VMFixtures.makeFeedPost(id: "post-1", authorId: "me")
+        let vm = FeedPostDetailViewModel(
+            appState: appState,
+            post: post,
+            commentService: MockCommentServicing())
+
+        let deleted = await vm.deletePost()
+
+        #expect(deleted)
+        #expect(feedPost.deletedPostIds == ["post-1"])
+    }
+
+    // The rules refuse a delete from anyone but the author, so asking is a
+    // round trip that can only fail. The menu does not offer it either.
+    @Test func aReaderCannotDeleteSomeoneElsesPost() async {
+        let feedPost = MockFeedPostServicing()
+        let appState = VMFixtures.makeAppState(
+            auth: MockAuthServicing(userId: "me"),
+            feedPost: feedPost)
+        let post = VMFixtures.makeFeedPost(id: "post-1", authorId: "someone-else")
+        let vm = FeedPostDetailViewModel(
+            appState: appState,
+            post: post,
+            commentService: MockCommentServicing())
+
+        let deleted = await vm.deletePost()
+
+        #expect(!deleted)
+        #expect(feedPost.deletedPostIds.isEmpty)
+    }
+
+    // Dismissing the screen on a failed delete would read as success and leave
+    // the post in the feed behind it.
+    @Test func aFailedDeleteReportsAndKeepsTheScreenOpen() async {
+        let feedPost = MockFeedPostServicing()
+        feedPost.errorMessage = "no network"
+        let appState = VMFixtures.makeAppState(
+            auth: MockAuthServicing(userId: "me"),
+            feedPost: feedPost)
+        let post = VMFixtures.makeFeedPost(id: "post-1", authorId: "me")
+        let vm = FeedPostDetailViewModel(
+            appState: appState,
+            post: post,
+            commentService: MockCommentServicing())
+
+        let deleted = await vm.deletePost()
+
+        #expect(!deleted)
+        #expect(appState.toastMessage == "no network")
+    }
 }
