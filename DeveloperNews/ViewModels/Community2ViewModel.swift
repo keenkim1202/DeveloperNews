@@ -26,6 +26,7 @@ final class Community2ViewModel {
 
     var tab: Tab = .discover
     var mode: Mode = .trending
+    var searchQuery = ""
 
     private static let fetchLimit = 200
 
@@ -45,9 +46,40 @@ final class Community2ViewModel {
     var displayedPosts: [FeedPost] {
         switch mode {
         case .trending:
-            trendingPosts
+            searchFiltered(trendingPosts)
         case .recent:
-            recentPosts
+            searchFiltered(recentPosts)
+        }
+    }
+
+    var displayedFollowingPosts: [FeedPost] {
+        searchFiltered(visibleFollowingPosts)
+    }
+
+    var isSearching: Bool {
+        !trimmedQuery.isEmpty
+    }
+
+    private var trimmedQuery: String {
+        searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Matches what a row actually shows: the quoted story and where it came
+    /// from, what the poster said about it, and who they are.
+    ///
+    /// Only what has been fetched is searched. The feeds hold the most recent
+    /// 200 posts, so this finds a post in the list rather than in the whole
+    /// collection — a server-side search is a different piece of work.
+    private func searchFiltered(_ posts: [FeedPost]) -> [FeedPost] {
+        guard !trimmedQuery.isEmpty else {
+            return posts
+        }
+        let needle = trimmedQuery.lowercased()
+        return posts.filter {
+            $0.story.title.lowercased().contains(needle)
+                || $0.story.sourceName.lowercased().contains(needle)
+                || $0.comment.lowercased().contains(needle)
+                || $0.authorName.lowercased().contains(needle)
         }
     }
 

@@ -56,6 +56,89 @@ import Foundation
         #expect(freshLow > oldHigh)
     }
 
+    // A row shows the quoted story and its source, the poster's own words, and
+    // their name. A query has to reach all four or the search misses something
+    // the reader can see.
+    @Test func searchMatchesStoryTitleCommentAndAuthor() async {
+        let feedPost = MockFeedPostServicing()
+        feedPost.recentPosts = [
+            VMFixtures.makeFeedPost(id: "story", title: "SwiftUI layout"),
+            VMFixtures.makeFeedPost(id: "comment", comment: "the layout is clever", title: "Other"),
+            VMFixtures.makeFeedPost(id: "author", authorName: "Layout Larry", title: "Other"),
+            VMFixtures.makeFeedPost(id: "miss", comment: "coroutines", title: "Kotlin"),
+        ]
+        let vm = Community2ViewModel(appState: VMFixtures.makeAppState(feedPost: feedPost))
+        await vm.load()
+        vm.mode = .recent
+
+        vm.searchQuery = "layout"
+
+        #expect(Set(vm.displayedPosts.map(\.id)) == ["story", "comment", "author"])
+    }
+
+    // The source sits under the title on every row, so it is the fourth thing a
+    // reader can see and reasonably type.
+    @Test func searchMatchesTheStorySource() async {
+        let feedPost = MockFeedPostServicing()
+        feedPost.recentPosts = [
+            VMFixtures.makeFeedPost(id: "a", comment: "worth a look", title: "A release"),
+            VMFixtures.makeFeedPost(id: "b", comment: "also good", title: "Another"),
+        ]
+        let vm = Community2ViewModel(appState: VMFixtures.makeAppState(feedPost: feedPost))
+        await vm.load()
+        vm.mode = .recent
+
+        // Every fixture post carries the same source, so a match on it returns both.
+        vm.searchQuery = "source"
+
+        #expect(vm.displayedPosts.count == 2)
+    }
+
+    @Test func searchIgnoresCaseAndSurroundingSpace() async {
+        let feedPost = MockFeedPostServicing()
+        feedPost.recentPosts = [VMFixtures.makeFeedPost(id: "a", title: "SwiftUI Layout")]
+        let vm = Community2ViewModel(appState: VMFixtures.makeAppState(feedPost: feedPost))
+        await vm.load()
+        vm.mode = .recent
+
+        vm.searchQuery = "  swiftui  "
+
+        #expect(vm.displayedPosts.map(\.id) == ["a"])
+        #expect(vm.isSearching)
+    }
+
+    // Whitespace alone is not a query. Treating it as one would empty the feed
+    // and put the no-results screen up over a list that is fine.
+    @Test func aBlankQueryLeavesTheFeedAlone() async {
+        let feedPost = MockFeedPostServicing()
+        feedPost.recentPosts = [
+            VMFixtures.makeFeedPost(id: "a"),
+            VMFixtures.makeFeedPost(id: "b"),
+        ]
+        let vm = Community2ViewModel(appState: VMFixtures.makeAppState(feedPost: feedPost))
+        await vm.load()
+        vm.mode = .recent
+
+        vm.searchQuery = "   "
+
+        #expect(vm.displayedPosts.count == 2)
+        #expect(!vm.isSearching)
+    }
+
+    // The empty-state check reads the unfiltered feed on purpose: a query that
+    // matches nothing must not read as a community with nothing in it.
+    @Test func searchingDoesNotMakeTheFeedLookEmpty() async {
+        let feedPost = MockFeedPostServicing()
+        feedPost.recentPosts = [VMFixtures.makeFeedPost(id: "a", title: "SwiftUI")]
+        let vm = Community2ViewModel(appState: VMFixtures.makeAppState(feedPost: feedPost))
+        await vm.load()
+
+        vm.searchQuery = "nothing matches this"
+
+        #expect(vm.displayedPosts.isEmpty)
+        #expect(!vm.hasNoPosts)
+    }
+
     @Test func recentPostsSortedByCreatedAtDescending() async {
         let feedPost = MockFeedPostServicing()
         let older = VMFixtures.makeFeedPost(
