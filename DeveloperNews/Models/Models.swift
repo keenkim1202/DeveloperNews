@@ -49,6 +49,35 @@ enum SavedSortOrder: String, CaseIterable, Identifiable, Hashable, Sendable {
     }
 }
 
+/// How large article text is drawn — the app's own reading surfaces and the
+/// page in the web view.
+///
+/// A multiplier rather than a point size, so Dynamic Type still sets the base
+/// and this only scales what the reader already asked the system for.
+enum ReaderTextSize: String, CaseIterable, Identifiable, Hashable, Sendable {
+    case small
+    case standard
+    case large
+    case extraLarge
+
+    var id: String {
+        rawValue
+    }
+
+    var scale: Double {
+        switch self {
+        case .small:
+            0.85
+        case .standard:
+            1
+        case .large:
+            1.2
+        case .extraLarge:
+            1.4
+        }
+    }
+}
+
 enum SourceCategory: String, CaseIterable, Identifiable, Hashable, Codable, Sendable {
     case article
     case hackerNews

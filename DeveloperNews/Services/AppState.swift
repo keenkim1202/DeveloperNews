@@ -38,6 +38,7 @@ final class AppState {
     var currentTab: AppTab = .home
     var notificationsEnabled = false
     var blockedUserIds: Set<String> = []
+    var readerTextSize: ReaderTextSize = .standard
     var toastMessage: String?
     var toastTrigger: Int = 0
     var hasSeenIntro = false
@@ -334,6 +335,11 @@ final class AppState {
     func setTranslationLanguage(_ code: String?) {
         translator.targetLanguageCode = code
         saveTranslationLanguage()
+    }
+
+    func setReaderTextSize(_ size: ReaderTextSize) {
+        readerTextSize = size
+        saveReaderTextSize()
     }
 
     func markURLAsRead(_ urlString: String) {
@@ -743,6 +749,7 @@ final class AppState {
         sourceCategoryStore.seedInitialState(
             disabledSourceCategories: state.disabledSourceCategories)
         blockedUserIds = state.blockedUserIds
+        readerTextSize = state.readerTextSize
         offlineArticleStore.seedInitialState(state.offlineArticles)
         readTracker.seedInitialState(
             readItemURLs: state.readItemURLs,
@@ -834,6 +841,13 @@ final class AppState {
             await store.saveReadItems(
                 readItemURLs: readItemURLs,
                 readPostIds: readPostIds)
+        }
+    }
+
+    private func saveReaderTextSize() {
+        let size = readerTextSize
+        enqueuePersistence { store in
+            await store.saveReaderTextSize(size)
         }
     }
 

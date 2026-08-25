@@ -100,6 +100,14 @@ final class SettingsViewModel {
         appState.setTranslationLanguage(code)
     }
 
+    var readerTextSize: ReaderTextSize {
+        appState.readerTextSize
+    }
+
+    func setReaderTextSize(_ size: ReaderTextSize) {
+        appState.setReaderTextSize(size)
+    }
+
     func resetTopics() {
         appState.resetTopics()
     }

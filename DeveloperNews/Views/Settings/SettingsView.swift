@@ -201,6 +201,21 @@ struct SettingsView: View {
             }
 
             Section {
+                Picker(selection: Binding(
+                    get: { viewModel.readerTextSize },
+                    set: { viewModel.setReaderTextSize($0) }
+                )) {
+                    ForEach(ReaderTextSize.allCases) { size in
+                        Text(Self.label(for: size)).tag(size)
+                    }
+                } label: {
+                    Label(.settingsTextSize, icon: .document)
+                }
+            } footer: {
+                Text(.settingsTextSizeFooter)
+            }
+
+            Section {
                 Button(action: openSystemSettings) {
                     HStack {
                         Label(.language, icon: .globe)
@@ -379,6 +394,19 @@ struct SettingsView: View {
 
     // Catches permission revoked outside the app, which would otherwise leave
     // a switch that is on and a digest that never arrives.
+    private static func label(for size: ReaderTextSize) -> LocalizedStringResource {
+        switch size {
+        case .small:
+            .settingsTextSizeSmall
+        case .standard:
+            .settingsTextSizeStandard
+        case .large:
+            .settingsTextSizeLarge
+        case .extraLarge:
+            .settingsTextSizeExtraLarge
+        }
+    }
+
     private func syncNotificationAuthorization() async {
         await viewModel.syncNotificationAuthorization()
     }
