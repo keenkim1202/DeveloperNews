@@ -2805,6 +2805,23 @@
         }
       }
     },
+    "community.cancelReply": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel reply"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "답글 취소"
+          }
+        }
+      }
+    },
     "community.commentPlaceholder": {
       "extractionState": "manual",
       "localizations": {
@@ -3056,6 +3073,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "팔로잉"
+          }
+        }
+      }
+    },
+    "community.moreActions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More actions"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "더 보기"
           }
         }
       }
