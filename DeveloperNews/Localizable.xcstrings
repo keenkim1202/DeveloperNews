@@ -4460,13 +4460,30 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A daily summary at 9 AM, put together on this device. Nothing is sent to a server."
+            "value": "A daily summary at %@, put together on this device. Nothing is sent to a server."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "매일 오전 9시에 이 기기에서 만들어 알려줍니다. 서버로 전송되는 정보는 없습니다."
+            "value": "매일 %@에 이 기기에서 만들어 알려줍니다. 서버로 전송되는 정보는 없습니다."
+          }
+        }
+      }
+    },
+    "settings.digestTime": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delivery time"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "받는 시각"
           }
         }
       }

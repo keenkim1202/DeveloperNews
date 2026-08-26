@@ -19,11 +19,14 @@ protocol NotificationScheduling {
     /// standing answer without showing anything.
     func requestAuthorization() async -> NotificationAuthorization
 
-    /// Replaces any previously scheduled digest with one carrying this body.
-    /// Repeats daily at a fixed local hour. Returns whether the request was
+    /// Replaces any previously scheduled digest with one carrying this body,
+    /// repeating daily at the given local time. Returns whether the request was
     /// accepted, so a caller that just turned the setting on can undo it.
     @discardableResult
-    func scheduleDailyDigest(body: String) async -> Bool
+    func scheduleDailyDigest(
+        body: String,
+        at time: DigestTime,
+    ) async -> Bool
 
     func cancelDailyDigest()
 }

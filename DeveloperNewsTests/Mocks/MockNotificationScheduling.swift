@@ -10,6 +10,7 @@ final class MockNotificationScheduling: NotificationScheduling {
 
     private(set) var requestCount = 0
     private(set) var scheduledBodies: [String] = []
+    private(set) var scheduledTimes: [DigestTime] = []
     private(set) var cancelCount = 0
 
     func authorization() async -> NotificationAuthorization {
@@ -25,8 +26,12 @@ final class MockNotificationScheduling: NotificationScheduling {
     var scheduleSucceeds = true
 
     @discardableResult
-    func scheduleDailyDigest(body: String) async -> Bool {
+    func scheduleDailyDigest(
+        body: String,
+        at time: DigestTime,
+    ) async -> Bool {
         scheduledBodies.append(body)
+        scheduledTimes.append(time)
         return scheduleSucceeds
     }
 

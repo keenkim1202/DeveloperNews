@@ -7,10 +7,6 @@ final class NotificationScheduler: NotificationScheduling {
     /// request instead of stacking a second daily alert.
     static let dailyDigestIdentifier = "keen-onit.DeveloperNews.dailyDigest"
 
-    /// Local hour the digest fires at. Morning, because the app exists for the
-    /// catch-up someone does before starting work.
-    private static let firesAtHour = 9
-
     private let center: UNUserNotificationCenter
 
     init(center: UNUserNotificationCenter = .current()) {
@@ -40,7 +36,10 @@ final class NotificationScheduler: NotificationScheduling {
     }
 
     @discardableResult
-    func scheduleDailyDigest(body: String) async -> Bool {
+    func scheduleDailyDigest(
+        body: String,
+        at time: DigestTime,
+    ) async -> Bool {
         cancelDailyDigest()
 
         let content = UNMutableNotificationContent()
@@ -49,8 +48,8 @@ final class NotificationScheduler: NotificationScheduling {
         content.sound = .default
 
         var components = DateComponents()
-        components.hour = Self.firesAtHour
-        components.minute = 0
+        components.hour = time.hour
+        components.minute = time.minute
 
         let request = UNNotificationRequest(
             identifier: Self.dailyDigestIdentifier,

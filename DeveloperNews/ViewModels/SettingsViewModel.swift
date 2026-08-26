@@ -124,6 +124,20 @@ final class SettingsViewModel {
         appState.setTranslationLanguage(code)
     }
 
+    var digestTime: DigestTime {
+        appState.digestTime
+    }
+
+    func setDigestTime(_ time: DigestTime) async {
+        await appState.setDigestTime(time)
+    }
+
+    /// The delivery time as the reader's locale writes a clock time, for the
+    /// footer that used to name a fixed nine in the morning.
+    var digestTimeText: String {
+        appState.digestTime.date(on: .now).formatted(date: .omitted, time: .shortened)
+    }
+
     var readerTextSize: ReaderTextSize {
         appState.readerTextSize
     }

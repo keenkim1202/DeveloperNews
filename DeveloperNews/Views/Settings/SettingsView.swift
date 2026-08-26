@@ -170,6 +170,16 @@ struct SettingsView: View {
                     get: { viewModel.notificationsEnabled },
                     set: { setNotificationsEnabled($0) }
                 ))
+                if viewModel.notificationsEnabled {
+                    DatePicker(
+                        selection: Binding(
+                            get: { viewModel.digestTime.date(on: .now) },
+                            set: { setDigestTime($0) }
+                        ),
+                        displayedComponents: .hourAndMinute) {
+                        Label(.settingsDigestTime, icon: .clock)
+                    }
+                }
                 if viewModel.notificationsDeniedBySystem {
                     Button(action: openSystemSettings) {
                         Label(.notificationOpenSettings, icon: .globe)
@@ -181,7 +191,7 @@ struct SettingsView: View {
                 Text(
                     viewModel.notificationsDeniedBySystem
                         ? .notificationPermissionDeniedMessage
-                        : .settingsDailyDigestFooter)
+                        : .settingsDailyDigestFooter(viewModel.digestTimeText))
             }
 
             // Says why summaries are or are not available here. Without it, a
@@ -446,6 +456,12 @@ struct SettingsView: View {
             .summaryModelNotReady
         case .deviceNotEligible:
             .summaryDeviceNotEligible
+        }
+    }
+
+    private func setDigestTime(_ date: Date) {
+        Task {
+            await viewModel.setDigestTime(DigestTime(from: date))
         }
     }
 

@@ -49,6 +49,43 @@ enum SavedSortOrder: String, CaseIterable, Identifiable, Hashable, Sendable {
     }
 }
 
+/// When the daily digest fires, as minutes since local midnight.
+///
+/// One number rather than a `Date`: the notification repeats on a calendar
+/// trigger that only reads hour and minute, and a stored date would carry a day
+/// that means nothing here.
+nonisolated struct DigestTime: Hashable, Sendable {
+    static let `default` = DigestTime(minuteOfDay: 9 * 60)
+
+    let minuteOfDay: Int
+
+    init(minuteOfDay: Int) {
+        self.minuteOfDay = min(max(minuteOfDay, 0), 24 * 60 - 1)
+    }
+
+    var hour: Int {
+        minuteOfDay / 60
+    }
+
+    var minute: Int {
+        minuteOfDay % 60
+    }
+
+    /// Today at this time, for a `DatePicker` that has to bind to a `Date`.
+    func date(on day: Date, calendar: Calendar = .current) -> Date {
+        calendar.date(
+            bySettingHour: hour,
+            minute: minute,
+            second: 0,
+            of: day) ?? day
+    }
+
+    init(from date: Date, calendar: Calendar = .current) {
+        let parts = calendar.dateComponents([.hour, .minute], from: date)
+        self.init(minuteOfDay: (parts.hour ?? 0) * 60 + (parts.minute ?? 0))
+    }
+}
+
 /// How large article text is drawn — the app's own reading surfaces and the
 /// page in the web view.
 ///

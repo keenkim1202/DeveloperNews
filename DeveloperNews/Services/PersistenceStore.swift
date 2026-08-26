@@ -25,6 +25,7 @@ actor PersistenceStore {
         static let offlineArticles = "offlineArticles"
         static let translationLanguage = "translationLanguage"
         static let readerTextSize = "readerTextSize"
+        static let digestMinuteOfDay = "digestMinuteOfDay"
         static let allItems = "allItems"
         static let importedShareReceiptIDs = "importedShareReceiptIDs"
     }
@@ -49,6 +50,7 @@ actor PersistenceStore {
         var offlineArticles: [OfflineArticle] = []
         var translationLanguage: String?
         var readerTextSize: ReaderTextSize = .standard
+        var digestTime: DigestTime = .default
         var lastUpdatedAt: Date?
         var hasSeenIntro = false
         var topStoryDismissedAt: Date?
@@ -120,6 +122,10 @@ actor PersistenceStore {
 
         if let storedReadPosts = defaults.stringArray(forKey: StorageKey.readPostIds) {
             state.readPostIds = Set(storedReadPosts)
+        }
+
+        if let storedMinute = defaults.object(forKey: StorageKey.digestMinuteOfDay) as? Int {
+            state.digestTime = DigestTime(minuteOfDay: storedMinute)
         }
 
         if let storedTextSize = defaults.string(forKey: StorageKey.readerTextSize),
@@ -216,6 +222,10 @@ actor PersistenceStore {
 
     func saveTranslationLanguage(_ code: String?) {
         defaults.set(code, forKey: StorageKey.translationLanguage)
+    }
+
+    func saveDigestTime(_ time: DigestTime) {
+        defaults.set(time.minuteOfDay, forKey: StorageKey.digestMinuteOfDay)
     }
 
     func saveReaderTextSize(_ size: ReaderTextSize) {
