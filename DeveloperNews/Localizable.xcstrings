@@ -2720,6 +2720,23 @@
         }
       }
     },
+    "common.share": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "공유"
+          }
+        }
+      }
+    },
     "community.alreadyReported": {
       "extractionState": "manual",
       "localizations": {
@@ -3345,23 +3362,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "게시글 검색"
-          }
-        }
-      }
-    },
-    "community.sharePost": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Share"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "공유"
           }
         }
       }
