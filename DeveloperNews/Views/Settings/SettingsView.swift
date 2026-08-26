@@ -518,7 +518,9 @@ struct SettingsView: View {
     }
 
     private func signOut() {
-        viewModel.signOut()
+        Task {
+            await viewModel.signOut()
+        }
     }
 
     private func confirmDeleteAccount() {

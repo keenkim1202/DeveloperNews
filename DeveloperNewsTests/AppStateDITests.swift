@@ -99,7 +99,7 @@ import Foundation
         let profile = MockProfileServicing()
         let state = makeAppState(auth: auth, profile: profile)
 
-        state.signOut()
+        await state.signOut()
 
         #expect(auth.didSignOut)
         #expect(profile.didStopListening)

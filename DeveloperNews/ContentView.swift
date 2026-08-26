@@ -61,6 +61,11 @@ struct ContentView: View {
         if let user = appState.authService.user {
             appState.profileService.startListening(for: user)
         }
+        // A session restored before this view existed never crosses the
+        // signed-in change handler, which is the ordinary launch.
+        Task {
+            await appState.registerForPush(userId: appState.authService.userId)
+        }
         appState.communityService.startListening()
         appState.startListeningForActivities()
         Task {
@@ -108,11 +113,15 @@ struct ContentView: View {
             appState.startListeningForActivities()
             Task {
                 await appState.profileService.createProfileIfNeeded(for: user)
+                await appState.registerForPush(userId: appState.authService.userId)
             }
         }
         else {
             appState.profileService.stopListening()
             appState.stopListeningForActivities()
+            Task {
+                await appState.registerForPush(userId: nil)
+            }
         }
     }
 }

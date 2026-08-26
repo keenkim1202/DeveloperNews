@@ -32,6 +32,7 @@ final class AppState {
     let activityService: any ActivityServicing
     let notificationScheduler: any NotificationScheduling
     let articleSummarizer: any ArticleSummarizing
+    let pushRegistrar: PushRegistrar
 
     var selectedTopics: Set<Topic> = []
     var focusedTopic: Topic?
@@ -172,6 +173,7 @@ final class AppState {
         activityService: any ActivityServicing,
         notificationScheduler: any NotificationScheduling,
         articleSummarizer: any ArticleSummarizing,
+        pushRegistrar: PushRegistrar = PushRegistrar(),
         contentSourceClient: (any ContentSourceClient)? = nil,
         persistenceStore: PersistenceStore = PersistenceStore(),
     ) {
@@ -184,6 +186,7 @@ final class AppState {
         self.activityService = activityService
         self.notificationScheduler = notificationScheduler
         self.articleSummarizer = articleSummarizer
+        self.pushRegistrar = pushRegistrar
         self.persistenceStore = persistenceStore
         let client = contentSourceClient ?? Self.defaultContentSourceClient()
         self.contentSourceClient = client
@@ -355,6 +358,7 @@ final class AppState {
         guard await refreshDailyDigest() else {
             notificationsEnabled = false
             saveNotificationsEnabled()
+            await pushRegistrar.stop()
             presentError(String(localized: .notificationScheduleFailed))
             return
         }
@@ -407,6 +411,13 @@ final class AppState {
         visibleActivities.count { !$0.isRead }
     }
 
+    /// Pairs this device's push token with the signed-in reader, and unpairs it
+    /// on the way out. Called from the same place the activity listener starts,
+    /// because a push about an activity is the same event arriving elsewhere.
+    func registerForPush(userId: String?) async {
+        await pushRegistrar.userChanged(to: userId)
+    }
+
     func startListeningForActivities() {
         guard let uid = authService.userId else {
             return
@@ -432,6 +443,7 @@ final class AppState {
     func deleteCurrentAccount() async -> DeleteAccountResult {
         guard let uid = authService.userId else { return .failed }
 
+        await pushRegistrar.stop()
         profileService.stopListening()
         stopListeningForActivities()
 
@@ -477,7 +489,12 @@ final class AppState {
         profileService.profileBio
     }
 
-    func signOut() {
+    /// Unpairs the device before dropping the session. The rule allows a token
+    /// delete only from its owner, so doing it after `signOut` is refused and
+    /// the row survives — this account's notifications would keep arriving on a
+    /// phone it no longer owns.
+    func signOut() async {
+        await pushRegistrar.stop()
         profileService.stopListening()
         authService.signOut()
     }
@@ -571,6 +588,7 @@ final class AppState {
             notificationsEnabled = false
             notificationsDeniedBySystem = false
             notificationScheduler.cancelDailyDigest()
+            await pushRegistrar.stop()
             saveNotificationsEnabled()
             return
         }
@@ -585,12 +603,14 @@ final class AppState {
 
         notificationsDeniedBySystem = false
         notificationsEnabled = true
+        await pushRegistrar.start()
 
         // The switch is only persisted once iOS has actually taken the request.
         // Leaving it on after a rejected schedule would promise a digest that
         // never arrives, with nothing on screen to say so.
         guard await refreshDailyDigest() else {
             notificationsEnabled = false
+            await pushRegistrar.stop()
             presentError(String(localized: .notificationScheduleFailed))
             return
         }
@@ -631,6 +651,7 @@ final class AppState {
             saveNotificationsEnabled()
             return
         }
+        await pushRegistrar.start()
         await refreshDailyDigest()
     }
 

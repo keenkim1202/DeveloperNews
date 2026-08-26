@@ -170,8 +170,8 @@ final class SettingsViewModel {
         appState.resetTopics()
     }
 
-    func signOut() {
-        appState.signOut()
+    func signOut() async {
+        await appState.signOut()
     }
 
     func deleteAccount() async -> DeleteAccountResult {

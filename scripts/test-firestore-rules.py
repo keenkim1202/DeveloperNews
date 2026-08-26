@@ -318,6 +318,23 @@ check("bystander deleting someone else's row", code == 200, False, body)
 code, body = request("DELETE", f"/users/{ALICE}/activities/{LIKE_ROW}", uid=ALICE)
 check("recipient dismissing a row from their own inbox", code == 200, True, body)
 
+# --- push tokens -----------------------------------------------------------
+# The token is what addresses a notification to a phone, so a row another
+# account could write would point someone else's alerts at this device.
+code, body = request("PATCH", f"/users/{ALICE}/pushTokens/device-token-1",
+                     {"fields": {"platform": s("ios")}}, uid=ALICE)
+check("owner registering their own device token", code == 200, True, body)
+
+code, body = request("PATCH", f"/users/{ALICE}/pushTokens/device-token-2",
+                     {"fields": {"platform": s("ios")}}, uid=BOB)
+check("another account writing a token into someone's inbox", code == 200, False, body)
+
+code, body = request("GET", f"/users/{ALICE}/pushTokens/device-token-1", uid=BOB)
+check("another account reading someone's device tokens", code == 200, False, body)
+
+code, body = request("DELETE", f"/users/{ALICE}/pushTokens/device-token-1", uid=ALICE)
+check("owner removing their own device token", code == 200, True, body)
+
 print()
 print(f"{sum(results)}/{len(results)} passed")
 sys.exit(0 if all(results) else 1)
