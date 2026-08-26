@@ -185,6 +185,9 @@ private struct FeedPostDetailContentView: View {
                 SignInView(appState: appState, viewModel: signInViewModel)
             }
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    shareLink
+                }
                 if currentUserId != nil {
                     ToolbarItem(placement: .topBarTrailing) {
                         if isAuthor {
@@ -240,6 +243,18 @@ private struct FeedPostDetailContentView: View {
             } message: {
                 Text(.communityBlockConfirmMessage)
             }
+        }
+    }
+
+    /// Shares the story the post is about rather than the post itself: there is
+    /// no web address for a post, and the article is what a recipient can open.
+    @ViewBuilder
+    private var shareLink: some View {
+        if let url = currentPost.story.storyURL {
+            ShareLink(item: url, subject: Text(currentPost.story.title)) {
+                Image(.share)
+            }
+            .accessibilityLabel(Text(.communitySharePost))
         }
     }
 

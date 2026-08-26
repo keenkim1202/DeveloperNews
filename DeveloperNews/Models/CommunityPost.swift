@@ -23,4 +23,11 @@ struct CommunityPost: Identifiable, Hashable, Sendable {
         guard let link else { return nil }
         return URL(string: link)
     }
+
+    /// What a post without a link has to send. The app publishes nothing to the
+    /// web, so there is no address for the post itself — the text is the whole
+    /// of what a recipient can be given.
+    var shareText: String {
+        description.isEmpty ? title : "\(title)\n\n\(description)"
+    }
 }
