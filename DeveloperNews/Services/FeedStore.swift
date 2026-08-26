@@ -1,12 +1,9 @@
 import Foundation
 import Observation
 
-// Owns the feed subsystem: loading state, reload orchestration (with
-// generation-token cancellation), personalization/ranking, and pagination.
-// Live inputs that still live in AppState (selected topics, source-category
-// toggles, saved snapshots, following items) are read through closures, and
-// persistence is delegated back to AppState so writes keep flowing through its
-// serial persistence chain. Closures avoid a retain cycle with AppState.
+// Owns loading, ranking and pagination for the feed. Inputs still held by
+// AppState are read through closures rather than copied, which also avoids a
+// retain cycle, and writes are delegated back so they keep their serial order.
 @Observable
 @MainActor
 final class FeedStore {

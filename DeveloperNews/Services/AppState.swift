@@ -344,10 +344,9 @@ final class AppState {
     /// Moves the digest and re-arms it, since a pending notification keeps the
     /// hour it was scheduled with until something replaces it.
     ///
-    /// Rescheduling cancels the standing request before asking for the new one,
-    /// so a rejected request leaves nothing pending at all. The switch goes off
-    /// with it rather than promising a digest that cannot arrive — what a
-    /// rejected schedule already does when the switch is first turned on.
+    /// Rescheduling cancels the standing request first, so a rejected one leaves
+    /// nothing pending. The switch goes off with it rather than promising a
+    /// digest that cannot arrive.
     func setDigestTime(_ time: DigestTime) async {
         digestTime = time
         saveDigestTime()

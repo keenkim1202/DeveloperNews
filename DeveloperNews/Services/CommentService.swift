@@ -127,10 +127,9 @@ final class CommentService: CommentServicing {
     /// The activity a new comment produces, or nil when the parent collection
     /// has no detail route to send the recipient to.
     ///
-    /// A reply notifies whoever it answers; a top-level comment notifies the
-    /// post author. A reply whose parent is outside the listener window is
-    /// recorded as a plain comment to the post author rather than as a reply to
-    /// someone we cannot name.
+    /// A reply notifies whoever it answers, a top-level comment the post author.
+    /// A reply whose parent is outside the listener window falls back to the
+    /// post author rather than naming someone we cannot resolve.
     static func commentActivityDraft(
         parentCollection: String,
         postId: String,

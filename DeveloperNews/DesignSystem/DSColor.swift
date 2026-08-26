@@ -1,11 +1,8 @@
 import SwiftUI
 
-// Semantic color tokens for the app. Each token maps 1:1 to the system or asset
-// color it replaces, so adopting these never changes the rendered appearance.
-//
-// Note: the hierarchical SwiftUI styles (.primary/.secondary/.tertiary) are the
-// native semantic layer this design system builds on top of, so they are used
-// directly at call sites rather than aliased here.
+// Semantic color tokens. Each maps 1:1 to the system or asset color it replaces,
+// so adopting one never changes what is rendered. The hierarchical SwiftUI styles
+// (.primary/.secondary/.tertiary) are the layer underneath and stay at call sites.
 enum DSColor {
     static let accent = Color.accentColor
 

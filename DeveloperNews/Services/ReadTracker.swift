@@ -1,10 +1,9 @@
 import Foundation
 import Observation
 
-// Owns the read-tracking subsystem: the short-hash sets of read article URLs
-// and read community post ids, the mark operations, the read-state queries, and
-// the bounded eviction that caps each set. Persistence is delegated back to
-// AppState so writes keep flowing through its serial persistence chain. The
+// Owns read state: short-hash sets of read article URLs and post ids, and the
+// bounded eviction that caps them. Writes are delegated back to AppState so
+// they keep their serial order. The
 // closure avoids a retain cycle with AppState.
 @Observable
 @MainActor

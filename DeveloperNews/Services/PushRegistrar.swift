@@ -3,13 +3,11 @@ import Foundation
 import Observation
 import UIKit
 
-/// Keeps the device's push token and the signed-in reader paired up in
-/// Firestore, so a notification written for that reader can reach this device.
+/// Pairs the device's push token with the signed-in reader, so a notification
+/// written for that reader can reach this device.
 ///
-/// Two facts arrive independently and in either order: the token, from FCM
-/// whenever it decides to issue or rotate one, and the reader, from signing in
-/// or out. Nothing is written until both are known, and the pairing is undone
-/// as soon as either changes.
+/// The token comes from FCM whenever it issues or rotates one and the reader
+/// from signing in, in either order. Nothing is written until both are known.
 @Observable
 @MainActor
 final class PushRegistrar: NSObject, MessagingDelegate {
@@ -33,20 +31,17 @@ final class PushRegistrar: NSObject, MessagingDelegate {
 
     /// Starts listening for the token and asks iOS to register with APNs.
     ///
-    /// Registration is only worth asking for once notifications are permitted:
-    /// without permission APNs still issues a token, but nothing it delivers is
-    /// shown, so the reader would be paired to a device that stays silent.
+    /// Only worth asking for once notifications are permitted: APNs issues a
+    /// token either way, but without permission nothing it delivers is shown.
     func start() async {
         Messaging.messaging().delegate = self
         UIApplication.shared.registerForRemoteNotifications()
         await setEnabled(true)
     }
 
-    /// Unpairs this device and stops it receiving anything.
-    ///
-    /// Must run while the reader is still signed in: the rule allows a delete
-    /// only from the token's owner, so a removal attempted after sign-out is
-    /// refused and the row outlives the session.
+    /// Unpairs this device and stops it receiving anything. Must run while the
+    /// reader is still signed in — the rule allows a delete only from the
+    /// token's owner, so a later attempt is refused and the row survives.
     func stop() async {
         await setEnabled(false)
         UIApplication.shared.unregisterForRemoteNotifications()

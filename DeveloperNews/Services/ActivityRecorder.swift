@@ -3,11 +3,9 @@ import Foundation
 
 /// Writes activities into other users' inboxes.
 ///
-/// Every write is best effort and deliberately silent: the caller has already
-/// completed the like, comment, or follow the user asked for, and failing that
-/// action because its notification could not be written would be worse than
-/// dropping the notification. Self-directed activities are skipped so nobody is
-/// told about their own actions.
+/// Best effort and deliberately silent: the like or comment the reader asked for
+/// has already happened, and failing it over its notification would be worse
+/// than dropping the notification. Self-directed activities are skipped.
 @MainActor
 final class ActivityRecorder: ActivityRecording {
     private let db = Firestore.firestore()

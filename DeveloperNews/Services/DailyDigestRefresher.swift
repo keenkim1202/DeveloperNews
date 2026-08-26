@@ -3,10 +3,9 @@ import Foundation
 
 /// Keeps the daily digest's text current using iOS background refresh.
 ///
-/// This is an enhancement, never a dependency: the digest is scheduled the
-/// moment the setting is turned on and re-armed whenever the app refreshes in
-/// the foreground, so it still fires on time if iOS never grants a background
-/// run — which it often will not. All a granted run buys is a fresher headline.
+/// An enhancement, never a dependency: the digest is armed when the setting goes
+/// on and again on every foreground refresh, so it fires on time whether or not
+/// iOS grants a background run. A granted run only buys a fresher headline.
 @MainActor
 enum DailyDigestRefresher {
     static let taskIdentifier = "keen-onit.DeveloperNews.dailyDigestRefresh"

@@ -1,10 +1,8 @@
 import SwiftUI
 
-// Semantic SF Symbol tokens for icons used in views. The rawValue is the exact
-// system symbol name used before, so adopting these never changes appearance.
-//
-// Domain icon maps (Topic.symbolName, SourceCategory.symbolName,
-// ContentItem.Kind.symbolName) stay in the model layer and are not routed here.
+// Semantic SF Symbol tokens for views. The rawValue is the exact symbol name used
+// before, so adopting one never changes appearance. Domain icon maps
+// (Topic.symbolName and its siblings) stay in the model layer.
 enum DSIcon: String {
     case close = "xmark"
     case add = "plus"
