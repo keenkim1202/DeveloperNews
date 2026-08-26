@@ -39,6 +39,7 @@ final class AppState {
     var notificationsEnabled = false
     var blockedUserIds: Set<String> = []
     var readerTextSize: ReaderTextSize = .standard
+    var digestTime: DigestTime = .default
     var toastMessage: String?
     var toastTrigger: Int = 0
     var hasSeenIntro = false
@@ -337,6 +338,28 @@ final class AppState {
         saveTranslationLanguage()
     }
 
+    /// Moves the digest and re-arms it, since a pending notification keeps the
+    /// hour it was scheduled with until something replaces it.
+    ///
+    /// Rescheduling cancels the standing request before asking for the new one,
+    /// so a rejected request leaves nothing pending at all. The switch goes off
+    /// with it rather than promising a digest that cannot arrive — what a
+    /// rejected schedule already does when the switch is first turned on.
+    func setDigestTime(_ time: DigestTime) async {
+        digestTime = time
+        saveDigestTime()
+
+        guard notificationsEnabled else {
+            return
+        }
+        guard await refreshDailyDigest() else {
+            notificationsEnabled = false
+            saveNotificationsEnabled()
+            presentError(String(localized: .notificationScheduleFailed))
+            return
+        }
+    }
+
     func setReaderTextSize(_ size: ReaderTextSize) {
         readerTextSize = size
         saveReaderTextSize()
@@ -591,7 +614,7 @@ final class AppState {
         }
         let body = personalizedItems.first?.title
             ?? String(localized: .notificationDailyDigestFallback)
-        return await notificationScheduler.scheduleDailyDigest(body: body)
+        return await notificationScheduler.scheduleDailyDigest(body: body, at: digestTime)
     }
 
     /// Reconciles the stored setting with the system's answer at launch. A user
@@ -750,6 +773,7 @@ final class AppState {
             disabledSourceCategories: state.disabledSourceCategories)
         blockedUserIds = state.blockedUserIds
         readerTextSize = state.readerTextSize
+        digestTime = state.digestTime
         offlineArticleStore.seedInitialState(state.offlineArticles)
         readTracker.seedInitialState(
             readItemURLs: state.readItemURLs,
@@ -841,6 +865,13 @@ final class AppState {
             await store.saveReadItems(
                 readItemURLs: readItemURLs,
                 readPostIds: readPostIds)
+        }
+    }
+
+    private func saveDigestTime() {
+        let time = digestTime
+        enqueuePersistence { store in
+            await store.saveDigestTime(time)
         }
     }
 

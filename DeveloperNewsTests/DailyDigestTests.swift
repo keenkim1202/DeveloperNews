@@ -111,4 +111,50 @@ import Testing
         #expect(state.notificationsEnabled)
         #expect(notifications.scheduledBodies.count == scheduledOnEnable + 1)
     }
+
+    // A pending notification keeps the hour it was scheduled with, so moving the
+    // time has to replace the request rather than only store the new value.
+    @Test func movingTheTimeRearmsTheDigest() async {
+        let notifications = MockNotificationScheduling()
+        let state = makeState(notifications: notifications)
+        await state.setNotificationsEnabled(true)
+        #expect(notifications.scheduledTimes == [.default])
+
+        await state.setDigestTime(DigestTime(minuteOfDay: 7 * 60 + 30))
+
+        #expect(state.digestTime == DigestTime(minuteOfDay: 7 * 60 + 30))
+        #expect(notifications.scheduledTimes.last == DigestTime(minuteOfDay: 7 * 60 + 30))
+        #expect(state.notificationsEnabled)
+    }
+
+    // Rescheduling cancels the standing request before asking for the new one,
+    // so a refusal leaves nothing pending. A switch left on would promise a
+    // digest that cannot arrive.
+    @Test func aRefusedRescheduleTurnsTheDigestOff() async {
+        let notifications = MockNotificationScheduling()
+        let state = makeState(notifications: notifications)
+        await state.setNotificationsEnabled(true)
+        #expect(state.notificationsEnabled)
+
+        notifications.scheduleSucceeds = false
+        await state.setDigestTime(DigestTime(minuteOfDay: 7 * 60 + 30))
+
+        #expect(!state.notificationsEnabled)
+        #expect(state.toastMessage != nil)
+        // The choice is still the reader's, so it survives for the next attempt.
+        #expect(state.digestTime == DigestTime(minuteOfDay: 7 * 60 + 30))
+    }
+
+    // With the digest off there is nothing to re-arm, but the choice is still
+    // the reader's and has to survive until they turn it on.
+    @Test func theTimeIsKeptWhileTheDigestIsOff() async {
+        let notifications = MockNotificationScheduling()
+        let state = makeState(notifications: notifications)
+
+        await state.setDigestTime(DigestTime(minuteOfDay: 22 * 60))
+
+        #expect(state.digestTime == DigestTime(minuteOfDay: 22 * 60))
+        #expect(notifications.scheduledTimes.isEmpty)
+        #expect(!state.notificationsEnabled)
+    }
 }
