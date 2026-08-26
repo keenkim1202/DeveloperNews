@@ -75,6 +75,10 @@ jobs:
           # head SHA 는 이벤트 페이로드가 아니라 API 에서 받는다.
           # 수동 실행에는 페이로드가 없고, 페이로드가 있어도 그 사이 푸시가 있었을 수 있다.
           HEAD_SHA=$(gh api "repos/$REPO/pulls/$PR_NUM" --jq '.head.sha')
+          # 코덱스는 head 가 아니라 GitHub 이 만드는 테스트 머지 커밋을 리뷰하고
+          # 그 SHA 를 코멘트에 적는다. head 나 base 가 움직이면 이 값도 바뀌므로
+          # 이 코멘트가 지금 상태를 본 것인지 가리는 데 쓸 수 있다.
+          MERGE_SHA=$(gh api "repos/$REPO/pulls/$PR_NUM" --jq '.merge_commit_sha // ""')
           post_status() {
             gh api -X POST "repos/$REPO/statuses/$HEAD_SHA" \
               -f state="$1" \
@@ -94,6 +98,13 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
             echo "$1 (PR #$PR_NUM, $HEAD_SHA)"
             exit 0
+          }
+
+          # 코덱스가 PR 에 남긴 코멘트. 한 줄에 하나씩(@json) 뽑아야 본문에 든 줄바꿈이
+          # 항목 경계를 흔들지 않는다. 한도 초과 통보와 "지적 없음" 보고가 모두 여기 온다.
+          bot_comments() {
+            gh api "repos/$REPO/issues/$PR_NUM/comments?per_page=100" --paginate \
+              --jq ".[] | select(.user.login == \"${BOT}[bot]\") | .body | @json" 2>/dev/null || true
           }
 
           # 반응 수, 또는 호출 자체가 실패하면 err.
@@ -121,6 +132,24 @@ jobs:
               echo err
             fi
           }
+
+          # 크레딧이 떨어지면 코덱스는 리뷰 대신 그 사실을 코멘트로 남기고 끝낸다.
+          # 기다려봐야 오지 않는 리뷰라, 게이트가 PR 을 영영 막는 것 말고는 하는 일이
+          # 없다. 마지막으로 한 말이 그것이면 통과시킨다.
+          COMMENTS=$(bot_comments)
+          if printf '%s' "$COMMENTS" | tail -1 | grep -q "reached your Codex usage limits"; then
+            DESC="코덱스 사용 한도 — 리뷰 없이 통과"
+            post_status success "$DESC"
+            {
+              echo "## 코덱스 리뷰 게이트"
+              echo
+              echo "PR #$PR_NUM · \`${HEAD_SHA:0:7}\` · **success** — $DESC"
+              echo
+              echo "크레딧이 돌아온 뒤 리뷰를 받으려면 PR 에 \`@codex review\` 를 남겨라."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "$DESC (PR #$PR_NUM, $HEAD_SHA)"
+            exit 0
+          fi
 
           # 판정 전에 pending 을 쏜다. 기다리는 동안 체크가 초록도 빨강도 아니어야
           # "아직 리뷰 중" 이 읽힌다.
@@ -165,9 +194,19 @@ jobs:
           # 또는 이 head 를 가리키는 코덱스 리뷰가 있는 경우. 👍 는 쓰지 않는다 —
           # 그건 커밋이 아니라 PR 에 붙어서 어떤 시각 비교로도 이 head 의 것이라고
           # 말할 수 없다. 이전 head 의 따봉이 남아 새 커밋을 통과시킨다.
+          # 지적이 없는 리뷰는 리뷰 객체를 남기지 않고 "Reviewed commit: <sha>" 가
+          # 적힌 코멘트로 끝난다. 그 SHA 가 지금의 테스트 머지 커밋이면 이 상태를 본
+          # 리뷰다 — 반응과 달리 커밋에 묶인 증거다.
+          COMMENTS=$(bot_comments)
+          REPORTED=no
+          if [ -n "$MERGE_SHA" ] && printf '%s' "$COMMENTS" | grep -q "${MERGE_SHA:0:10}"; then
+            REPORTED=yes
+          fi
+          printf '%s' "$COMMENTS" | grep -q "${HEAD_SHA:0:10}" && REPORTED=yes
+
           REVIEWED=$(reviewed_this_head)
           [ "$REVIEWED" = "err" ] && hold_pending "리뷰 목록을 읽지 못했다 — 리뷰 상태 불명"
-          if [ "$SAW_REVIEW" = "no" ] && [ "$REVIEWED" = "0" ]; then
+          if [ "$SAW_REVIEW" = "no" ] && [ "$REVIEWED" = "0" ] && [ "$REPORTED" = "no" ]; then
             hold_pending "이 커밋에 대한 코덱스 리뷰 기록이 없다 — PR 에 @codex review 를 남겨라"
           fi
 
