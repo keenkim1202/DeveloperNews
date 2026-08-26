@@ -12,6 +12,7 @@
 		1C7F47F530353F10009BDF21 /* WidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1C7F47E230353F0F009BDF21 /* WidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		1C8320FE2F8C1EF200C9DE50 /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1C8320F42F8C1EF200C9DE50 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B10000082FA000000000AA08 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = B10000022FA000000000AA02 /* FirebaseAuth */; };
+		B100000A2FA000000000AA10 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = B100000B2FA000000000AA11 /* FirebaseMessaging */; };
 		B10000092FA000000000AA09 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = B10000032FA000000000AA03 /* FirebaseFirestore */; };
 		B100000B2FA000000000AA0B /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = B10000062FA000000000AA06 /* GoogleSignIn */; };
 		B100000C2FA000000000AA0C /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = B10000072FA000000000AA07 /* GoogleSignInSwift */; };
@@ -126,6 +127,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B10000082FA000000000AA08 /* FirebaseAuth in Frameworks */,
+				B100000A2FA000000000AA10 /* FirebaseMessaging in Frameworks */,
 				B10000092FA000000000AA09 /* FirebaseFirestore in Frameworks */,
 				B100000B2FA000000000AA0B /* GoogleSignIn in Frameworks */,
 				B100000C2FA000000000AA0C /* GoogleSignInSwift in Frameworks */,
@@ -235,6 +237,7 @@
 			name = DeveloperNews;
 			packageProductDependencies = (
 				B10000022FA000000000AA02 /* FirebaseAuth */,
+				B100000B2FA000000000AA11 /* FirebaseMessaging */,
 				B10000032FA000000000AA03 /* FirebaseFirestore */,
 				B10000062FA000000000AA06 /* GoogleSignIn */,
 				B10000072FA000000000AA07 /* GoogleSignInSwift */,
@@ -865,6 +868,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B10000012FA000000000AA01 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		B100000B2FA000000000AA11 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10000012FA000000000AA01 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
 		};
 		B10000062FA000000000AA06 /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;

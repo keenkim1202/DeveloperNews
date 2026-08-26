@@ -14,6 +14,15 @@ service cloud.firestore {
 
       allow delete: if request.auth != null && request.auth.uid == userId;
 
+      // Push tokens for this reader's devices. Only the owner touches them:
+      // the token is what addresses a notification to a phone, and a token
+      // another account could write would point someone else's alerts here.
+      // Nothing on the client reads them back — the sender does, with admin
+      // credentials — so there is no read rule to widen.
+      match /pushTokens/{token} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+
       // Activity inbox. Written by whoever performed the action into the
       // recipient's subcollection, and readable only by the recipient.
       match /activities/{activityId} {

@@ -27,6 +27,7 @@ enum VMFixtures {
             activityService: activity,
             notificationScheduler: notifications,
             articleSummarizer: summarizer,
+            pushRegistrar: PushRegistrar(store: MockPushTokenStoring()),
             contentSourceClient: contentSourceClient,
             persistenceStore: makeIsolatedPersistenceStore())
     }

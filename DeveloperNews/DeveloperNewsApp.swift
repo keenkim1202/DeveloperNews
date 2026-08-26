@@ -1,10 +1,25 @@
 import CoreText
 import FirebaseCore
+import FirebaseMessaging
 import Foundation
 import SwiftUI
+import UIKit
+
+/// Exists for one callback. APNs hands the device token to the application
+/// delegate and nowhere else, and FCM cannot mint its own token without it.
+final class PushAppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data,
+    ) {
+        Messaging.messaging().apnsToken = deviceToken
+    }
+}
 
 @main
 struct DeveloperNewsApp: App {
+    @UIApplicationDelegateAdaptor(PushAppDelegate.self) private var appDelegate
+
     @State private var appState: AppState?
 
     init() {
