@@ -129,6 +129,7 @@ struct ArticleDetailView: View {
                 ShareLink(item: item.url, subject: Text(item.title)) {
                     Image(.share)
                 }
+                .accessibilityLabel(Text(.commonShare))
             }
         }
         .safeAreaInset(edge: .bottom) {

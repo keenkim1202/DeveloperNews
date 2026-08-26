@@ -254,7 +254,7 @@ private struct FeedPostDetailContentView: View {
             ShareLink(item: url, subject: Text(currentPost.story.title)) {
                 Image(.share)
             }
-            .accessibilityLabel(Text(.communitySharePost))
+            .accessibilityLabel(Text(.commonShare))
         }
     }
 

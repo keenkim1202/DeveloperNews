@@ -146,13 +146,13 @@ struct CommunityPostDetailContentView: View {
             ShareLink(item: url, subject: Text(currentPost.title)) {
                 Image(.share)
             }
-            .accessibilityLabel(Text(.communitySharePost))
+            .accessibilityLabel(Text(.commonShare))
         }
         else {
             ShareLink(item: currentPost.shareText, subject: Text(currentPost.title)) {
                 Image(.share)
             }
-            .accessibilityLabel(Text(.communitySharePost))
+            .accessibilityLabel(Text(.commonShare))
         }
     }
 
