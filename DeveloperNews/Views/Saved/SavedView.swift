@@ -41,6 +41,7 @@ struct SavedView: View {
                         Button(action: openAddItem) {
                             Image(.add)
                         }
+                        .accessibilityLabel(Text(.saveAddItem))
 
                         if !viewModel.savedItems.isEmpty {
                             Menu {

@@ -253,6 +253,7 @@ private struct FeedPostDetailContentView: View {
         } label: {
             Image(.more)
         }
+        .accessibilityLabel(Text(.communityMoreActions))
     }
 
     private var moderationMenu: some View {
@@ -271,6 +272,7 @@ private struct FeedPostDetailContentView: View {
         } label: {
             Image(.more)
         }
+        .accessibilityLabel(Text(.communityMoreActions))
     }
 
     private var postHeader: some View {

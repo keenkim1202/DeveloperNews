@@ -129,6 +129,7 @@ struct BookmarkDetailView: View {
                 Button(action: openEdit) {
                     Image(.edit)
                 }
+                .accessibilityLabel(Text(.bookmarkEdit))
             }
         }
         .onAppear(perform: onAppear)

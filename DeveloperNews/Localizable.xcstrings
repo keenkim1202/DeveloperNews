@@ -1178,23 +1178,6 @@
         }
       }
     },
-    "Retro Sunset": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Retro Sunset"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "레트로 선셋"
-          }
-        }
-      }
-    },
     "Reload article": {
       "extractionState": "manual",
       "localizations": {
@@ -1242,6 +1225,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "주제 선택 초기화"
+          }
+        }
+      }
+    },
+    "Retro Sunset": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retro Sunset"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "레트로 선셋"
           }
         }
       }
@@ -2805,6 +2805,23 @@
         }
       }
     },
+    "community.cancelReply": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel reply"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "답글 취소"
+          }
+        }
+      }
+    },
     "community.commentPlaceholder": {
       "extractionState": "manual",
       "localizations": {
@@ -3056,6 +3073,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "팔로잉"
+          }
+        }
+      }
+    },
+    "community.moreActions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More actions"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "더 보기"
           }
         }
       }

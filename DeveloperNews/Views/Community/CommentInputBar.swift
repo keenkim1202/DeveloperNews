@@ -82,6 +82,7 @@ struct CommentInputBar: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(Text(.communityCancelReply))
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)

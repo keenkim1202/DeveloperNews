@@ -155,6 +155,7 @@ struct UserProfileView: View {
                     } label: {
                         Image(.more)
                     }
+                    .accessibilityLabel(Text(.communityMoreActions))
                 }
             }
         }
