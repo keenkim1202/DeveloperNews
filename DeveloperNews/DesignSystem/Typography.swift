@@ -1,11 +1,8 @@
 import SwiftUI
 
-// Brand and semantic font tokens. The brand font carries the app's identity; the
-// semantic tokens name the weighted standard styles that recur across the views.
-// Each token maps 1:1 to the exact font it replaces, so appearance is unchanged.
-//
-// Single standard styles (.headline, .body, .caption, .title2.bold(), ...) stay
-// inline at call sites and are not tokenized.
+// Brand and semantic font tokens, each mapping 1:1 to the font it replaces, so
+// appearance is unchanged. Only the weighted styles that recur are named here;
+// a single standard style stays inline at its call site.
 extension Font {
     static let keenPixelTitle = Font.custom("PixelifySans-Regular", size: 26)
 

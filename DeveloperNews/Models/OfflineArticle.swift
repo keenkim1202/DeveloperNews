@@ -1,11 +1,9 @@
 import Foundation
 
-/// A saved article's readable text, captured so it can still be read with no
-/// network.
+/// A saved article's readable text, kept so it opens with no network.
 ///
-/// Text rather than an archive of the page: a few tens of kilobytes instead of
-/// several megabytes, and the app already shows the real page when it can. This
-/// is the fallback, not a replacement for it.
+/// Text rather than an archive of the page — tens of kilobytes instead of
+/// megabytes, and it is the fallback, not a second rendering of the site.
 struct OfflineArticle: Identifiable, Hashable, Codable, Sendable {
     let url: URL
     let title: String

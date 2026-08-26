@@ -1,13 +1,10 @@
 import Foundation
 
-/// One entry in a user's activity inbox: something another user did to their
-/// content. Written by the actor's client into the recipient's subcollection,
-/// so the recipient learns about a reaction without polling their own posts.
+/// One entry in a reader's activity inbox, written by the actor's client into
+/// the recipient's subcollection so nobody has to poll their own posts.
 ///
-/// Only `actorId` is stored. The actor's name and emoji are resolved when the
-/// inbox is read, because the inbox is a signed-in-only screen that may read
-/// `/users`, and because a name copied onto every activity would go stale the
-/// moment its owner renamed themselves.
+/// Only `actorId` is stored; the name and emoji are resolved when the inbox is
+/// read. A name copied onto every row goes stale the moment its owner renames.
 struct Activity: Identifiable, Hashable, Sendable {
     let id: String
     let kind: ActivityKind

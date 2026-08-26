@@ -2,10 +2,8 @@ import Foundation
 
 /// Owns all app-group `UserDefaults` persistence for `AppState`.
 ///
-/// Runs as an `actor` so the heavy JSON encoding (saved-item snapshots, the full
-/// `allItems` feed) happens off the main actor. `UserDefaults` writes are
-/// thread-safe, and the suite handle is cached once instead of being recreated
-/// on every write. Reads happen synchronously at launch via `load()`.
+/// An `actor` so encoding the saved snapshots and the whole feed happens off the
+/// main actor; `load()` is the exception and runs synchronously at launch.
 actor PersistenceStore {
     private enum StorageKey {
         static let selectedTopics = "selectedTopics"
