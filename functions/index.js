@@ -18,6 +18,10 @@ const DEAD_TOKEN = new Set([
 exports.sendActivityPush = onDocumentCreated(
   {
     document: "users/{userId}/activities/{activityId}",
+    // Where the database is. A function in another region still works — the
+    // trigger is created next to Firestore either way — but every activity
+    // would then cross the Pacific and back before a phone hears about it.
+    region: "asia-northeast3",
     // A push nobody reads is not worth a retry: the row is already in the
     // inbox, and a retrying Firestore trigger is the one way this function
     // could run away with the bill.
