@@ -138,6 +138,24 @@ struct CommunityPostDetailContentView: View {
         viewModel.authorEmoji
     }
 
+    /// A post that quotes a link shares the link; one that is only text shares
+    /// the text, since the post has no address of its own to send.
+    @ViewBuilder
+    private var shareLink: some View {
+        if let url = currentPost.linkURL {
+            ShareLink(item: url, subject: Text(currentPost.title)) {
+                Image(.share)
+            }
+            .accessibilityLabel(Text(.communitySharePost))
+        }
+        else {
+            ShareLink(item: currentPost.shareText, subject: Text(currentPost.title)) {
+                Image(.share)
+            }
+            .accessibilityLabel(Text(.communitySharePost))
+        }
+    }
+
     private var currentPost: CommunityPost {
         viewModel.currentPost
     }
@@ -340,6 +358,9 @@ struct CommunityPostDetailContentView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                shareLink
+            }
             if isAuthor {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: openEditPost) {
