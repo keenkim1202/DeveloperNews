@@ -44,10 +44,20 @@ permissions:
   pull-requests: read
   statuses: write
 
+# 한 PR 에 대해 한 번만 돈다. 이 잡은 리뷰가 끝나기를 최대 20 분 기다리므로
+# 겹쳐 돌면 러너를 그만큼 오래 붙잡는다. 새 실행이 이전 것을 대체한다.
+concurrency:
+  group: codex-gate-${{ github.event.pull_request.number || github.event.issue.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   gate:
-    # issue_comment 는 이슈에도 붙는다. PR 코멘트만 본다.
-    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
+    # issue_comment 는 이슈에도 붙고, PR 의 잡담에도 붙는다. 코덱스를 부르는
+    # 코멘트만 잡을 띄운다 — 그러지 않으면 코멘트 하나마다 20 분짜리 잡이 하나씩
+    # 뜨고, 러너가 그 대기로 가득 찬다.
+    if: >-
+      github.event_name != 'issue_comment' ||
+      (github.event.issue.pull_request && contains(github.event.comment.body, '@codex'))
     runs-on: ubuntu-latest
     steps:
       - name: 코덱스 미해결 스레드 확인
