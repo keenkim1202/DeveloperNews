@@ -5,6 +5,7 @@ on:
     paths:
       - firestore.rules
       - scripts/test-firestore-rules.py
+      - functions/**
       - .github/workflows/firestore-rules.yml
   push:
     branches:
@@ -46,6 +47,11 @@ jobs:
 
       - name: Run the rules probe
         run: firebase emulators:exec --only firestore "python3 scripts/test-firestore-rules.py"
+
+      # The message a push carries is the branchy part of the function and the
+      # only piece that runs without Firebase.
+      - name: Test the notification text
+        run: node --test functions/test/*.test.js
 
   # Deploying by hand is how the rules and the client drift apart: a merged
   # feature whose rules are still the old ones fails closed, and the writes it

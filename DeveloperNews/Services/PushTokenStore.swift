@@ -19,6 +19,10 @@ final class PushTokenStore: PushTokenStoring {
         try? await tokensRef(userId).document(token).setData([
             "updatedAt": FieldValue.serverTimestamp(),
             "platform": "ios",
+            // The sender writes the notification text, so the language the
+            // reader wants has to travel with the device rather than be
+            // guessed from the account.
+            "locale": Locale.current.identifier,
         ])
     }
 
