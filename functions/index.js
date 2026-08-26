@@ -22,7 +22,19 @@ exports.sendActivityPush = onDocumentCreated(
     // inbox, and a retrying Firestore trigger is the one way this function
     // could run away with the bill.
     retry: false,
-    maxInstances: 10,
+    // What is bounded here is the rate the bill can accumulate at, not the
+    // number of pushes — sending through FCM is free, and the meter runs on
+    // invocations and the time they take.
+    //
+    // Three instances is enough that a burst of activity queues for seconds
+    // rather than piling up, and few enough that nothing can accelerate. The
+    // work is two Firestore reads and one multicast, so thirty seconds is a
+    // hung invocation, not a slow one.
+    maxInstances: 3,
+    timeoutSeconds: 30,
+    // Never above zero. A warm instance is billed for sitting idle, which is
+    // the one way this costs money on a day when nobody touches the app.
+    minInstances: 0,
   },
   async (event) => {
     const activity = event.data?.data();
