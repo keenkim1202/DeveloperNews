@@ -2,10 +2,11 @@ name: Pull Request
 
 on:
   pull_request:
-  # A Run workflow button in the Actions tab. Two switches, not one: the tab's
-  # own "Disable workflow" stops the automatic run on every pull request, and
-  # this keeps a way to run the checks by hand while it is off — or on a branch
-  # with no pull request open yet.
+  # A Run workflow button in the Actions tab, for a branch with no pull request
+  # open yet or a re-run without pushing a commit.
+  #
+  # It is not a way around the tab's Disable workflow switch: disabling stops
+  # every trigger on a workflow, this one included, and the button goes with it.
   workflow_dispatch:
 
 concurrency:
