@@ -182,7 +182,7 @@ import Testing
 
     // The push carries the same field names the inbox document uses, so one
     // parser answers both. Every value arrives as a string.
-    @Test func aPushPayloadRebuildsTheRoute() throws {
+    @Test func aPushPayloadRebuildsTheRoute() {
         let payload = [
             "kind": "commentReply",
             "actorId": "actor-1",
@@ -191,9 +191,7 @@ import Testing
             "commentId": "comment-3",
         ]
 
-        let activity = try #require(ActivityDocument.activity(from: payload, id: ""))
-
-        #expect(ActivityViewModel.destination(for: activity)
+        #expect(ActivityViewModel.destination(forPush: payload)
             == .feedPostDetail("post-9", highlightedCommentId: "comment-3"))
     }
 
@@ -204,7 +202,10 @@ import Testing
         #expect(ActivityViewModel.destination(for: activity) == .userProfile(userId: "actor-1"))
     }
 
-    @Test func aPayloadWithoutAKindRoutesNowhere() {
+    // A route the sender dropped for being too large arrives as nothing at
+    // all. The tap still came from the inbox, so that is where it lands.
+    @Test func aPayloadWithoutAKindOpensTheInbox() {
         #expect(ActivityDocument.activity(from: ["actorId": "actor-1"], id: "") == nil)
+        #expect(ActivityViewModel.destination(forPush: [:]) == .activity)
     }
 }

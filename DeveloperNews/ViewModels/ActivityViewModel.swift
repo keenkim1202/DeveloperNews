@@ -109,6 +109,14 @@ final class ActivityViewModel {
 
     /// Where tapping the row goes. Nil rows are not tappable — a post activity
     /// that lost its target has nothing to open.
+    /// Where a tapped push opens. Anything that does not name a destination —
+    /// a route dropped for being too large, a kind this build does not know —
+    /// still came from the inbox, so the inbox is where the tap lands.
+    static func destination(forPush payload: [String: String]) -> CommunityTabDestination {
+        ActivityDocument.activity(from: payload, id: "")
+            .flatMap(destination(for:)) ?? .activity
+    }
+
     static func destination(for activity: Activity) -> CommunityTabDestination? {
         switch activity.kind {
         case .follow:
