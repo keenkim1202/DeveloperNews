@@ -57,8 +57,13 @@ function buildNotification(activity, locale) {
 const NAME_LIMIT = 60;
 const PREVIEW_LIMIT = 200;
 
+const GRAPHEMES = new Intl.Segmenter(undefined, { granularity: "grapheme" });
+
 function clip(text, limit) {
-  return text.length > limit ? `${text.slice(0, limit)}…` : text;
+  // By grapheme, not by string index: a family emoji is one character to
+  // whoever typed it and five code units to slice, which would cut it in half.
+  const clusters = Array.from(GRAPHEMES.segment(text), (part) => part.segment);
+  return clusters.length > limit ? `${clusters.slice(0, limit).join("")}…` : text;
 }
 
 /**

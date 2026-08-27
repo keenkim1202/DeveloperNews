@@ -94,3 +94,11 @@ test("counts the notification against the same budget as the route", () => {
     { kind: "postComment", actorId: "actor-1", targetPostId: "p1" });
   assert.deepStrictEqual(buildRoute(activity, { title: "t", body: "b".repeat(4000) }), {});
 });
+
+test("clips whole characters, not halves of them", () => {
+  const message = buildNotification(
+    { kind: "follow", actorName: "\u{1F468}\u200D\u{1F469}\u200D\u{1F467}".repeat(80) }, "en");
+
+  assert.ok(message.title.isWellFormed());
+  assert.ok(message.title.includes("\u{1F467}…"));
+});
