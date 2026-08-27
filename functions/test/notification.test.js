@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert");
-const { buildNotification } = require("../notification");
+const { buildNotification, buildRoute } = require("../notification");
 
 test("names the actor and carries the excerpt", () => {
   const message = buildNotification(
@@ -47,4 +47,33 @@ test("an untranslated locale falls back to English", () => {
   assert.strictEqual(
     buildNotification({ kind: "follow", actorName: "Ada" }, "fr-FR").title,
     "Ada started following you");
+});
+
+test("carries the fields the route is rebuilt from", () => {
+  const route = buildRoute({
+    kind: "commentReply",
+    actorId: "actor-1",
+    targetCollection: "feedPosts",
+    targetPostId: "post-9",
+    commentId: "comment-3",
+    preview: "not part of the route",
+  });
+
+  assert.deepStrictEqual(route, {
+    kind: "commentReply",
+    actorId: "actor-1",
+    targetCollection: "feedPosts",
+    targetPostId: "post-9",
+    commentId: "comment-3",
+  });
+});
+
+test("drops the route rather than the notification when it will not fit", () => {
+  const route = buildRoute({
+    kind: "postComment",
+    actorId: "actor-1",
+    storyURL: `https://example.com/${"a".repeat(4000)}`,
+  });
+
+  assert.deepStrictEqual(route, {});
 });

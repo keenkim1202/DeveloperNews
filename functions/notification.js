@@ -48,4 +48,29 @@ function buildNotification(activity, locale) {
   };
 }
 
-module.exports = { buildNotification };
+/**
+ * Fields the app needs to rebuild the route, under the name the inbox document
+ * already uses so one parser answers both. FCM values are strings.
+ */
+const ROUTE_KEYS = ["kind", "actorId", "targetCollection", "targetPostId",
+                    "commentId", "storyURL", "storyTitle"];
+
+/**
+ * APNs rejects a payload over 4 KB outright, and a story URL has no length
+ * anyone controls. Past the budget the route is dropped rather than the
+ * notification: the reader lands in the inbox, which is where a tap went
+ * before there was a route at all.
+ */
+const ROUTE_BUDGET = 3000;
+
+function buildRoute(activity) {
+  const route = {};
+  for (const key of ROUTE_KEYS) {
+    if (activity[key] != null) {
+      route[key] = String(activity[key]);
+    }
+  }
+  return Buffer.byteLength(JSON.stringify(route)) > ROUTE_BUDGET ? {} : route;
+}
+
+module.exports = { buildNotification, buildRoute };

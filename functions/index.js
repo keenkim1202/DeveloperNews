@@ -4,7 +4,7 @@ const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
-const { buildNotification } = require("./notification");
+const { buildNotification, buildRoute } = require("./notification");
 
 initializeApp();
 
@@ -67,15 +67,7 @@ exports.sendActivityPush = onDocumentCreated(
     }
 
     const tokens = tokenDocs.docs.map((doc) => doc.id);
-    // The same field names the inbox document uses, so the app rebuilds the
-    // route with the parser it already has. FCM data values must be strings.
-    const route = {};
-    for (const key of ["kind", "actorId", "targetCollection", "targetPostId",
-                       "commentId", "storyURL", "storyTitle"]) {
-      if (activity[key] != null) {
-        route[key] = String(activity[key]);
-      }
-    }
+    const route = buildRoute(activity);
 
     const response = await getMessaging().sendEachForMulticast({
       tokens,
