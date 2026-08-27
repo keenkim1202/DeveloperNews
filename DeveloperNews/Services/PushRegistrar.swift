@@ -123,12 +123,7 @@ final class PushRegistrar: NSObject, MessagingDelegate, UNUserNotificationCenter
                 }
             }
         await MainActor.run {
-            guard let activity = ActivityDocument.activity(from: payload, id: ""),
-                  let destination = ActivityViewModel.destination(for: activity)
-            else {
-                return
-            }
-            onTap?(destination)
+            onTap?(ActivityViewModel.destination(forPush: payload))
         }
     }
 
