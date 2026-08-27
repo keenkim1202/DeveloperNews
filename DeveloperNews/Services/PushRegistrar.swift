@@ -114,6 +114,12 @@ final class PushRegistrar: NSObject, MessagingDelegate, UNUserNotificationCenter
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
     ) async {
+        // Only a remote notification carries a route. The daily digest is
+        // scheduled locally with no user info, and would otherwise take the
+        // fallback and land every tap on it in the inbox.
+        guard response.notification.request.trigger is UNPushNotificationTrigger else {
+            return
+        }
         // Flattened to strings here: the userInfo dictionary itself cannot
         // cross to the main actor, and strings are all the route is made of.
         let payload = response.notification.request.content.userInfo
