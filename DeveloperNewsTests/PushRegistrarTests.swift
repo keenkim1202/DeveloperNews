@@ -118,4 +118,33 @@ import Testing
 
         #expect(store.removed.map(\.token) == ["token-1"])
     }
+
+    // The switch survives a launch and the registrar does not. A reader who
+    // turned alerts on last week never opens Settings again, and the token
+    // arriving at launch is the only one there will be.
+    @Test func launchingWithAlertsOnPairsTheToken() async {
+        let store = MockPushTokenStoring()
+        let state = VMFixtures.makeAppState(pushRegistrar: PushRegistrar(store: store))
+        state.notificationsEnabled = true
+
+        await state.registerForPush(userId: "me")
+        await state.pushRegistrar.tokenChanged(to: "token-1")
+
+        #expect(store.saved.map(\.token) == ["token-1"])
+    }
+
+    // Signing out runs the same call with no user. Restoring the switch there
+    // must not write the row back for the account being left.
+    @Test func signingOutWithAlertsOnLeavesNothingPaired() async {
+        let store = MockPushTokenStoring()
+        let state = VMFixtures.makeAppState(pushRegistrar: PushRegistrar(store: store))
+        state.notificationsEnabled = true
+        await state.registerForPush(userId: "me")
+        await state.pushRegistrar.tokenChanged(to: "token-1")
+
+        await state.registerForPush(userId: nil)
+
+        #expect(store.removed.map(\.userId) == ["me"])
+        #expect(store.saved.map(\.userId) == ["me"])
+    }
 }

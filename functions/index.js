@@ -4,7 +4,7 @@ const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
-const { buildNotification } = require("./notification");
+const { buildNotification, buildRoute } = require("./notification");
 
 initializeApp();
 
@@ -67,8 +67,11 @@ exports.sendActivityPush = onDocumentCreated(
     }
 
     const tokens = tokenDocs.docs.map((doc) => doc.id);
+    const route = buildRoute(activity, message);
+
     const response = await getMessaging().sendEachForMulticast({
       tokens,
+      data: route,
       notification: { title: message.title, body: message.body || undefined },
       apns: { payload: { aps: { sound: "default", badge: 1 } } },
     });

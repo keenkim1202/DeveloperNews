@@ -146,15 +146,15 @@ import Testing
         let vm = ActivityViewModel(appState: state)
 
         #expect(
-            vm.destination(for: makeActivity(kind: .follow, actorId: "actor-1", target: nil))
+            ActivityViewModel.destination(for: makeActivity(kind: .follow, actorId: "actor-1", target: nil))
                 == .userProfile(userId: "actor-1"))
         #expect(
-            vm.destination(for: makeActivity(kind: .postComment, target: .feedPost("f1")))
+            ActivityViewModel.destination(for: makeActivity(kind: .postComment, target: .feedPost("f1")))
                 == .feedPostDetail("f1"))
         #expect(
-            vm.destination(for: makeActivity(kind: .commentLike, target: .communityPost("c1")))
+            ActivityViewModel.destination(for: makeActivity(kind: .commentLike, target: .communityPost("c1")))
                 == .postDetail("c1"))
-        #expect(vm.destination(for: makeActivity(kind: .postLike, target: nil)) == nil)
+        #expect(ActivityViewModel.destination(for: makeActivity(kind: .postLike, target: nil)) == nil)
     }
 
     // A comment activity opens the post scrolled to the comment it was about;
@@ -164,15 +164,15 @@ import Testing
         let vm = ActivityViewModel(appState: state)
 
         #expect(
-            vm.destination(for: makeActivity(
+            ActivityViewModel.destination(for: makeActivity(
                 kind: .commentReply, target: .feedPost("f1"), commentId: "c9"))
                 == .feedPostDetail("f1", highlightedCommentId: "c9"))
         #expect(
-            vm.destination(for: makeActivity(
+            ActivityViewModel.destination(for: makeActivity(
                 kind: .commentLike, target: .communityPost("c1"), commentId: "c9"))
                 == .postDetail("c1", highlightedCommentId: "c9"))
         #expect(
-            vm.destination(for: makeActivity(
+            ActivityViewModel.destination(for: makeActivity(
                 kind: .postLike, target: .feedPost("f1"), commentId: nil))
                 == .feedPostDetail("f1", highlightedCommentId: nil))
     }

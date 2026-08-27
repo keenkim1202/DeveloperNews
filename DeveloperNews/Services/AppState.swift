@@ -41,6 +41,8 @@ final class AppState {
     var blockedUserIds: Set<String> = []
     var readerTextSize: ReaderTextSize = .standard
     var digestTime: DigestTime = .default
+    /// Where a tapped push wants to go, until `ContentView` takes it.
+    var pendingActivityDestination: CommunityTabDestination?
     var toastMessage: String?
     var toastTrigger: Int = 0
     var hasSeenIntro = false
@@ -232,6 +234,12 @@ final class AppState {
                 persistDisabledSourceCategories: { [unowned self] categories in
                     saveDisabledSourceCategories(categories)
                 }))
+        pushRegistrar.onTap = { [unowned self] payload in
+            let destination = ActivityViewModel.destination(
+                forPush: payload,
+                blockedUserIds: blockedUserIds)
+            pendingActivityDestination = destination
+        }
         loadPersistedState()
     }
 
@@ -415,6 +423,17 @@ final class AppState {
     /// because a push about an activity is the same event arriving elsewhere.
     func registerForPush(userId: String?) async {
         await pushRegistrar.userChanged(to: userId)
+        // The switch is persisted across launches and the registrar is not, so
+        // it has to be told again. After the user, never before: on the way out
+        // this would pair the token back to the account being left.
+        guard notificationsEnabled, userId != nil else {
+            await pushRegistrar.setEnabled(notificationsEnabled)
+            return
+        }
+        // Signing out unregisters the device from APNs, so signing back in has
+        // to ask for it again — pairing a token nothing delivers to is worse
+        // than not pairing, because the switch says alerts are on.
+        await pushRegistrar.start()
     }
 
     func startListeningForActivities() {

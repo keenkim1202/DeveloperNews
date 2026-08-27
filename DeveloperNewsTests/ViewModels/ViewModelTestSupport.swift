@@ -16,6 +16,7 @@ enum VMFixtures {
         summarizer: MockArticleSummarizing = MockArticleSummarizing(),
         translator: MockTranslating = MockTranslating(),
         contentSourceClient: (any ContentSourceClient)? = nil,
+        pushRegistrar: PushRegistrar = PushRegistrar(store: MockPushTokenStoring()),
     ) -> AppState {
         AppState(
             translator: translator,
@@ -27,7 +28,7 @@ enum VMFixtures {
             activityService: activity,
             notificationScheduler: notifications,
             articleSummarizer: summarizer,
-            pushRegistrar: PushRegistrar(store: MockPushTokenStoring()),
+            pushRegistrar: pushRegistrar,
             contentSourceClient: contentSourceClient,
             persistenceStore: makeIsolatedPersistenceStore())
     }

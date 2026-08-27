@@ -42,6 +42,7 @@ struct ContentView: View {
         .keenOnChange(of: appState.toastTrigger, perform: onToastTriggerChange)
         .keenOnChange(of: scenePhase, perform: onScenePhaseChange)
         .keenOnChange(of: appState.authService.isSignedIn, perform: onIsSignedInChange)
+        .keenOnChange(of: appState.pendingActivityDestination, perform: onPendingActivityDestinationChange)
         .onOpenURL(perform: openDeepLink)
         .onAppear(perform: onAppear)
     }
@@ -57,7 +58,21 @@ struct ContentView: View {
         navigation.home = [.articleDetail(articleURL)]
     }
 
+    /// Opens what a tapped push pointed at. Same shape as the widget's deep
+    /// link, one tab over.
+    private func onPendingActivityDestinationChange() {
+        guard let destination = appState.pendingActivityDestination else {
+            return
+        }
+        appState.pendingActivityDestination = nil
+        appState.currentTab = .community
+        navigation.community = [destination]
+    }
+
     private func onAppear() {
+        // A tap that launched the app sets the destination before this view
+        // exists, and onChange takes a populated value as its baseline.
+        onPendingActivityDestinationChange()
         if let user = appState.authService.user {
             appState.profileService.startListening(for: user)
         }

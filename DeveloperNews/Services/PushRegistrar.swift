@@ -1,5 +1,7 @@
+import FirebaseCore
 import FirebaseMessaging
 import Foundation
+import UserNotifications
 import Observation
 import UIKit
 
@@ -10,8 +12,13 @@ import UIKit
 /// from signing in, in either order. Nothing is written until both are known.
 @Observable
 @MainActor
-final class PushRegistrar: NSObject, MessagingDelegate {
+final class PushRegistrar: NSObject, MessagingDelegate, UNUserNotificationCenterDelegate {
     private let store: any PushTokenStoring
+
+    /// The route fields off a tapped notification, handed to whoever can both
+    /// navigate and say which actors this reader wants to hear from.
+    @ObservationIgnored
+    var onTap: (([String: String]) -> Void)?
 
     @ObservationIgnored
     private var token: String?
@@ -29,12 +36,26 @@ final class PushRegistrar: NSObject, MessagingDelegate {
         super.init()
     }
 
-    /// Starts listening for the token and asks iOS to register with APNs.
+    /// Claims the two callbacks that only arrive once, and only to whoever is
+    /// listening when they do: the FCM token, and the tap on a notification
+    /// that launched the app. Both land before any screen exists, so this has
+    /// to run while the app is still starting up.
+    func installDelegates() {
+        UNUserNotificationCenter.current().delegate = self
+        // A checkout without GoogleService-Info.plist runs with the community
+        // signed out, and asking Messaging for its instance there would take
+        // the launch down with it.
+        guard FirebaseApp.app() != nil else {
+            return
+        }
+        Messaging.messaging().delegate = self
+    }
+
+    /// Asks iOS to register with APNs.
     ///
     /// Only worth asking for once notifications are permitted: APNs issues a
     /// token either way, but without permission nothing it delivers is shown.
     func start() async {
-        Messaging.messaging().delegate = self
         UIApplication.shared.registerForRemoteNotifications()
         await setEnabled(true)
     }
@@ -88,6 +109,29 @@ final class PushRegistrar: NSObject, MessagingDelegate {
             return
         }
         await store.save(token, userId: userId)
+    }
+
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+    ) async {
+        // Only a remote notification carries a route. The daily digest is
+        // scheduled locally with no user info, and would otherwise take the
+        // fallback and land every tap on it in the inbox.
+        guard response.notification.request.trigger is UNPushNotificationTrigger else {
+            return
+        }
+        // Flattened to strings here: the userInfo dictionary itself cannot
+        // cross to the main actor, and strings are all the route is made of.
+        let payload = response.notification.request.content.userInfo
+            .reduce(into: [String: String]()) { result, pair in
+                if let key = pair.key as? String, let value = pair.value as? String {
+                    result[key] = value
+                }
+            }
+        await MainActor.run {
+            onTap?(payload)
+        }
     }
 
     nonisolated func messaging(

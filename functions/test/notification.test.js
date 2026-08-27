@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert");
-const { buildNotification } = require("../notification");
+const { buildNotification, buildRoute } = require("../notification");
 
 test("names the actor and carries the excerpt", () => {
   const message = buildNotification(
@@ -47,4 +47,65 @@ test("an untranslated locale falls back to English", () => {
   assert.strictEqual(
     buildNotification({ kind: "follow", actorName: "Ada" }, "fr-FR").title,
     "Ada started following you");
+});
+
+test("carries the fields the route is rebuilt from", () => {
+  const route = buildRoute({
+    kind: "commentReply",
+    actorId: "actor-1",
+    targetCollection: "feedPosts",
+    targetPostId: "post-9",
+    commentId: "comment-3",
+    preview: "not part of the route",
+  });
+
+  assert.deepStrictEqual(route, {
+    kind: "commentReply",
+    actorId: "actor-1",
+    targetCollection: "feedPosts",
+    targetPostId: "post-9",
+    commentId: "comment-3",
+  });
+});
+
+test("drops the route rather than the notification when it will not fit", () => {
+  const route = buildRoute({
+    kind: "postComment",
+    actorId: "actor-1",
+    storyURL: `https://example.com/${"a".repeat(4000)}`,
+  });
+
+  assert.deepStrictEqual(route, {});
+});
+
+test("clips a name long enough to cost the payload", () => {
+  const message = buildNotification(
+    { kind: "follow", actorName: "a".repeat(500) }, "en");
+
+  assert.ok(message.title.length < 120);
+  assert.ok(message.title.includes("…"));
+});
+
+test("counts the notification against the same budget as the route", () => {
+  const activity = { kind: "postComment", actorId: "actor-1", targetPostId: "p1" };
+
+  assert.deepStrictEqual(
+    buildRoute(activity, { title: "Ada commented on your post", body: "short" }),
+    { kind: "postComment", actorId: "actor-1", targetPostId: "p1" });
+  assert.deepStrictEqual(buildRoute(activity, { title: "t", body: "b".repeat(4000) }), {});
+});
+
+test("clips whole characters, not halves of them", () => {
+  const message = buildNotification(
+    { kind: "follow", actorName: "\u{1F468}\u200D\u{1F469}\u200D\u{1F467}".repeat(80) }, "en");
+
+  assert.ok(message.title.isWellFormed());
+  assert.ok(message.title.includes("\u{1F467}…"));
+});
+
+test("clips text that is one character and a thousand marks on it", () => {
+  const message = buildNotification(
+    { kind: "postComment", actorName: "Ada", preview: `a${"\u0301".repeat(5000)}` }, "en");
+
+  assert.ok(Buffer.byteLength(message.body) < 1000);
 });

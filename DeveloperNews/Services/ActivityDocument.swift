@@ -54,7 +54,12 @@ enum ActivityDocument {
     }
 
     static func parse(_ doc: QueryDocumentSnapshot) -> Activity? {
-        let data = doc.data()
+        activity(from: doc.data(), id: doc.documentID)
+    }
+
+    /// The same fields arrive twice: from the inbox listener, and from the
+    /// push the sender built out of the document. One mapping for both.
+    static func activity(from data: [String: Any], id: String) -> Activity? {
         guard let kind = (data["kind"] as? String).flatMap(ActivityKind.init(rawValue:)),
               let actorId = data["actorId"] as? String
         else { return nil }
@@ -66,7 +71,7 @@ enum ActivityDocument {
         }
 
         return Activity(
-            id: doc.documentID,
+            id: id,
             kind: kind,
             actorId: actorId,
             target: target,

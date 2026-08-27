@@ -180,4 +180,41 @@ import Testing
         #expect(draft?.recipientId == "post-author")
     }
 
+    // The push carries the same field names the inbox document uses, so one
+    // parser answers both. Every value arrives as a string.
+    @Test func aPushPayloadRebuildsTheRoute() {
+        let payload = [
+            "kind": "commentReply",
+            "actorId": "actor-1",
+            "targetCollection": "feedPosts",
+            "targetPostId": "post-9",
+            "commentId": "comment-3",
+        ]
+
+        #expect(ActivityViewModel.destination(forPush: payload, blockedUserIds: [])
+            == .feedPostDetail("post-9", highlightedCommentId: "comment-3"))
+    }
+
+    @Test func aFollowPushOpensTheActor() throws {
+        let activity = try #require(
+            ActivityDocument.activity(from: ["kind": "follow", "actorId": "actor-1"], id: ""))
+
+        #expect(ActivityViewModel.destination(for: activity) == .userProfile(userId: "actor-1"))
+    }
+
+    // A route the sender dropped for being too large arrives as nothing at
+    // all. The tap still came from the inbox, so that is where it lands.
+    @Test func aPayloadWithoutAKindOpensTheInbox() {
+        #expect(ActivityDocument.activity(from: ["actorId": "actor-1"], id: "") == nil)
+        #expect(ActivityViewModel.destination(forPush: [:], blockedUserIds: []) == .activity)
+    }
+
+    // Blocking is kept on the device that did it, so an activity from a blocked
+    // actor can still arrive. The inbox filters it out; the tap has to agree.
+    @Test func aPushFromABlockedActorOpensTheInbox() {
+        let payload = ["kind": "follow", "actorId": "actor-1"]
+
+        #expect(ActivityViewModel.destination(forPush: payload, blockedUserIds: ["actor-1"])
+            == .activity)
+    }
 }
