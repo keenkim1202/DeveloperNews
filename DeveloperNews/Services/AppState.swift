@@ -426,7 +426,14 @@ final class AppState {
         // The switch is persisted across launches and the registrar is not, so
         // it has to be told again. After the user, never before: on the way out
         // this would pair the token back to the account being left.
-        await pushRegistrar.setEnabled(notificationsEnabled)
+        guard notificationsEnabled, userId != nil else {
+            await pushRegistrar.setEnabled(notificationsEnabled)
+            return
+        }
+        // Signing out unregisters the device from APNs, so signing back in has
+        // to ask for it again — pairing a token nothing delivers to is worse
+        // than not pairing, because the switch says alerts are on.
+        await pushRegistrar.start()
     }
 
     func startListeningForActivities() {
