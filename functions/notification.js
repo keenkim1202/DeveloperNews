@@ -56,14 +56,29 @@ function buildNotification(activity, locale) {
  */
 const NAME_LIMIT = 60;
 const PREVIEW_LIMIT = 200;
+// Room for a character in any script, without room for a thousand marks on it.
+const BYTES_PER_CHARACTER = 4;
 
 const GRAPHEMES = new Intl.Segmenter(undefined, { granularity: "grapheme" });
 
 function clip(text, limit) {
   // By grapheme, not by string index: a family emoji is one character to
   // whoever typed it and five code units to slice, which would cut it in half.
-  const clusters = Array.from(GRAPHEMES.segment(text), (part) => part.segment);
-  return clusters.length > limit ? `${clusters.slice(0, limit).join("")}…` : text;
+  // Counting them is not enough on its own — one base letter takes as many
+  // combining marks as someone cares to type, and the bytes are what APNs
+  // measures — so the budget is both.
+  let kept = "";
+  let bytes = 0;
+  let count = 0;
+  for (const { segment } of GRAPHEMES.segment(text)) {
+    bytes += Buffer.byteLength(segment);
+    count += 1;
+    if (count > limit || bytes > limit * BYTES_PER_CHARACTER) {
+      return `${kept}…`;
+    }
+    kept += segment;
+  }
+  return kept;
 }
 
 /**

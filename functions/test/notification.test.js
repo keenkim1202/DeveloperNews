@@ -102,3 +102,10 @@ test("clips whole characters, not halves of them", () => {
   assert.ok(message.title.isWellFormed());
   assert.ok(message.title.includes("\u{1F467}…"));
 });
+
+test("clips text that is one character and a thousand marks on it", () => {
+  const message = buildNotification(
+    { kind: "postComment", actorName: "Ada", preview: `a${"\u0301".repeat(5000)}` }, "en");
+
+  assert.ok(Buffer.byteLength(message.body) < 1000);
+});
