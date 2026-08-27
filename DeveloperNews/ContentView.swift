@@ -70,6 +70,9 @@ struct ContentView: View {
     }
 
     private func onAppear() {
+        // A tap that launched the app sets the destination before this view
+        // exists, and onChange takes a populated value as its baseline.
+        onPendingActivityDestinationChange()
         if let user = appState.authService.user {
             appState.profileService.startListening(for: user)
         }

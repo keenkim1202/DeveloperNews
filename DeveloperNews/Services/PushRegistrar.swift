@@ -1,3 +1,4 @@
+import FirebaseCore
 import FirebaseMessaging
 import Foundation
 import UserNotifications
@@ -39,8 +40,14 @@ final class PushRegistrar: NSObject, MessagingDelegate, UNUserNotificationCenter
     /// that launched the app. Both land before any screen exists, so this has
     /// to run while the app is still starting up.
     func installDelegates() {
-        Messaging.messaging().delegate = self
         UNUserNotificationCenter.current().delegate = self
+        // A checkout without GoogleService-Info.plist runs with the community
+        // signed out, and asking Messaging for its instance there would take
+        // the launch down with it.
+        guard FirebaseApp.app() != nil else {
+            return
+        }
+        Messaging.messaging().delegate = self
     }
 
     /// Asks iOS to register with APNs.
