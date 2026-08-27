@@ -420,6 +420,10 @@ final class AppState {
     /// because a push about an activity is the same event arriving elsewhere.
     func registerForPush(userId: String?) async {
         await pushRegistrar.userChanged(to: userId)
+        // The switch is persisted across launches and the registrar is not, so
+        // it has to be told again. After the user, never before: on the way out
+        // this would pair the token back to the account being left.
+        await pushRegistrar.setEnabled(notificationsEnabled)
     }
 
     func startListeningForActivities() {
