@@ -56,6 +56,7 @@ struct DeveloperNewsApp: App {
         // rather than in a task or an onAppear.
         let state = _appState.wrappedValue
         DailyDigestRefresher.register { state }
+        state?.pushRegistrar.installDelegates()
     }
 
     var body: some Scene {

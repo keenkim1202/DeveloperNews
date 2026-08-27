@@ -34,13 +34,20 @@ final class PushRegistrar: NSObject, MessagingDelegate, UNUserNotificationCenter
         super.init()
     }
 
-    /// Starts listening for the token and asks iOS to register with APNs.
+    /// Claims the two callbacks that only arrive once, and only to whoever is
+    /// listening when they do: the FCM token, and the tap on a notification
+    /// that launched the app. Both land before any screen exists, so this has
+    /// to run while the app is still starting up.
+    func installDelegates() {
+        Messaging.messaging().delegate = self
+        UNUserNotificationCenter.current().delegate = self
+    }
+
+    /// Asks iOS to register with APNs.
     ///
     /// Only worth asking for once notifications are permitted: APNs issues a
     /// token either way, but without permission nothing it delivers is shown.
     func start() async {
-        Messaging.messaging().delegate = self
-        UNUserNotificationCenter.current().delegate = self
         UIApplication.shared.registerForRemoteNotifications()
         await setEnabled(true)
     }
