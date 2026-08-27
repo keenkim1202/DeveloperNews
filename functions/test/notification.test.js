@@ -77,3 +77,20 @@ test("drops the route rather than the notification when it will not fit", () => 
 
   assert.deepStrictEqual(route, {});
 });
+
+test("clips a name long enough to cost the payload", () => {
+  const message = buildNotification(
+    { kind: "follow", actorName: "a".repeat(500) }, "en");
+
+  assert.ok(message.title.length < 120);
+  assert.ok(message.title.includes("…"));
+});
+
+test("counts the notification against the same budget as the route", () => {
+  const activity = { kind: "postComment", actorId: "actor-1", targetPostId: "p1" };
+
+  assert.deepStrictEqual(
+    buildRoute(activity, { title: "Ada commented on your post", body: "short" }),
+    { kind: "postComment", actorId: "actor-1", targetPostId: "p1" });
+  assert.deepStrictEqual(buildRoute(activity, { title: "t", body: "b".repeat(4000) }), {});
+});

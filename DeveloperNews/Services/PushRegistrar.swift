@@ -15,9 +15,10 @@ import UIKit
 final class PushRegistrar: NSObject, MessagingDelegate, UNUserNotificationCenterDelegate {
     private let store: any PushTokenStoring
 
-    /// What a tapped notification points at. Set by whoever can navigate.
+    /// The route fields off a tapped notification, handed to whoever can both
+    /// navigate and say which actors this reader wants to hear from.
     @ObservationIgnored
-    var onTap: ((CommunityTabDestination) -> Void)?
+    var onTap: (([String: String]) -> Void)?
 
     @ObservationIgnored
     private var token: String?
@@ -129,7 +130,7 @@ final class PushRegistrar: NSObject, MessagingDelegate, UNUserNotificationCenter
                 }
             }
         await MainActor.run {
-            onTap?(ActivityViewModel.destination(forPush: payload))
+            onTap?(payload)
         }
     }
 

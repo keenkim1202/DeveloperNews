@@ -67,7 +67,7 @@ exports.sendActivityPush = onDocumentCreated(
     }
 
     const tokens = tokenDocs.docs.map((doc) => doc.id);
-    const route = buildRoute(activity);
+    const route = buildRoute(activity, message);
 
     const response = await getMessaging().sendEachForMulticast({
       tokens,

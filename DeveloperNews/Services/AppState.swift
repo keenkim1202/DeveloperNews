@@ -234,7 +234,10 @@ final class AppState {
                 persistDisabledSourceCategories: { [unowned self] categories in
                     saveDisabledSourceCategories(categories)
                 }))
-        pushRegistrar.onTap = { [unowned self] destination in
+        pushRegistrar.onTap = { [unowned self] payload in
+            let destination = ActivityViewModel.destination(
+                forPush: payload,
+                blockedUserIds: blockedUserIds)
             pendingActivityDestination = destination
         }
         loadPersistedState()

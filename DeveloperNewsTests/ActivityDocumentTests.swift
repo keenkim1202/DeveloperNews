@@ -191,7 +191,7 @@ import Testing
             "commentId": "comment-3",
         ]
 
-        #expect(ActivityViewModel.destination(forPush: payload)
+        #expect(ActivityViewModel.destination(forPush: payload, blockedUserIds: [])
             == .feedPostDetail("post-9", highlightedCommentId: "comment-3"))
     }
 
@@ -206,6 +206,15 @@ import Testing
     // all. The tap still came from the inbox, so that is where it lands.
     @Test func aPayloadWithoutAKindOpensTheInbox() {
         #expect(ActivityDocument.activity(from: ["actorId": "actor-1"], id: "") == nil)
-        #expect(ActivityViewModel.destination(forPush: [:]) == .activity)
+        #expect(ActivityViewModel.destination(forPush: [:], blockedUserIds: []) == .activity)
+    }
+
+    // Blocking is kept on the device that did it, so an activity from a blocked
+    // actor can still arrive. The inbox filters it out; the tap has to agree.
+    @Test func aPushFromABlockedActorOpensTheInbox() {
+        let payload = ["kind": "follow", "actorId": "actor-1"]
+
+        #expect(ActivityViewModel.destination(forPush: payload, blockedUserIds: ["actor-1"])
+            == .activity)
     }
 }

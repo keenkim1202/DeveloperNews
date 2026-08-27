@@ -112,9 +112,17 @@ final class ActivityViewModel {
     /// Where a tapped push opens. Anything that does not name a destination —
     /// a route dropped for being too large, a kind this build does not know —
     /// still came from the inbox, so the inbox is where the tap lands.
-    static func destination(forPush payload: [String: String]) -> CommunityTabDestination {
-        ActivityDocument.activity(from: payload, id: "")
-            .flatMap(destination(for:)) ?? .activity
+    static func destination(
+        forPush payload: [String: String],
+        blockedUserIds: Set<String>,
+    ) -> CommunityTabDestination {
+        guard let activity = ActivityDocument.activity(from: payload, id: ""),
+              !blockedUserIds.contains(activity.actorId),
+              let destination = destination(for: activity)
+        else {
+            return .activity
+        }
+        return destination
     }
 
     static func destination(for activity: Activity) -> CommunityTabDestination? {

@@ -40,12 +40,25 @@ function buildNotification(activity, locale) {
   if (!line) {
     return null;
   }
-  const who = (activity.actorName || "").trim() || strings.someone;
-  const preview = (activity.preview || "").trim();
+  const who = clip((activity.actorName || "").trim(), NAME_LIMIT) || strings.someone;
+  const preview = clip((activity.preview || "").trim(), PREVIEW_LIMIT);
   return {
     title: line(who),
     body: activity.kind === "follow" ? "" : preview,
   };
+}
+
+/**
+ * A display name and an excerpt are both as long as whoever wrote them made
+ * them, and neither is shown past a line or two on the lock screen. Clipping
+ * them keeps the payload under the APNs limit, which rejects the notification
+ * outright rather than trimming it.
+ */
+const NAME_LIMIT = 60;
+const PREVIEW_LIMIT = 200;
+
+function clip(text, limit) {
+  return text.length > limit ? `${text.slice(0, limit)}…` : text;
 }
 
 /**
@@ -57,20 +70,21 @@ const ROUTE_KEYS = ["kind", "actorId", "targetCollection", "targetPostId",
 
 /**
  * APNs rejects a payload over 4 KB outright, and a story URL has no length
- * anyone controls. Past the budget the route is dropped rather than the
- * notification: the reader lands in the inbox, which is where a tap went
- * before there was a route at all.
+ * anyone controls. The title and body count against the same budget, so they
+ * are measured with the route. Past it the route goes and the notification
+ * stays: a tap without one lands in the inbox.
  */
-const ROUTE_BUDGET = 3000;
+const PAYLOAD_BUDGET = 3000;
 
-function buildRoute(activity) {
+function buildRoute(activity, message = {}) {
   const route = {};
   for (const key of ROUTE_KEYS) {
     if (activity[key] != null) {
       route[key] = String(activity[key]);
     }
   }
-  return Buffer.byteLength(JSON.stringify(route)) > ROUTE_BUDGET ? {} : route;
+  const payload = JSON.stringify([message.title, message.body, route]);
+  return Buffer.byteLength(payload) > PAYLOAD_BUDGET ? {} : route;
 }
 
 module.exports = { buildNotification, buildRoute };
