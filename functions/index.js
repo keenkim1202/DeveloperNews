@@ -67,8 +67,19 @@ exports.sendActivityPush = onDocumentCreated(
     }
 
     const tokens = tokenDocs.docs.map((doc) => doc.id);
+    // The same field names the inbox document uses, so the app rebuilds the
+    // route with the parser it already has. FCM data values must be strings.
+    const route = {};
+    for (const key of ["kind", "actorId", "targetCollection", "targetPostId",
+                       "commentId", "storyURL", "storyTitle"]) {
+      if (activity[key] != null) {
+        route[key] = String(activity[key]);
+      }
+    }
+
     const response = await getMessaging().sendEachForMulticast({
       tokens,
+      data: route,
       notification: { title: message.title, body: message.body || undefined },
       apns: { payload: { aps: { sound: "default", badge: 1 } } },
     });

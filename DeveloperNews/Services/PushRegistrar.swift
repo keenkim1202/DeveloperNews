@@ -1,5 +1,6 @@
 import FirebaseMessaging
 import Foundation
+import UserNotifications
 import Observation
 import UIKit
 
@@ -10,8 +11,12 @@ import UIKit
 /// from signing in, in either order. Nothing is written until both are known.
 @Observable
 @MainActor
-final class PushRegistrar: NSObject, MessagingDelegate {
+final class PushRegistrar: NSObject, MessagingDelegate, UNUserNotificationCenterDelegate {
     private let store: any PushTokenStoring
+
+    /// What a tapped notification points at. Set by whoever can navigate.
+    @ObservationIgnored
+    var onTap: ((CommunityTabDestination) -> Void)?
 
     @ObservationIgnored
     private var token: String?
@@ -35,6 +40,7 @@ final class PushRegistrar: NSObject, MessagingDelegate {
     /// token either way, but without permission nothing it delivers is shown.
     func start() async {
         Messaging.messaging().delegate = self
+        UNUserNotificationCenter.current().delegate = self
         UIApplication.shared.registerForRemoteNotifications()
         await setEnabled(true)
     }
@@ -88,6 +94,28 @@ final class PushRegistrar: NSObject, MessagingDelegate {
             return
         }
         await store.save(token, userId: userId)
+    }
+
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+    ) async {
+        // Flattened to strings here: the userInfo dictionary itself cannot
+        // cross to the main actor, and strings are all the route is made of.
+        let payload = response.notification.request.content.userInfo
+            .reduce(into: [String: String]()) { result, pair in
+                if let key = pair.key as? String, let value = pair.value as? String {
+                    result[key] = value
+                }
+            }
+        await MainActor.run {
+            guard let activity = ActivityDocument.activity(from: payload, id: ""),
+                  let destination = ActivityViewModel.destination(for: activity)
+            else {
+                return
+            }
+            onTap?(destination)
+        }
     }
 
     nonisolated func messaging(

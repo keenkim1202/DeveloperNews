@@ -80,7 +80,7 @@ struct ActivityView: View {
 
     @ViewBuilder
     private func row(for activity: Activity) -> some View {
-        if let destination = viewModel.destination(for: activity) {
+        if let destination = ActivityViewModel.destination(for: activity) {
             NavigationLink(value: destination) {
                 ActivityRow(
                     activity: activity,

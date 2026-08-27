@@ -109,7 +109,7 @@ final class ActivityViewModel {
 
     /// Where tapping the row goes. Nil rows are not tappable — a post activity
     /// that lost its target has nothing to open.
-    func destination(for activity: Activity) -> CommunityTabDestination? {
+    static func destination(for activity: Activity) -> CommunityTabDestination? {
         switch activity.kind {
         case .follow:
             return .userProfile(userId: activity.actorId)

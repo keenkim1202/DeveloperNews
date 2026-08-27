@@ -180,4 +180,31 @@ import Testing
         #expect(draft?.recipientId == "post-author")
     }
 
+    // The push carries the same field names the inbox document uses, so one
+    // parser answers both. Every value arrives as a string.
+    @Test func aPushPayloadRebuildsTheRoute() throws {
+        let payload = [
+            "kind": "commentReply",
+            "actorId": "actor-1",
+            "targetCollection": "feedPosts",
+            "targetPostId": "post-9",
+            "commentId": "comment-3",
+        ]
+
+        let activity = try #require(ActivityDocument.activity(from: payload, id: ""))
+
+        #expect(ActivityViewModel.destination(for: activity)
+            == .feedPostDetail("post-9", highlightedCommentId: "comment-3"))
+    }
+
+    @Test func aFollowPushOpensTheActor() throws {
+        let activity = try #require(
+            ActivityDocument.activity(from: ["kind": "follow", "actorId": "actor-1"], id: ""))
+
+        #expect(ActivityViewModel.destination(for: activity) == .userProfile(userId: "actor-1"))
+    }
+
+    @Test func aPayloadWithoutAKindRoutesNowhere() {
+        #expect(ActivityDocument.activity(from: ["actorId": "actor-1"], id: "") == nil)
+    }
 }

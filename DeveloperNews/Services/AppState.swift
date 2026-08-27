@@ -41,6 +41,8 @@ final class AppState {
     var blockedUserIds: Set<String> = []
     var readerTextSize: ReaderTextSize = .standard
     var digestTime: DigestTime = .default
+    /// Where a tapped push wants to go, until `ContentView` takes it.
+    var pendingActivityDestination: CommunityTabDestination?
     var toastMessage: String?
     var toastTrigger: Int = 0
     var hasSeenIntro = false
@@ -232,6 +234,9 @@ final class AppState {
                 persistDisabledSourceCategories: { [unowned self] categories in
                     saveDisabledSourceCategories(categories)
                 }))
+        pushRegistrar.onTap = { [unowned self] destination in
+            pendingActivityDestination = destination
+        }
         loadPersistedState()
     }
 
