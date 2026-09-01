@@ -335,6 +335,22 @@ check("another account reading someone's device tokens", code == 200, False, bod
 code, body = request("DELETE", f"/users/{ALICE}/pushTokens/device-token-1", uid=ALICE)
 check("owner removing their own device token", code == 200, True, body)
 
+# --- comments on a post that is gone ---------------------------------------
+# Deleting a post takes its comments with it, through a trigger that runs once.
+# A comment written after that has nothing to belong to and nothing to remove
+# it, so the write is refused instead.
+code, body = request("PATCH", "/feedPosts/post-deleted/comments/late-alice",
+                     {"fields": {"authorId": s(ALICE), "text": s("late")}}, uid=ALICE)
+check("commenting on a feed post that does not exist", code == 200, False, body)
+
+code, body = request("PATCH", "/posts/post-deleted/comments/late-alice",
+                     {"fields": {"authorId": s(ALICE), "text": s("late")}}, uid=ALICE)
+check("commenting on a community post that does not exist", code == 200, False, body)
+
+code, body = request("PATCH", "/feedPosts/post-alice/comments/late-bob",
+                     {"fields": {"authorId": s(BOB), "text": s("fine")}}, uid=BOB)
+check("commenting on a feed post that is still there", code == 200, True, body)
+
 print()
 print(f"{sum(results)}/{len(results)} passed")
 sys.exit(0 if all(results) else 1)
