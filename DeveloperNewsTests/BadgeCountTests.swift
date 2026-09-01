@@ -8,6 +8,21 @@ import Testing
 // what the reader sees on screen.
 @MainActor
 @Suite struct BadgeCountTests {
+    /// The switch is what the badge hangs off, so every case here starts with
+    /// it on. Turning it off is its own test.
+    private func makeState(
+        auth: MockAuthServicing = MockAuthServicing(),
+        activity: MockActivityServicing = MockActivityServicing(),
+        notifications: MockNotificationScheduling = MockNotificationScheduling(),
+    ) -> AppState {
+        let state = VMFixtures.makeAppState(
+            auth: auth,
+            activity: activity,
+            notifications: notifications)
+        state.notificationsEnabled = true
+        return state
+    }
+
     private func makeActivity(
         id: String,
         actorId: String = "actor-1",
@@ -34,7 +49,7 @@ import Testing
             makeActivity(id: "c", isRead: true),
         ]
         let notifications = MockNotificationScheduling()
-        let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
+        let state = makeState(activity: activity, notifications: notifications)
 
         await state.refreshBadge()
 
@@ -50,7 +65,7 @@ import Testing
             makeActivity(id: "b", actorId: "blocked"),
         ]
         let notifications = MockNotificationScheduling()
-        let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
+        let state = makeState(activity: activity, notifications: notifications)
         state.blockUser("blocked")
 
         await state.refreshBadge()
@@ -64,7 +79,7 @@ import Testing
         let activity = MockActivityServicing()
         activity.activities = [makeActivity(id: "a")]
         let notifications = MockNotificationScheduling()
-        let state = VMFixtures.makeAppState(
+        let state = makeState(
             auth: auth,
             activity: activity,
             notifications: notifications)
@@ -83,7 +98,7 @@ import Testing
         let activity = MockActivityServicing()
         activity.activities = [makeActivity(id: "a")]
         let notifications = MockNotificationScheduling()
-        let state = VMFixtures.makeAppState(
+        let state = makeState(
             auth: auth,
             activity: activity,
             notifications: notifications)
@@ -100,7 +115,7 @@ import Testing
         let activity = MockActivityServicing()
         activity.hasServerSnapshot = false
         let notifications = MockNotificationScheduling()
-        let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
+        let state = makeState(activity: activity, notifications: notifications)
 
         await state.refreshBadge()
 
@@ -113,7 +128,7 @@ import Testing
         let activity = MockActivityServicing()
         activity.hasServerSnapshot = true
         let notifications = MockNotificationScheduling()
-        let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
+        let state = makeState(activity: activity, notifications: notifications)
 
         #expect(state.badgeCount == 0)
 
@@ -127,7 +142,7 @@ import Testing
         auth.userId = "me"
         auth.deleteAccountResult = .success
         let notifications = MockNotificationScheduling()
-        let state = VMFixtures.makeAppState(auth: auth, notifications: notifications)
+        let state = makeState(auth: auth, notifications: notifications)
 
         #expect(await state.deleteCurrentAccount() == .success)
 
@@ -141,7 +156,7 @@ import Testing
         let activity = MockActivityServicing()
         activity.activities = [makeActivity(id: "a")]
         activity.activities.append(makeActivity(id: "b", actorId: "blocked"))
-        let state = VMFixtures.makeAppState(activity: activity)
+        let state = makeState(activity: activity)
         state.blockUser("blocked")
 
         let before = state.badgeSync
@@ -156,7 +171,7 @@ import Testing
     @Test func resumingWithoutASnapshotIsNotAChange() async {
         let activity = MockActivityServicing()
         activity.activities = [makeActivity(id: "a")]
-        let state = VMFixtures.makeAppState(activity: activity)
+        let state = makeState(activity: activity)
 
         #expect(state.badgeSync == state.badgeSync)
     }
@@ -168,10 +183,26 @@ import Testing
         activity.activities = [makeActivity(id: "a")]
         let notifications = MockNotificationScheduling()
         notifications.authorizationResult = .granted
+        // Starts off, which is the whole point: this is the moment the switch
+        // is turned on for the first time.
         let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
 
         await state.setNotificationsEnabled(true)
 
         #expect(notifications.badgeCounts.last == 1)
+    }
+
+    // Turning alerts off leaves the iOS permission granted, so nothing else
+    // keeps the number from coming back on the next snapshot.
+    @Test func turningNotificationsOffClearsItAndKeepsItOff() async {
+        let activity = MockActivityServicing()
+        activity.activities = [makeActivity(id: "a")]
+        let notifications = MockNotificationScheduling()
+        let state = makeState(activity: activity, notifications: notifications)
+
+        await state.setNotificationsEnabled(false)
+        await state.refreshBadge()
+
+        #expect(notifications.badgeCounts == [0])
     }
 }

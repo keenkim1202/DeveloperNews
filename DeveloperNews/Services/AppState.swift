@@ -449,7 +449,9 @@ final class AppState {
     /// than one window sees the window's number — the same one the tab badge
     /// shows them.
     func refreshBadge() async {
-        guard let badgeCount else {
+        // A reader who turned alerts off keeps the iOS permission, so nothing
+        // else stops the number reappearing on their icon.
+        guard notificationsEnabled, let badgeCount else {
             return
         }
         await notificationScheduler.setBadgeCount(badgeCount)
@@ -677,6 +679,7 @@ final class AppState {
             notificationsDeniedBySystem = false
             notificationScheduler.cancelDailyDigest()
             await pushRegistrar.stop()
+            await notificationScheduler.setBadgeCount(0)
             saveNotificationsEnabled()
             return
         }

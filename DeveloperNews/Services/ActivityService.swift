@@ -91,7 +91,11 @@ final class ActivityService: ActivityServicing {
         listenerRegistration = activitiesRef(userId)
             .order(by: "createdAt", descending: true)
             .limit(to: windowLimit)
-            .addSnapshotListener { [weak self] snapshot, error in
+            // Metadata changes included, because the answer that matters here
+            // is often not a change in rows: the cache serves the same
+            // documents the server then confirms, and without this the moment
+            // it stops being the cache is never delivered.
+            .addSnapshotListener(includeMetadataChanges: true) { [weak self] snapshot, error in
                 Task { @MainActor in
                     guard let self else { return }
 
