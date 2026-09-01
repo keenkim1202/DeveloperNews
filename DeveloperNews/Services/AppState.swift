@@ -366,6 +366,7 @@ final class AppState {
             notificationsEnabled = false
             saveNotificationsEnabled()
             await pushRegistrar.stop()
+            await refreshBadge()
             presentError(String(localized: .notificationScheduleFailed))
             return
         }
@@ -418,11 +419,21 @@ final class AppState {
         visibleActivities.count { !$0.isRead }
     }
 
-    /// What the icon should show, or nil while the inbox has yet to answer.
-    /// An empty list means both "nothing unread" and "not loaded yet", and only
-    /// the first of those is a number.
+    /// What the icon should show, or nil while nothing can be said about it.
+    ///
+    /// Signed out, or with alerts switched off, the answer is zero without
+    /// asking the inbox: there is nobody to notify. Otherwise it is what the
+    /// inbox holds, and only once the server has answered — an empty list means
+    /// both "nothing unread" and "not loaded yet", and only the first is a
+    /// number.
     var badgeCount: Int? {
-        activityService.hasServerSnapshot ? unreadActivityCount : nil
+        guard authService.isSignedIn, notificationsEnabled else {
+            return 0
+        }
+        guard activityService.hasServerSnapshot else {
+            return nil
+        }
+        return unreadActivityCount
     }
 
     /// What has to change before the icon is written again.
@@ -449,9 +460,7 @@ final class AppState {
     /// than one window sees the window's number — the same one the tab badge
     /// shows them.
     func refreshBadge() async {
-        // A reader who turned alerts off keeps the iOS permission, so nothing
-        // else stops the number reappearing on their icon.
-        guard notificationsEnabled, let badgeCount else {
+        guard let badgeCount else {
             return
         }
         await notificationScheduler.setBadgeCount(badgeCount)
@@ -546,11 +555,11 @@ final class AppState {
         }
 
         let result = await authService.deleteAccount()
-        if case .success = result {
-            // The listener stopped before the inbox went, so no count change is
-            // coming to clear this. The account it belonged to no longer exists.
-            await notificationScheduler.setBadgeCount(0)
-        }
+        // The listener stopped before the inbox went, so no count change is
+        // coming to clear this. Every outcome here except an outright failure
+        // leaves the reader signed out, including the one that asks them to
+        // sign in again.
+        await refreshBadge()
         return result
     }
 
@@ -578,15 +587,11 @@ final class AppState {
         await pushRegistrar.stop()
         profileService.stopListening()
         authService.signOut()
-        // The inbox belonged to the account that just left. Leaving its count
-        // on the icon offers a number nobody signed in can open.
-        //
-        // A sign-out can fail, and one that does leaves the reader where they
-        // were, unread rows and all.
-        guard authService.userId == nil else {
-            return
-        }
-        await notificationScheduler.setBadgeCount(0)
+        // Asked rather than assumed: a sign-out can fail and leave the reader
+        // where they were, and a successful one is confirmed by a listener that
+        // has not necessarily run yet. Either way the answer comes from the
+        // state, and the same call runs again when the state settles.
+        await refreshBadge()
     }
 
     func toggleSaved(_ item: ContentItem) {
@@ -679,8 +684,8 @@ final class AppState {
             notificationsDeniedBySystem = false
             notificationScheduler.cancelDailyDigest()
             await pushRegistrar.stop()
-            await notificationScheduler.setBadgeCount(0)
             saveNotificationsEnabled()
+            await refreshBadge()
             return
         }
 

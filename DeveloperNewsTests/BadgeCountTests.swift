@@ -15,6 +15,10 @@ import Testing
         activity: MockActivityServicing = MockActivityServicing(),
         notifications: MockNotificationScheduling = MockNotificationScheduling(),
     ) -> AppState {
+        auth.isSignedIn = true
+        if auth.userId == nil {
+            auth.userId = "me"
+        }
         let state = VMFixtures.makeAppState(
             auth: auth,
             activity: activity,
@@ -89,9 +93,9 @@ import Testing
         #expect(notifications.badgeCounts == [0])
     }
 
-    // A sign-out that failed leaves the reader signed in. Their unread rows are
-    // still theirs to see.
-    @Test func aFailedSignOutLeavesItAlone() async {
+    // A sign-out that failed leaves the reader signed in, and the count they
+    // still have every right to see.
+    @Test func aFailedSignOutKeepsTheCount() async {
         let auth = MockAuthServicing()
         auth.userId = "me"
         auth.signOutFails = true
@@ -105,7 +109,7 @@ import Testing
 
         await state.signOut()
 
-        #expect(notifications.badgeCounts.isEmpty)
+        #expect(notifications.badgeCounts == [1])
     }
 
     // An inbox that has not answered yet is an empty list, the same shape as an
@@ -185,7 +189,13 @@ import Testing
         notifications.authorizationResult = .granted
         // Starts off, which is the whole point: this is the moment the switch
         // is turned on for the first time.
-        let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
+        let auth = MockAuthServicing()
+        auth.isSignedIn = true
+        auth.userId = "me"
+        let state = VMFixtures.makeAppState(
+            auth: auth,
+            activity: activity,
+            notifications: notifications)
 
         await state.setNotificationsEnabled(true)
 
@@ -203,6 +213,48 @@ import Testing
         await state.setNotificationsEnabled(false)
         await state.refreshBadge()
 
-        #expect(notifications.badgeCounts == [0])
+        #expect(!notifications.badgeCounts.isEmpty)
+        #expect(notifications.badgeCounts.allSatisfy { $0 == 0 })
+    }
+
+    // Signing out is confirmed by a listener that has not necessarily run when
+    // the call returns, so the answer is asked for again rather than assumed.
+    @Test func aSignedOutReaderHasNothingToCount() async {
+        let auth = MockAuthServicing()
+        let activity = MockActivityServicing()
+        activity.activities = [makeActivity(id: "a")]
+        let state = makeState(auth: auth, activity: activity)
+        auth.isSignedIn = false
+
+        #expect(state.badgeCount == 0)
+    }
+
+    // Rescheduling the digest can fail, and turns the switch off when it does.
+    // The icon has to follow the switch.
+    @Test func aFailedRescheduleTakesTheBadgeWithTheSwitch() async {
+        let activity = MockActivityServicing()
+        activity.activities = [makeActivity(id: "a")]
+        let notifications = MockNotificationScheduling()
+        let state = makeState(activity: activity, notifications: notifications)
+        notifications.scheduleSucceeds = false
+
+        await state.setDigestTime(DigestTime(minuteOfDay: 8 * 60))
+
+        #expect(state.notificationsEnabled == false)
+        #expect(notifications.badgeCounts.last == 0)
+    }
+
+    // Deletion that asks for a fresh sign-in has already signed the reader out.
+    @Test func aDeletionThatNeedsReauthenticationStillClearsIt() async {
+        let auth = MockAuthServicing()
+        auth.userId = "me"
+        auth.deleteAccountResult = .requiresRecentLogin
+        let notifications = MockNotificationScheduling()
+        let state = makeState(auth: auth, notifications: notifications)
+        auth.isSignedIn = false
+
+        #expect(await state.deleteCurrentAccount() == .requiresRecentLogin)
+
+        #expect(notifications.badgeCounts.last == 0)
     }
 }

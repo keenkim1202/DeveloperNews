@@ -150,6 +150,9 @@ struct ContentView: View {
             appState.stopListeningForActivities()
             Task {
                 await appState.registerForPush(userId: nil)
+                // The inbox belonged to whoever just left, and its listener has
+                // stopped, so no count is coming to take the number off.
+                await appState.refreshBadge()
             }
         }
     }
