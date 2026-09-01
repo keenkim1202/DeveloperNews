@@ -59,10 +59,9 @@ struct ContentView: View {
         navigation.home = [.articleDetail(articleURL)]
     }
 
-    /// The push sets the icon badge while the app is closed. Once the inbox
-    /// answers, it is the truth: it leaves out the rows this reader blocked,
-    /// which no server can count for them. Every snapshot is worth acting on,
-    /// including one that says the number has not moved.
+    /// Once the inbox answers it outranks the push, which cannot leave out the
+    /// rows this reader blocked. Every snapshot counts, including one that says
+    /// the number has not moved.
     private func onBadgeSyncChange() {
         Task {
             await appState.refreshBadge()

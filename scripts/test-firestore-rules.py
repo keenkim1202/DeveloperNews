@@ -336,9 +336,8 @@ code, body = request("DELETE", f"/users/{ALICE}/pushTokens/device-token-1", uid=
 check("owner removing their own device token", code == 200, True, body)
 
 # --- comments on a post that is gone ---------------------------------------
-# Deleting a post takes its comments with it, through a trigger that runs once.
-# A comment written after that has nothing to belong to and nothing to remove
-# it, so the write is refused instead.
+# The trigger that takes a post's comments with it runs once. A comment written
+# after it has nothing to belong to and nothing to remove it, so it is refused.
 code, body = request("PATCH", "/feedPosts/post-deleted/comments/late-alice",
                      {"fields": {"authorId": s(ALICE), "text": s("late")}}, uid=ALICE)
 check("commenting on a feed post that does not exist", code == 200, False, body)

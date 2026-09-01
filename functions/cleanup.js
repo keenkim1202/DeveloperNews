@@ -1,21 +1,17 @@
 "use strict";
 
-// What a deleted post leaves behind, and how much of it goes at a time. Kept
-// apart from the trigger so the paging can be read and tested without
-// Firestore: it is the only part with a loop in it.
+// Kept apart from the trigger so the paging can be tested without Firestore:
+// it is the only part of this with a loop in it.
 
-// One page of stale rows at a time, asking again until a page comes back
-// short. A post nobody touched costs one empty query.
+// One page at a time, asked again until a page comes back short. A post nobody
+// touched costs one empty query.
 const PAGE = 300;
 
 /**
- * Clears what deleting a post does not: the comments under it, which Firestore
- * does not take with the document, and the notifications about it sitting in
- * other people's inboxes.
- *
- * Those rows are deletable by their recipient and by their actor, and whoever
- * deleted the post is usually neither. A client cannot even find them — an
- * inbox is readable only by its owner.
+ * Clears what deleting a post does not: the comments Firestore leaves under it,
+ * and the notifications about it in other people's inboxes. A client cannot
+ * reach those — an inbox is readable only by its owner, who is rarely the one
+ * deleting the post.
  */
 async function cleanUpAfterPost(db, collection, postId) {
   await db.recursiveDelete(db.collection(collection).doc(postId));
