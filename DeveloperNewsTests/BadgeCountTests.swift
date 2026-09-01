@@ -123,4 +123,18 @@ import Testing
 
         #expect(notifications.badgeCounts == [1, 1])
     }
+
+    // Until permission is granted, iOS refuses the badge. Granting it is the
+    // last moment anything asks for the count, so the switch has to ask again.
+    @Test func turningNotificationsOnWritesTheCount() async {
+        let activity = MockActivityServicing()
+        activity.activities = [makeActivity(id: "a")]
+        let notifications = MockNotificationScheduling()
+        notifications.authorizationResult = .granted
+        let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
+
+        await state.setNotificationsEnabled(true)
+
+        #expect(notifications.badgeCounts.last == 1)
+    }
 }

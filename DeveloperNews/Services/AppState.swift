@@ -684,6 +684,9 @@ final class AppState {
         }
 
         saveNotificationsEnabled()
+        // Every earlier attempt at the badge was refused for want of permission,
+        // and the count has not moved since, so nothing else is going to ask.
+        await refreshBadge()
     }
 
     /// Publishes the current top stories to the widget's shared container.
