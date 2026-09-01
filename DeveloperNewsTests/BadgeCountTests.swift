@@ -109,4 +109,18 @@ import Testing
 
         #expect(notifications.badgeCounts == [0])
     }
+
+    // Coming back to the foreground writes the badge again even when the count
+    // has not moved: the push counted a blocked row this side leaves out.
+    @Test func returningToTheAppWritesItAgain() async {
+        let activity = MockActivityServicing()
+        activity.activities = [makeActivity(id: "a")]
+        let notifications = MockNotificationScheduling()
+        let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
+
+        await state.refreshBadge()
+        await state.refreshBadge()
+
+        #expect(notifications.badgeCounts == [1, 1])
+    }
 }

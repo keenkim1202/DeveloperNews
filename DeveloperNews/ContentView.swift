@@ -133,6 +133,11 @@ struct ContentView: View {
             await appState.refreshIfStale(maxAge: AppState.feedStaleThreshold)
             appState.refreshWidgetSnapshot()
             await appState.refreshDailyDigest()
+            // A push that landed while the app sat in the background counted a
+            // row this reader blocked, which leaves the filtered count the same
+            // and nothing to notice. Coming back to the foreground is when the
+            // icon is worth correcting whether or not the number moved.
+            await appState.refreshBadge()
         }
     }
 
