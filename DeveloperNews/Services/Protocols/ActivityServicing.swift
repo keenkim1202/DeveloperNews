@@ -10,9 +10,10 @@ protocol ActivityServicing {
     /// Whether the inbox holds rows older than the ones currently loaded.
     var canLoadMore: Bool { get }
 
-    /// Whether a snapshot has arrived yet. An empty inbox and one that has not
-    /// answered look the same in `activities`, and they are not the same thing.
-    var hasLoaded: Bool { get }
+    /// Whether the server has answered yet. An empty inbox, one that has not
+    /// answered, and one served from a stale cache all look the same in
+    /// `activities`, and they are not the same thing.
+    var hasServerSnapshot: Bool { get }
 
     /// Counts snapshots, so a listener that answers without changing anything
     /// is still something a caller can notice.

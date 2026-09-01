@@ -8,10 +8,11 @@ final class ActivityService: ActivityServicing {
     private(set) var errorMessage: String?
     private(set) var canLoadMore = false
 
-    /// Whether a snapshot has arrived. Before the first one there is no inbox,
-    /// only an empty list that has not been filled in yet — a difference that
-    /// matters to anything reading the unread count.
-    private(set) var hasLoaded = false
+    /// Whether the server has answered. Firestore serves the cache first, and
+    /// a cached inbox can be older than the push that arrived while the app was
+    /// closed — old enough to be empty. Rows from the cache are still shown;
+    /// they are just not evidence of what is unread.
+    private(set) var hasServerSnapshot = false
 
     /// Bumped by every snapshot, including one that changes nothing. It is the
     /// only evidence that the rows in memory are as new as the server's, which
@@ -67,7 +68,7 @@ final class ActivityService: ActivityServicing {
         pendingDeletions = []
         windowLimit = Self.windowStep
         canLoadMore = false
-        hasLoaded = false
+        hasServerSnapshot = false
     }
 
     /// Widens the window by a page. A listener carries its limit, so there is
@@ -100,7 +101,9 @@ final class ActivityService: ActivityServicing {
                     }
 
                     let documents = snapshot?.documents ?? []
-                    self.hasLoaded = true
+                    if let snapshot, !snapshot.metadata.isFromCache {
+                        self.hasServerSnapshot = true
+                    }
                     self.snapshotToken += 1
                     // A full window is the only evidence there is more behind
                     // it; a short one means the query reached the end.

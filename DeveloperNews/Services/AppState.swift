@@ -422,7 +422,7 @@ final class AppState {
     /// An empty list means both "nothing unread" and "not loaded yet", and only
     /// the first of those is a number.
     var badgeCount: Int? {
-        activityService.hasLoaded ? unreadActivityCount : nil
+        activityService.hasServerSnapshot ? unreadActivityCount : nil
     }
 
     /// What has to change before the icon is written again.

@@ -98,7 +98,7 @@ import Testing
     // the push had right.
     @Test func anInboxThatHasNotAnsweredIsNotACountOfZero() async {
         let activity = MockActivityServicing()
-        activity.hasLoaded = false
+        activity.hasServerSnapshot = false
         let notifications = MockNotificationScheduling()
         let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
 
@@ -111,7 +111,7 @@ import Testing
     // badge a push left behind has to come off for it.
     @Test func anEmptyAnswerIsStillWorthWriting() async {
         let activity = MockActivityServicing()
-        activity.hasLoaded = true
+        activity.hasServerSnapshot = true
         let notifications = MockNotificationScheduling()
         let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
 

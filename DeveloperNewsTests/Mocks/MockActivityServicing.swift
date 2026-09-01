@@ -13,7 +13,7 @@ final class MockActivityServicing: ActivityServicing {
     private(set) var deletedActivityIds: [[Activity.ID]] = []
     private(set) var loadMoreCallCount = 0
     var canLoadMore = false
-    var hasLoaded = true
+    var hasServerSnapshot = true
     var snapshotToken = 0
     var deleteInboxError: (any Error)?
 
