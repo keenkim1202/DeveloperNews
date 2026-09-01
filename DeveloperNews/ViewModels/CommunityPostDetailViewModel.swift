@@ -103,7 +103,8 @@ final class CommunityPostDetailViewModel {
     }
 
     func deleteComment(_ comment: CommunityComment) async {
-        await commentService.deleteComment(comment)
+        await commentService.deleteComment(comment, postAuthorId: currentPost.authorId)
+        await appState.purgeActivities(aboutComment: comment.id)
     }
 
     func reportComment(
@@ -152,7 +153,9 @@ final class CommunityPostDetailViewModel {
         await community.deletePost(currentPost)
         if let message = community.errorMessage {
             appState.presentError(message)
+            return
         }
+        await appState.purgeActivities(aboutPost: currentPost.id)
     }
 
     func submitReport(_ reason: ReportReason) async {

@@ -85,7 +85,8 @@ final class FeedPostDetailViewModel {
     }
 
     func deleteComment(_ comment: CommunityComment) async {
-        await commentService.deleteComment(comment)
+        await commentService.deleteComment(comment, postAuthorId: currentPost.authorId)
+        await appState.purgeActivities(aboutComment: comment.id)
     }
 
     func reportComment(
@@ -141,6 +142,7 @@ final class FeedPostDetailViewModel {
             appState.presentError(message)
             return false
         }
+        await appState.purgeActivities(aboutPost: currentPost.id)
         return true
     }
 

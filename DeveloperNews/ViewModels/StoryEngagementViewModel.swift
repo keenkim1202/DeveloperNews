@@ -142,7 +142,9 @@ final class StoryEngagementViewModel {
     }
 
     func deleteComment(_ comment: CommunityComment) async {
-        await commentService.deleteComment(comment)
+        // A story is nobody's post, the same as when the comment was written.
+        await commentService.deleteComment(comment, postAuthorId: "")
+        await appState.purgeActivities(aboutComment: comment.id)
     }
 
     func reportComment(

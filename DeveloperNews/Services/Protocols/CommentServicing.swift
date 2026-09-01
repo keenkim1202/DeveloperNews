@@ -19,7 +19,7 @@ protocol CommentServicing {
         parentCommentId: String?,
     ) async
 
-    func deleteComment(_ comment: CommunityComment) async
+    func deleteComment(_ comment: CommunityComment, postAuthorId: String) async
 
     func toggleCommentLike(
         _ comment: CommunityComment,
