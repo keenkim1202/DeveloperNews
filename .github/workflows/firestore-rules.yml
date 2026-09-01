@@ -91,8 +91,13 @@ jobs:
       # Rules land ahead of the build that ships them, so one that requires a
       # field the released app does not write yet breaks that app. Keep rules
       # changes backward compatible with what is in the store.
-      # Indexes alongside the rules: the cleanup trigger queries activities
-      # across every inbox, and a collection-group query without its index
-      # fails at the moment it is needed rather than at deploy time.
-      - name: Deploy the rules and indexes
-        run: firebase deploy --only firestore:rules,firestore:indexes --non-interactive
+      - name: Deploy the rules
+        run: firebase deploy --only firestore:rules --non-interactive
+
+      # Separately, and after: an index needs a role the rules do not, and a
+      # deploy that does both leaves the rules unreleased when it is missing.
+      # The cleanup trigger queries activities across every inbox, and a
+      # collection-group query without its index fails when it is used rather
+      # than when it is deployed.
+      - name: Deploy the indexes
+        run: firebase deploy --only firestore:indexes --non-interactive
