@@ -42,6 +42,7 @@ struct ContentView: View {
         .keenOnChange(of: appState.toastTrigger, perform: onToastTriggerChange)
         .keenOnChange(of: scenePhase, perform: onScenePhaseChange)
         .keenOnChange(of: appState.authService.isSignedIn, perform: onIsSignedInChange)
+        .keenOnChange(of: appState.badgeSync, perform: onBadgeSyncChange)
         .keenOnChange(of: appState.pendingActivityDestination, perform: onPendingActivityDestinationChange)
         .onOpenURL(perform: openDeepLink)
         .onAppear(perform: onAppear)
@@ -56,6 +57,16 @@ struct ContentView: View {
         }
         appState.currentTab = .home
         navigation.home = [.articleDetail(articleURL)]
+    }
+
+    /// The push sets the icon badge while the app is closed. Once the inbox
+    /// answers, it is the truth: it leaves out the rows this reader blocked,
+    /// which no server can count for them. Every snapshot is worth acting on,
+    /// including one that says the number has not moved.
+    private func onBadgeSyncChange() {
+        Task {
+            await appState.refreshBadge()
+        }
     }
 
     /// Opens what a tapped push pointed at. Same shape as the widget's deep
@@ -83,6 +94,9 @@ struct ContentView: View {
         }
         appState.communityService.startListening()
         appState.startListeningForActivities()
+        Task {
+            await appState.refreshBadge()
+        }
         Task {
             await appState.processPendingSharedItems()
         }
@@ -136,6 +150,9 @@ struct ContentView: View {
             appState.stopListeningForActivities()
             Task {
                 await appState.registerForPush(userId: nil)
+                // The inbox belonged to whoever just left, and its listener has
+                // stopped, so no count is coming to take the number off.
+                await appState.refreshBadge()
             }
         }
     }

@@ -8,6 +8,17 @@ final class ActivityService: ActivityServicing {
     private(set) var errorMessage: String?
     private(set) var canLoadMore = false
 
+    /// Whether the server has answered. Firestore serves the cache first, and
+    /// a cached inbox can be older than the push that arrived while the app was
+    /// closed — old enough to be empty. Rows from the cache are still shown;
+    /// they are just not evidence of what is unread.
+    private(set) var hasServerSnapshot = false
+
+    /// Bumped by every snapshot, including one that changes nothing. It is the
+    /// only evidence that the rows in memory are as new as the server's, which
+    /// a count on its own cannot show.
+    private(set) var snapshotToken = 0
+
     /// How much of the inbox one window holds, and how much each `loadMore`
     /// adds to it.
     private static let windowStep = 100
@@ -57,6 +68,7 @@ final class ActivityService: ActivityServicing {
         pendingDeletions = []
         windowLimit = Self.windowStep
         canLoadMore = false
+        hasServerSnapshot = false
     }
 
     /// Widens the window by a page. A listener carries its limit, so there is
@@ -79,7 +91,11 @@ final class ActivityService: ActivityServicing {
         listenerRegistration = activitiesRef(userId)
             .order(by: "createdAt", descending: true)
             .limit(to: windowLimit)
-            .addSnapshotListener { [weak self] snapshot, error in
+            // Metadata changes included, because the answer that matters here
+            // is often not a change in rows: the cache serves the same
+            // documents the server then confirms, and without this the moment
+            // it stops being the cache is never delivered.
+            .addSnapshotListener(includeMetadataChanges: true) { [weak self] snapshot, error in
                 Task { @MainActor in
                     guard let self else { return }
 
@@ -89,6 +105,10 @@ final class ActivityService: ActivityServicing {
                     }
 
                     let documents = snapshot?.documents ?? []
+                    if let snapshot, !snapshot.metadata.isFromCache {
+                        self.hasServerSnapshot = true
+                    }
+                    self.snapshotToken += 1
                     // A full window is the only evidence there is more behind
                     // it; a short one means the query reached the end.
                     self.canLoadMore = documents.count >= self.windowLimit

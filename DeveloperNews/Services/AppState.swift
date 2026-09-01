@@ -366,6 +366,7 @@ final class AppState {
             notificationsEnabled = false
             saveNotificationsEnabled()
             await pushRegistrar.stop()
+            await refreshBadge()
             presentError(String(localized: .notificationScheduleFailed))
             return
         }
@@ -416,6 +417,53 @@ final class AppState {
 
     var unreadActivityCount: Int {
         visibleActivities.count { !$0.isRead }
+    }
+
+    /// What the icon should show, or nil while nothing can be said about it.
+    ///
+    /// Signed out, or with alerts switched off, the answer is zero without
+    /// asking the inbox: there is nobody to notify. Otherwise it is what the
+    /// inbox holds, and only once the server has answered — an empty list means
+    /// both "nothing unread" and "not loaded yet", and only the first is a
+    /// number.
+    var badgeCount: Int? {
+        guard authService.isSignedIn, notificationsEnabled else {
+            return 0
+        }
+        guard activityService.hasServerSnapshot else {
+            return nil
+        }
+        return unreadActivityCount
+    }
+
+    /// What has to change before the icon is written again.
+    ///
+    /// The count alone is not enough: a push that counted a row this reader
+    /// blocked leaves it exactly where it was. The snapshot alone is not
+    /// enough either, because a row swiped away never reaches the server before
+    /// it leaves the list. Resuming is not evidence of either — the rows in
+    /// memory can be older than the badge the push just wrote.
+    var badgeSync: BadgeSync? {
+        guard let badgeCount else {
+            return nil
+        }
+        return BadgeSync(snapshot: activityService.snapshotToken, count: badgeCount)
+    }
+
+    /// Puts the inbox count on the app icon.
+    ///
+    /// The push carries a count of its own for while the app is closed, and it
+    /// counts rows this reader has blocked, because a server has no way to know
+    /// who they are. This is the number that agrees with what is on screen.
+    ///
+    /// Only what the window holds is counted, so a reader with more unread rows
+    /// than one window sees the window's number — the same one the tab badge
+    /// shows them.
+    func refreshBadge() async {
+        guard let badgeCount else {
+            return
+        }
+        await notificationScheduler.setBadgeCount(badgeCount)
     }
 
     /// Pairs this device's push token with the signed-in reader, and unpairs it
@@ -506,7 +554,13 @@ final class AppState {
             return .failed
         }
 
-        return await authService.deleteAccount()
+        let result = await authService.deleteAccount()
+        // The listener stopped before the inbox went, so no count change is
+        // coming to clear this. Every outcome here except an outright failure
+        // leaves the reader signed out, including the one that asks them to
+        // sign in again.
+        await refreshBadge()
+        return result
     }
 
     func updateDisplayName(_ name: String) async {
@@ -533,6 +587,11 @@ final class AppState {
         await pushRegistrar.stop()
         profileService.stopListening()
         authService.signOut()
+        // Asked rather than assumed: a sign-out can fail and leave the reader
+        // where they were, and a successful one is confirmed by a listener that
+        // has not necessarily run yet. Either way the answer comes from the
+        // state, and the same call runs again when the state settles.
+        await refreshBadge()
     }
 
     func toggleSaved(_ item: ContentItem) {
@@ -626,6 +685,7 @@ final class AppState {
             notificationScheduler.cancelDailyDigest()
             await pushRegistrar.stop()
             saveNotificationsEnabled()
+            await refreshBadge()
             return
         }
 
@@ -652,6 +712,9 @@ final class AppState {
         }
 
         saveNotificationsEnabled()
+        // Every earlier attempt at the badge was refused for want of permission,
+        // and the count has not moved since, so nothing else is going to ask.
+        await refreshBadge()
     }
 
     /// Publishes the current top stories to the widget's shared container.

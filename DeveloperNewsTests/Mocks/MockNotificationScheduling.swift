@@ -12,6 +12,7 @@ final class MockNotificationScheduling: NotificationScheduling {
     private(set) var scheduledBodies: [String] = []
     private(set) var scheduledTimes: [DigestTime] = []
     private(set) var cancelCount = 0
+    private(set) var badgeCounts: [Int] = []
 
     func authorization() async -> NotificationAuthorization {
         currentAuthorization
@@ -37,5 +38,9 @@ final class MockNotificationScheduling: NotificationScheduling {
 
     func cancelDailyDigest() {
         cancelCount += 1
+    }
+
+    func setBadgeCount(_ count: Int) async {
+        badgeCounts.append(count)
     }
 }

@@ -35,6 +35,12 @@ final class NotificationScheduler: NotificationScheduling {
         }
     }
 
+    func setBadgeCount(_ count: Int) async {
+        // Refused when notifications were never permitted, which is a badge
+        // nobody can see rather than a failure worth reporting.
+        try? await center.setBadgeCount(count)
+    }
+
     @discardableResult
     func scheduleDailyDigest(
         body: String,

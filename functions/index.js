@@ -68,12 +68,33 @@ exports.sendActivityPush = onDocumentCreated(
 
     const tokens = tokenDocs.docs.map((doc) => doc.id);
     const route = buildRoute(activity, message);
+    // What the icon shows while the app is closed. Counted rather than
+    // incremented: a push that never arrived would otherwise leave the number
+    // wrong for good.
+    //
+    // Only ever sent by a new activity, so a count that falls while every
+    // device is closed — read on one phone, an actor withdrawing a like — does
+    // not reach the others until one of them is opened. Pushing that would mean
+    // a trigger on every write to every inbox, and marking an inbox read is two
+    // hundred writes in one batch. That is a lot of invocations to buy a number
+    // on a device nobody is holding.
+    //
+    // Read as late as possible and still not ordered: two activities for the
+    // same reader within the same moment can be counted by one invocation and
+    // delivered by the other, leaving the icon off by one until the app is
+    // opened. Ordering it would mean serialising every push for every reader,
+    // which is a lot of throughput to spend on a number the app corrects on
+    // sight — it recounts from the inbox, including the actors this reader has
+    // blocked, which no server can leave out for them.
+    const unread = await db
+      .collection("users").doc(recipientId)
+      .collection("activities").where("isRead", "==", false).count().get();
 
     const response = await getMessaging().sendEachForMulticast({
       tokens,
       data: route,
       notification: { title: message.title, body: message.body || undefined },
-      apns: { payload: { aps: { sound: "default", badge: 1 } } },
+      apns: { payload: { aps: { sound: "default", badge: unread.data().count } } },
     });
 
     // Tokens the device no longer answers to are removed here rather than left

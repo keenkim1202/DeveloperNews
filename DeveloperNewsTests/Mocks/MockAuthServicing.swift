@@ -66,9 +66,18 @@ final class MockAuthServicing: AuthServicing {
         sendPasswordResetResult
     }
 
+    /// Set to make `signOut` fail the way the live service does — the error is
+    /// reported and the session stays exactly where it was.
+    var signOutFails = false
+
     func signOut() {
         didSignOut = true
+        guard !signOutFails else {
+            errorMessage = "boom"
+            return
+        }
         isSignedIn = false
+        userId = nil
     }
 
     func setErrorMessage(_ message: String?) {
