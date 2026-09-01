@@ -6,6 +6,7 @@ const { getFirestore } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 const { buildNotification, buildRoute } = require("./notification");
 const { cleanUpAfterPost } = require("./cleanup");
+const { countUnread } = require("./badge");
 
 initializeApp();
 
@@ -78,15 +79,17 @@ exports.sendActivityPush = onDocumentCreated(
     // hundred. And two pushes to the same reader in the same moment can be
     // counted by one invocation and delivered by the other, because ordering
     // them means serialising every push for everyone.
-    const unread = await db
-      .collection("users").doc(recipientId)
-      .collection("activities").where("isRead", "==", false).count().get();
+    const unread = await countUnread(db, recipientId);
 
     const response = await getMessaging().sendEachForMulticast({
       tokens,
       data: route,
       notification: { title: message.title, body: message.body || undefined },
-      apns: { payload: { aps: { sound: "default", badge: unread.data().count } } },
+      apns: {
+        payload: {
+          aps: { sound: "default", ...(unread === null ? {} : { badge: unread }) },
+        },
+      },
     });
 
     // Tokens the device no longer answers to are removed here rather than left
