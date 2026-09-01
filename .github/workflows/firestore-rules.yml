@@ -14,6 +14,9 @@ on:
     paths:
       - firestore.rules
       - firestore.indexes.json
+      # A change to how the deploy runs is a reason to run it: the last one
+      # left the rules unreleased, and nothing else here would notice.
+      - .github/workflows/firestore-rules.yml
   workflow_dispatch:
 
 concurrency:
