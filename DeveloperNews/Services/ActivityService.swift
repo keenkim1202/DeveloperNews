@@ -13,6 +13,11 @@ final class ActivityService: ActivityServicing {
     /// matters to anything reading the unread count.
     private(set) var hasLoaded = false
 
+    /// Bumped by every snapshot, including one that changes nothing. It is the
+    /// only evidence that the rows in memory are as new as the server's, which
+    /// a count on its own cannot show.
+    private(set) var snapshotToken = 0
+
     /// How much of the inbox one window holds, and how much each `loadMore`
     /// adds to it.
     private static let windowStep = 100
@@ -96,6 +101,7 @@ final class ActivityService: ActivityServicing {
 
                     let documents = snapshot?.documents ?? []
                     self.hasLoaded = true
+                    self.snapshotToken += 1
                     // A full window is the only evidence there is more behind
                     // it; a short one means the query reached the end.
                     self.canLoadMore = documents.count >= self.windowLimit

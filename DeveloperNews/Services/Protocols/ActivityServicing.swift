@@ -14,6 +14,10 @@ protocol ActivityServicing {
     /// answered look the same in `activities`, and they are not the same thing.
     var hasLoaded: Bool { get }
 
+    /// Counts snapshots, so a listener that answers without changing anything
+    /// is still something a caller can notice.
+    var snapshotToken: Int { get }
+
     /// Drops the last failure once the screen has shown it.
     func clearError()
 

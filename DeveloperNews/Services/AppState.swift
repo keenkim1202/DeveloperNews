@@ -425,6 +425,20 @@ final class AppState {
         activityService.hasLoaded ? unreadActivityCount : nil
     }
 
+    /// What has to change before the icon is written again.
+    ///
+    /// The count alone is not enough: a push that counted a row this reader
+    /// blocked leaves it exactly where it was. The snapshot alone is not
+    /// enough either, because a row swiped away never reaches the server before
+    /// it leaves the list. Resuming is not evidence of either — the rows in
+    /// memory can be older than the badge the push just wrote.
+    var badgeSync: BadgeSync? {
+        guard let badgeCount else {
+            return nil
+        }
+        return BadgeSync(snapshot: activityService.snapshotToken, count: badgeCount)
+    }
+
     /// Puts the inbox count on the app icon.
     ///
     /// The push carries a count of its own for while the app is closed, and it

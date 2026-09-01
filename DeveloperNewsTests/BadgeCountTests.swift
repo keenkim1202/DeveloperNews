@@ -110,18 +110,31 @@ import Testing
         #expect(notifications.badgeCounts == [0])
     }
 
-    // Coming back to the foreground writes the badge again even when the count
-    // has not moved: the push counted a blocked row this side leaves out.
-    @Test func returningToTheAppWritesItAgain() async {
+    // A push that counted a blocked row leaves the filtered number where it
+    // was, so the number alone is not what the icon waits on. The snapshot that
+    // carried the row is.
+    @Test func aSnapshotThatChangesNothingIsStillWorthNoticing() async {
         let activity = MockActivityServicing()
         activity.activities = [makeActivity(id: "a")]
-        let notifications = MockNotificationScheduling()
-        let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
+        activity.activities.append(makeActivity(id: "b", actorId: "blocked"))
+        let state = VMFixtures.makeAppState(activity: activity)
+        state.blockUser("blocked")
 
-        await state.refreshBadge()
-        await state.refreshBadge()
+        let before = state.badgeSync
+        activity.snapshotToken += 1
 
-        #expect(notifications.badgeCounts == [1, 1])
+        #expect(state.badgeSync?.count == before?.count)
+        #expect(state.badgeSync != before)
+    }
+
+    // Resuming is not evidence of anything: the rows in memory can be older
+    // than the badge the push wrote while the app was away.
+    @Test func resumingWithoutASnapshotIsNotAChange() async {
+        let activity = MockActivityServicing()
+        activity.activities = [makeActivity(id: "a")]
+        let state = VMFixtures.makeAppState(activity: activity)
+
+        #expect(state.badgeSync == state.badgeSync)
     }
 
     // Until permission is granted, iOS refuses the badge. Granting it is the

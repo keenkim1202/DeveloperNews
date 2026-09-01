@@ -42,7 +42,7 @@ struct ContentView: View {
         .keenOnChange(of: appState.toastTrigger, perform: onToastTriggerChange)
         .keenOnChange(of: scenePhase, perform: onScenePhaseChange)
         .keenOnChange(of: appState.authService.isSignedIn, perform: onIsSignedInChange)
-        .keenOnChange(of: appState.badgeCount, perform: onBadgeCountChange)
+        .keenOnChange(of: appState.badgeSync, perform: onBadgeSyncChange)
         .keenOnChange(of: appState.pendingActivityDestination, perform: onPendingActivityDestinationChange)
         .onOpenURL(perform: openDeepLink)
         .onAppear(perform: onAppear)
@@ -59,11 +59,11 @@ struct ContentView: View {
         navigation.home = [.articleDetail(articleURL)]
     }
 
-    /// The push sets the icon badge while the app is closed. Once it is open
-    /// the inbox is the truth, including the rows this reader has blocked,
-    /// which no server can count for them. The first snapshot is a change even
-    /// when it is empty, which is how a stale badge over an empty inbox goes.
-    private func onBadgeCountChange() {
+    /// The push sets the icon badge while the app is closed. Once the inbox
+    /// answers, it is the truth: it leaves out the rows this reader blocked,
+    /// which no server can count for them. Every snapshot is worth acting on,
+    /// including one that says the number has not moved.
+    private func onBadgeSyncChange() {
         Task {
             await appState.refreshBadge()
         }
@@ -133,11 +133,6 @@ struct ContentView: View {
             await appState.refreshIfStale(maxAge: AppState.feedStaleThreshold)
             appState.refreshWidgetSnapshot()
             await appState.refreshDailyDigest()
-            // A push that landed while the app sat in the background counted a
-            // row this reader blocked, which leaves the filtered count the same
-            // and nothing to notice. Coming back to the foreground is when the
-            // icon is worth correcting whether or not the number moved.
-            await appState.refreshBadge()
         }
     }
 

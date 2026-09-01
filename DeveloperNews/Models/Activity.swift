@@ -95,3 +95,10 @@ enum ActivityTarget: Hashable, Sendable {
         }
     }
 }
+
+/// The pair the app icon's number is written from: which snapshot it came from
+/// and what it counted.
+struct BadgeSync: Equatable {
+    let snapshot: Int
+    let count: Int
+}
