@@ -176,7 +176,23 @@ final class CommentService: CommentServicing {
             text: comment.text)
         do {
             try await commentsRef(comment.postId).document(comment.id).delete()
+        }
+        catch {
+            errorMessage = error.localizedDescription
+            return
+        }
 
+        // A notification does not outlive what it is about. Only the author of
+        // a comment can delete it, so this is always the actor withdrawing
+        // their own row, which is a delete the rules already allow.
+        //
+        // Ahead of the count, which can fail on its own and would otherwise
+        // take the withdrawal down with it.
+        if let draft {
+            await activityRecorder.clear(draft)
+        }
+
+        do {
             // Atomic, clamped decrement. Security rules reject commentCount < 0,
             // so we can't use FieldValue.increment(-1) on a 0-count post; a
             // transaction lets us read-modify-write safely under contention.
@@ -187,14 +203,6 @@ final class CommentService: CommentServicing {
         }
         catch {
             errorMessage = error.localizedDescription
-            return
-        }
-
-        // A notification does not outlive what it is about. Only the author of
-        // a comment can delete it, so this is always the actor withdrawing
-        // their own row, which is a delete the rules already allow.
-        if let draft {
-            await activityRecorder.clear(draft)
         }
     }
 
