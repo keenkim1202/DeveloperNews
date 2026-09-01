@@ -284,4 +284,76 @@ import Foundation
         #expect(!deleted)
         #expect(appState.toastMessage == "no network")
     }
+
+    // The notification a comment produced points at the comment. Deleting one
+    // and leaving the other is a row that opens a post with nothing in it.
+    @Test func deletingACommentTakesItsNotificationWithIt() async {
+        let comments = MockCommentServicing()
+        comments.comments = [makeComment(id: "c1", authorId: "me")]
+        let activity = MockActivityServicing()
+        activity.activities = [
+            Activity(
+                id: "commentLike_feedPosts_post-1_c1_someone",
+                kind: .commentLike,
+                actorId: "someone",
+                target: .feedPost("post-1"),
+                commentId: "c1",
+                story: nil,
+                parentCommentId: nil,
+                preview: "Body",
+                createdAt: .now,
+                isRead: false),
+        ]
+        let appState = VMFixtures.makeAppState(activity: activity)
+        let vm = FeedPostDetailViewModel(
+            appState: appState,
+            post: VMFixtures.makeFeedPost(id: "post-1", authorId: "author-1"),
+            commentService: comments)
+
+        await vm.deleteComment(makeComment(id: "c1", authorId: "me"))
+
+        #expect(comments.deletedComments.map(\.postAuthorId) == ["author-1"])
+        #expect(activity.deletedActivityIds == [["commentLike_feedPosts_post-1_c1_someone"]])
+    }
+
+    // Same for the post: the likes and comments it collected are rows that
+    // point at something the reader has just removed.
+    @Test func deletingAPostTakesItsNotificationsWithIt() async {
+        let activity = MockActivityServicing()
+        activity.activities = [
+            Activity(
+                id: "postLike_feedPosts_post-1_someone",
+                kind: .postLike,
+                actorId: "someone",
+                target: .feedPost("post-1"),
+                commentId: nil,
+                story: nil,
+                parentCommentId: nil,
+                preview: "",
+                createdAt: .now,
+                isRead: false),
+            Activity(
+                id: "postLike_feedPosts_post-2_someone",
+                kind: .postLike,
+                actorId: "someone",
+                target: .feedPost("post-2"),
+                commentId: nil,
+                story: nil,
+                parentCommentId: nil,
+                preview: "",
+                createdAt: .now,
+                isRead: false),
+        ]
+        let auth = MockAuthServicing()
+        auth.userId = "author-1"
+        let appState = VMFixtures.makeAppState(auth: auth, activity: activity)
+        let vm = FeedPostDetailViewModel(
+            appState: appState,
+            post: VMFixtures.makeFeedPost(id: "post-1", authorId: "author-1"),
+            commentService: MockCommentServicing())
+
+        #expect(await vm.deletePost())
+
+        #expect(activity.deletedActivityIds == [["postLike_feedPosts_post-1_someone"]])
+    }
 }

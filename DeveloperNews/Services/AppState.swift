@@ -436,6 +436,24 @@ final class AppState {
         await pushRegistrar.start()
     }
 
+    /// Drops the reader's own inbox rows about something they have just
+    /// deleted. The row was earned when it was written, and the rules keep it
+    /// deletable by its recipient, but what it points at is gone now.
+    ///
+    /// Only rows the listener has loaded: an inbox older than the window is one
+    /// nobody is going to scroll back to a dead post through.
+    func purgeActivities(aboutPost postId: String) async {
+        await purgeActivities { $0.target?.postId == postId }
+    }
+
+    func purgeActivities(aboutComment commentId: String) async {
+        await purgeActivities { $0.commentId == commentId }
+    }
+
+    private func purgeActivities(matching isStale: (Activity) -> Bool) async {
+        await activityService.delete(activityIds: activityService.activities.filter(isStale).map(\.id))
+    }
+
     func startListeningForActivities() {
         guard let uid = authService.userId else {
             return

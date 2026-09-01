@@ -159,8 +159,21 @@ final class CommentService: CommentServicing {
             preview: text)
     }
 
-    func deleteComment(_ comment: CommunityComment) async {
+    func deleteComment(_ comment: CommunityComment, postAuthorId: String) async {
         errorMessage = nil
+        // Built while the comment is still in the list, because the reply it
+        // answers is what names the person the notification went to.
+        let draft = Self.commentActivityDraft(
+            parentCollection: parentCollection,
+            postId: comment.postId,
+            postAuthorId: postAuthorId,
+            parentComment: comment.parentCommentId.flatMap { id in
+                comments.first { $0.id == id }
+            },
+            actorId: comment.authorId,
+            commentId: comment.id,
+            story: activityStory,
+            text: comment.text)
         do {
             try await commentsRef(comment.postId).document(comment.id).delete()
 
@@ -174,6 +187,14 @@ final class CommentService: CommentServicing {
         }
         catch {
             errorMessage = error.localizedDescription
+            return
+        }
+
+        // A notification does not outlive what it is about. Only the author of
+        // a comment can delete it, so this is always the actor withdrawing
+        // their own row, which is a delete the rules already allow.
+        if let draft {
+            await activityRecorder.clear(draft)
         }
     }
 
