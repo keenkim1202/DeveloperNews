@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - firestore.rules
+      - firestore.indexes.json
       - scripts/test-firestore-rules.py
       - functions/**
       - .github/workflows/firestore-rules.yml
@@ -12,6 +13,7 @@ on:
       - develop
     paths:
       - firestore.rules
+      - firestore.indexes.json
   workflow_dispatch:
 
 concurrency:
@@ -89,5 +91,8 @@ jobs:
       # Rules land ahead of the build that ships them, so one that requires a
       # field the released app does not write yet breaks that app. Keep rules
       # changes backward compatible with what is in the store.
-      - name: Deploy the rules
-        run: firebase deploy --only firestore:rules --non-interactive
+      # Indexes alongside the rules: the cleanup trigger queries activities
+      # across every inbox, and a collection-group query without its index
+      # fails at the moment it is needed rather than at deploy time.
+      - name: Deploy the rules and indexes
+        run: firebase deploy --only firestore:rules,firestore:indexes --non-interactive
