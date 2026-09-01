@@ -72,6 +72,13 @@ exports.sendActivityPush = onDocumentCreated(
     // incremented: a push that never arrived would otherwise leave the number
     // wrong for good.
     //
+    // Only ever sent by a new activity, so a count that falls while every
+    // device is closed — read on one phone, an actor withdrawing a like — does
+    // not reach the others until one of them is opened. Pushing that would mean
+    // a trigger on every write to every inbox, and marking an inbox read is two
+    // hundred writes in one batch. That is a lot of invocations to buy a number
+    // on a device nobody is holding.
+    //
     // Read as late as possible and still not ordered: two activities for the
     // same reader within the same moment can be counted by one invocation and
     // delivered by the other, leaving the icon off by one until the app is
