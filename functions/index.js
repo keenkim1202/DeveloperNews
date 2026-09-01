@@ -1,10 +1,11 @@
 "use strict";
 
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated, onDocumentDeleted } = require("firebase-functions/v2/firestore");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
 const { buildNotification, buildRoute } = require("./notification");
+const { cleanUpAfterPost } = require("./cleanup");
 
 initializeApp();
 
@@ -107,3 +108,22 @@ exports.sendActivityPush = onDocumentCreated(
       db.collection("users").doc(recipientId)
         .collection("pushTokens").doc(token).delete()));
   });
+
+const CLEANUP_OPTIONS = {
+  region: "asia-northeast3",
+  // Deleting is idempotent, so a retry would be safe — but a trigger that
+  // retries is the one way this runs away with the bill, and what it would be
+  // retrying for is rows nobody can see.
+  retry: false,
+  maxInstances: 3,
+  timeoutSeconds: 120,
+  minInstances: 0,
+};
+
+exports.cleanUpDeletedFeedPost = onDocumentDeleted(
+  { ...CLEANUP_OPTIONS, document: "feedPosts/{postId}" },
+  (event) => cleanUpAfterPost(getFirestore(), "feedPosts", event.params.postId));
+
+exports.cleanUpDeletedCommunityPost = onDocumentDeleted(
+  { ...CLEANUP_OPTIONS, document: "posts/{postId}" },
+  (event) => cleanUpAfterPost(getFirestore(), "posts", event.params.postId));
