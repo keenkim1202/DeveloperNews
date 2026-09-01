@@ -82,4 +82,31 @@ import Testing
 
         #expect(notifications.badgeCounts.isEmpty)
     }
+
+    // An inbox that answers with nothing unread is still an answer, and the
+    // badge a push left behind has to come off for it.
+    @Test func anEmptyAnswerIsStillWorthWriting() async {
+        let activity = MockActivityServicing()
+        activity.hasLoaded = true
+        let notifications = MockNotificationScheduling()
+        let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
+
+        #expect(state.badgeCount == 0)
+
+        await state.refreshBadge()
+
+        #expect(notifications.badgeCounts == [0])
+    }
+
+    @Test func deletingTheAccountClearsIt() async {
+        let auth = MockAuthServicing()
+        auth.userId = "me"
+        auth.deleteAccountResult = .success
+        let notifications = MockNotificationScheduling()
+        let state = VMFixtures.makeAppState(auth: auth, notifications: notifications)
+
+        #expect(await state.deleteCurrentAccount() == .success)
+
+        #expect(notifications.badgeCounts == [0])
+    }
 }

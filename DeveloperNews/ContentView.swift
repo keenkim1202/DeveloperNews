@@ -42,7 +42,7 @@ struct ContentView: View {
         .keenOnChange(of: appState.toastTrigger, perform: onToastTriggerChange)
         .keenOnChange(of: scenePhase, perform: onScenePhaseChange)
         .keenOnChange(of: appState.authService.isSignedIn, perform: onIsSignedInChange)
-        .keenOnChange(of: appState.unreadActivityCount, perform: onUnreadActivityCountChange)
+        .keenOnChange(of: appState.badgeCount, perform: onBadgeCountChange)
         .keenOnChange(of: appState.pendingActivityDestination, perform: onPendingActivityDestinationChange)
         .onOpenURL(perform: openDeepLink)
         .onAppear(perform: onAppear)
@@ -61,8 +61,9 @@ struct ContentView: View {
 
     /// The push sets the icon badge while the app is closed. Once it is open
     /// the inbox is the truth, including the rows this reader has blocked,
-    /// which no server can count for them.
-    private func onUnreadActivityCountChange() {
+    /// which no server can count for them. The first snapshot is a change even
+    /// when it is empty, which is how a stale badge over an empty inbox goes.
+    private func onBadgeCountChange() {
         Task {
             await appState.refreshBadge()
         }

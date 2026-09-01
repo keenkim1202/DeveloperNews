@@ -418,22 +418,27 @@ final class AppState {
         visibleActivities.count { !$0.isRead }
     }
 
+    /// What the icon should show, or nil while the inbox has yet to answer.
+    /// An empty list means both "nothing unread" and "not loaded yet", and only
+    /// the first of those is a number.
+    var badgeCount: Int? {
+        activityService.hasLoaded ? unreadActivityCount : nil
+    }
+
     /// Puts the inbox count on the app icon.
     ///
     /// The push carries a count of its own for while the app is closed, and it
     /// counts rows this reader has blocked, because a server has no way to know
     /// who they are. This is the number that agrees with what is on screen.
     ///
-    /// Not before the inbox has answered: an empty list that is still loading
-    /// looks exactly like an empty inbox, and writing zero for it would wipe a
-    /// badge the push had right. Only what the window holds is counted, so a
-    /// reader with more unread rows than one window sees the window's number —
-    /// the same one the tab badge shows them.
+    /// Only what the window holds is counted, so a reader with more unread rows
+    /// than one window sees the window's number — the same one the tab badge
+    /// shows them.
     func refreshBadge() async {
-        guard activityService.hasLoaded else {
+        guard let badgeCount else {
             return
         }
-        await notificationScheduler.setBadgeCount(unreadActivityCount)
+        await notificationScheduler.setBadgeCount(badgeCount)
     }
 
     /// Pairs this device's push token with the signed-in reader, and unpairs it
@@ -524,7 +529,13 @@ final class AppState {
             return .failed
         }
 
-        return await authService.deleteAccount()
+        let result = await authService.deleteAccount()
+        if case .success = result {
+            // The listener stopped before the inbox went, so no count change is
+            // coming to clear this. The account it belonged to no longer exists.
+            await notificationScheduler.setBadgeCount(0)
+        }
+        return result
     }
 
     func updateDisplayName(_ name: String) async {
