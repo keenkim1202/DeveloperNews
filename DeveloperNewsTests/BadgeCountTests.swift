@@ -2,10 +2,9 @@ import Foundation
 import Testing
 @testable import DeveloperNews
 
-// The number on the app icon comes from two places: the push sets it while the
-// app is closed, and the inbox corrects it once the app is open. What is worth
-// pinning is the correcting half, since it is the one that can disagree with
-// what the reader sees on screen.
+// The push sets the icon while the app is closed and the inbox corrects it
+// once open. The correcting half is what can disagree with the screen, so it is
+// the half worth pinning.
 @MainActor
 @Suite struct BadgeCountTests {
     /// The switch is what the badge hangs off, so every case here starts with

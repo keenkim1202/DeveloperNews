@@ -8,10 +8,9 @@ final class ActivityService: ActivityServicing {
     private(set) var errorMessage: String?
     private(set) var canLoadMore = false
 
-    /// Whether the server has answered. Firestore serves the cache first, and
-    /// a cached inbox can be older than the push that arrived while the app was
-    /// closed — old enough to be empty. Rows from the cache are still shown;
-    /// they are just not evidence of what is unread.
+    /// Whether the server has answered. Firestore serves the cache first, and a
+    /// cached inbox can be older than the push that arrived while the app was
+    /// closed. Cached rows still show; they are not evidence of what is unread.
     private(set) var hasServerSnapshot = false
 
     /// Bumped by every snapshot, including one that changes nothing. It is the
@@ -91,10 +90,8 @@ final class ActivityService: ActivityServicing {
         listenerRegistration = activitiesRef(userId)
             .order(by: "createdAt", descending: true)
             .limit(to: windowLimit)
-            // Metadata changes included, because the answer that matters here
-            // is often not a change in rows: the cache serves the same
-            // documents the server then confirms, and without this the moment
-            // it stops being the cache is never delivered.
+            // Metadata included: when the cache and the server hold the same
+            // documents, the moment it stops being the cache is the only event.
             .addSnapshotListener(includeMetadataChanges: true) { [weak self] snapshot, error in
                 Task { @MainActor in
                     guard let self else { return }

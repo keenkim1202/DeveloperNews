@@ -5,8 +5,8 @@ const assert = require("node:assert");
 const { cleanUpAfterPost, PAGE } = require("../cleanup");
 
 /**
- * A Firestore stand-in that answers the collection-group query with the pages
- * it was given, one per call, and records what was asked of it.
+ * A Firestore stand-in that answers the collection-group query with the pages it
+ * was given, one per call, and records what was asked of it.
  */
 function makeDb(pages) {
   const deleted = [];

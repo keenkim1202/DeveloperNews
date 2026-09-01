@@ -420,10 +420,8 @@ final class AppState {
     }
 
     /// What the icon should show, or nil while nothing can be said about it.
-    ///
-    /// Signed out, or with alerts switched off, the answer is zero without
-    /// asking the inbox: there is nobody to notify. Otherwise it is what the
-    /// inbox holds, and only once the server has answered — an empty list means
+    /// Signed out or with alerts off it is zero without asking. Otherwise it is
+    /// the inbox, but only once the server has answered: an empty list means
     /// both "nothing unread" and "not loaded yet", and only the first is a
     /// number.
     var badgeCount: Int? {
@@ -436,13 +434,10 @@ final class AppState {
         return unreadActivityCount
     }
 
-    /// What has to change before the icon is written again.
-    ///
-    /// The count alone is not enough: a push that counted a row this reader
-    /// blocked leaves it exactly where it was. The snapshot alone is not
-    /// enough either, because a row swiped away never reaches the server before
-    /// it leaves the list. Resuming is not evidence of either — the rows in
-    /// memory can be older than the badge the push just wrote.
+    /// What has to change before the icon is written again. Not the count
+    /// alone — a push that counted a blocked row leaves it where it was. Not
+    /// the snapshot alone — a swiped row leaves the list before it reaches the
+    /// server. And not resuming, which is evidence of neither.
     var badgeSync: BadgeSync? {
         guard let badgeCount else {
             return nil
@@ -450,15 +445,9 @@ final class AppState {
         return BadgeSync(snapshot: activityService.snapshotToken, count: badgeCount)
     }
 
-    /// Puts the inbox count on the app icon.
-    ///
-    /// The push carries a count of its own for while the app is closed, and it
-    /// counts rows this reader has blocked, because a server has no way to know
-    /// who they are. This is the number that agrees with what is on screen.
-    ///
-    /// Only what the window holds is counted, so a reader with more unread rows
-    /// than one window sees the window's number — the same one the tab badge
-    /// shows them.
+    /// Puts `badgeCount` on the app icon. Only what the window holds, so a
+    /// reader with more unread rows than one window sees the window's number —
+    /// the same one the tab badge shows them.
     func refreshBadge() async {
         guard let badgeCount else {
             return
@@ -484,12 +473,9 @@ final class AppState {
         await pushRegistrar.start()
     }
 
-    /// Drops the reader's own inbox rows about something they have just
-    /// deleted. The row was earned when it was written, and the rules keep it
-    /// deletable by its recipient, but what it points at is gone now.
-    ///
-    /// Only rows the listener has loaded: an inbox older than the window is one
-    /// nobody is going to scroll back to a dead post through.
+    /// Drops the reader's own inbox rows about something they just deleted —
+    /// earned when written, pointing at nothing now. Only rows the listener has
+    /// loaded; nobody scrolls past the window to reach a dead post.
     func purgeActivities(aboutPost postId: String) async {
         await purgeActivities { $0.target?.postId == postId }
     }
@@ -556,9 +542,7 @@ final class AppState {
 
         let result = await authService.deleteAccount()
         // The listener stopped before the inbox went, so no count change is
-        // coming to clear this. Every outcome here except an outright failure
-        // leaves the reader signed out, including the one that asks them to
-        // sign in again.
+        // coming. Every outcome but an outright failure leaves them signed out.
         await refreshBadge()
         return result
     }
@@ -587,10 +571,8 @@ final class AppState {
         await pushRegistrar.stop()
         profileService.stopListening()
         authService.signOut()
-        // Asked rather than assumed: a sign-out can fail and leave the reader
-        // where they were, and a successful one is confirmed by a listener that
-        // has not necessarily run yet. Either way the answer comes from the
-        // state, and the same call runs again when the state settles.
+        // Asked, not assumed: a sign-out can fail, and one that worked is
+        // confirmed by a listener that has not necessarily run yet.
         await refreshBadge()
     }
 
