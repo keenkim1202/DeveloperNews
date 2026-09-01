@@ -68,4 +68,18 @@ import Testing
 
         #expect(notifications.badgeCounts == [0])
     }
+
+    // An inbox that has not answered yet is an empty list, the same shape as an
+    // inbox with nothing in it. Writing zero for the first would wipe a badge
+    // the push had right.
+    @Test func anInboxThatHasNotAnsweredIsNotACountOfZero() async {
+        let activity = MockActivityServicing()
+        activity.hasLoaded = false
+        let notifications = MockNotificationScheduling()
+        let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
+
+        await state.refreshBadge()
+
+        #expect(notifications.badgeCounts.isEmpty)
+    }
 }

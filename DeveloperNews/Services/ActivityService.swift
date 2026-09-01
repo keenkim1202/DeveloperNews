@@ -8,6 +8,11 @@ final class ActivityService: ActivityServicing {
     private(set) var errorMessage: String?
     private(set) var canLoadMore = false
 
+    /// Whether a snapshot has arrived. Before the first one there is no inbox,
+    /// only an empty list that has not been filled in yet — a difference that
+    /// matters to anything reading the unread count.
+    private(set) var hasLoaded = false
+
     /// How much of the inbox one window holds, and how much each `loadMore`
     /// adds to it.
     private static let windowStep = 100
@@ -57,6 +62,7 @@ final class ActivityService: ActivityServicing {
         pendingDeletions = []
         windowLimit = Self.windowStep
         canLoadMore = false
+        hasLoaded = false
     }
 
     /// Widens the window by a page. A listener carries its limit, so there is
@@ -89,6 +95,7 @@ final class ActivityService: ActivityServicing {
                     }
 
                     let documents = snapshot?.documents ?? []
+                    self.hasLoaded = true
                     // A full window is the only evidence there is more behind
                     // it; a short one means the query reached the end.
                     self.canLoadMore = documents.count >= self.windowLimit

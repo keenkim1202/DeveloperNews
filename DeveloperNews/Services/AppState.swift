@@ -421,9 +421,18 @@ final class AppState {
     /// Puts the inbox count on the app icon.
     ///
     /// The push carries a count of its own for while the app is closed, and it
-    /// counts rows this reader has blocked because a server has no way to know
+    /// counts rows this reader has blocked, because a server has no way to know
     /// who they are. This is the number that agrees with what is on screen.
+    ///
+    /// Not before the inbox has answered: an empty list that is still loading
+    /// looks exactly like an empty inbox, and writing zero for it would wipe a
+    /// badge the push had right. Only what the window holds is counted, so a
+    /// reader with more unread rows than one window sees the window's number —
+    /// the same one the tab badge shows them.
     func refreshBadge() async {
+        guard activityService.hasLoaded else {
+            return
+        }
         await notificationScheduler.setBadgeCount(unreadActivityCount)
     }
 

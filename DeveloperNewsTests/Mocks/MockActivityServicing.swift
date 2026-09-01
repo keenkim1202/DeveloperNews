@@ -13,6 +13,7 @@ final class MockActivityServicing: ActivityServicing {
     private(set) var deletedActivityIds: [[Activity.ID]] = []
     private(set) var loadMoreCallCount = 0
     var canLoadMore = false
+    var hasLoaded = true
     var deleteInboxError: (any Error)?
 
     /// Set to make the next `delete` fail the way the live service does — with

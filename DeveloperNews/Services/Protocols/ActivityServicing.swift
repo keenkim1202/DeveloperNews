@@ -10,6 +10,10 @@ protocol ActivityServicing {
     /// Whether the inbox holds rows older than the ones currently loaded.
     var canLoadMore: Bool { get }
 
+    /// Whether a snapshot has arrived yet. An empty inbox and one that has not
+    /// answered look the same in `activities`, and they are not the same thing.
+    var hasLoaded: Bool { get }
+
     /// Drops the last failure once the screen has shown it.
     func clearError()
 

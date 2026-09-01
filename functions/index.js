@@ -70,8 +70,15 @@ exports.sendActivityPush = onDocumentCreated(
     const route = buildRoute(activity, message);
     // What the icon shows while the app is closed. Counted rather than
     // incremented: a push that never arrived would otherwise leave the number
-    // wrong for good. The app corrects it the moment it is opened, since only
-    // the device knows which actors this reader has blocked.
+    // wrong for good.
+    //
+    // Read as late as possible and still not ordered: two activities for the
+    // same reader within the same moment can be counted by one invocation and
+    // delivered by the other, leaving the icon off by one until the app is
+    // opened. Ordering it would mean serialising every push for every reader,
+    // which is a lot of throughput to spend on a number the app corrects on
+    // sight — it recounts from the inbox, including the actors this reader has
+    // blocked, which no server can leave out for them.
     const unread = await db
       .collection("users").doc(recipientId)
       .collection("activities").where("isRead", "==", false).count().get();
