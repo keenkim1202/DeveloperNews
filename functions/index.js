@@ -68,12 +68,19 @@ exports.sendActivityPush = onDocumentCreated(
 
     const tokens = tokenDocs.docs.map((doc) => doc.id);
     const route = buildRoute(activity, message);
+    // What the icon shows while the app is closed. Counted rather than
+    // incremented: a push that never arrived would otherwise leave the number
+    // wrong for good. The app corrects it the moment it is opened, since only
+    // the device knows which actors this reader has blocked.
+    const unread = await db
+      .collection("users").doc(recipientId)
+      .collection("activities").where("isRead", "==", false).count().get();
 
     const response = await getMessaging().sendEachForMulticast({
       tokens,
       data: route,
       notification: { title: message.title, body: message.body || undefined },
-      apns: { payload: { aps: { sound: "default", badge: 1 } } },
+      apns: { payload: { aps: { sound: "default", badge: unread.data().count } } },
     });
 
     // Tokens the device no longer answers to are removed here rather than left

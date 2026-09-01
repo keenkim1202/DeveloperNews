@@ -418,6 +418,15 @@ final class AppState {
         visibleActivities.count { !$0.isRead }
     }
 
+    /// Puts the inbox count on the app icon.
+    ///
+    /// The push carries a count of its own for while the app is closed, and it
+    /// counts rows this reader has blocked because a server has no way to know
+    /// who they are. This is the number that agrees with what is on screen.
+    func refreshBadge() async {
+        await notificationScheduler.setBadgeCount(unreadActivityCount)
+    }
+
     /// Pairs this device's push token with the signed-in reader, and unpairs it
     /// on the way out. Called from the same place the activity listener starts,
     /// because a push about an activity is the same event arriving elsewhere.
@@ -533,6 +542,9 @@ final class AppState {
         await pushRegistrar.stop()
         profileService.stopListening()
         authService.signOut()
+        // The inbox belonged to the account that just left. Leaving its count
+        // on the icon offers a number nobody signed in can open.
+        await notificationScheduler.setBadgeCount(0)
     }
 
     func toggleSaved(_ item: ContentItem) {

@@ -42,6 +42,7 @@ struct ContentView: View {
         .keenOnChange(of: appState.toastTrigger, perform: onToastTriggerChange)
         .keenOnChange(of: scenePhase, perform: onScenePhaseChange)
         .keenOnChange(of: appState.authService.isSignedIn, perform: onIsSignedInChange)
+        .keenOnChange(of: appState.unreadActivityCount, perform: onUnreadActivityCountChange)
         .keenOnChange(of: appState.pendingActivityDestination, perform: onPendingActivityDestinationChange)
         .onOpenURL(perform: openDeepLink)
         .onAppear(perform: onAppear)
@@ -56,6 +57,15 @@ struct ContentView: View {
         }
         appState.currentTab = .home
         navigation.home = [.articleDetail(articleURL)]
+    }
+
+    /// The push sets the icon badge while the app is closed. Once it is open
+    /// the inbox is the truth, including the rows this reader has blocked,
+    /// which no server can count for them.
+    private func onUnreadActivityCountChange() {
+        Task {
+            await appState.refreshBadge()
+        }
     }
 
     /// Opens what a tapped push pointed at. Same shape as the widget's deep
@@ -83,6 +93,9 @@ struct ContentView: View {
         }
         appState.communityService.startListening()
         appState.startListeningForActivities()
+        Task {
+            await appState.refreshBadge()
+        }
         Task {
             await appState.processPendingSharedItems()
         }

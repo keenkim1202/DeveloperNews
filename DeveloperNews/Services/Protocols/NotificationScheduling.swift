@@ -29,4 +29,8 @@ protocol NotificationScheduling {
     ) async -> Bool
 
     func cancelDailyDigest()
+
+    /// Sets the number on the app icon. Nothing else writes it, so whatever is
+    /// passed here is what the reader sees on the Home Screen.
+    func setBadgeCount(_ count: Int) async
 }
