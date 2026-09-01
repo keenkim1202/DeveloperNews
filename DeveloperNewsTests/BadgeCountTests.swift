@@ -59,14 +59,38 @@ import Testing
     }
 
     @Test func signingOutClearsIt() async {
+        let auth = MockAuthServicing()
+        auth.userId = "me"
         let activity = MockActivityServicing()
         activity.activities = [makeActivity(id: "a")]
         let notifications = MockNotificationScheduling()
-        let state = VMFixtures.makeAppState(activity: activity, notifications: notifications)
+        let state = VMFixtures.makeAppState(
+            auth: auth,
+            activity: activity,
+            notifications: notifications)
 
         await state.signOut()
 
         #expect(notifications.badgeCounts == [0])
+    }
+
+    // A sign-out that failed leaves the reader signed in. Their unread rows are
+    // still theirs to see.
+    @Test func aFailedSignOutLeavesItAlone() async {
+        let auth = MockAuthServicing()
+        auth.userId = "me"
+        auth.signOutFails = true
+        let activity = MockActivityServicing()
+        activity.activities = [makeActivity(id: "a")]
+        let notifications = MockNotificationScheduling()
+        let state = VMFixtures.makeAppState(
+            auth: auth,
+            activity: activity,
+            notifications: notifications)
+
+        await state.signOut()
+
+        #expect(notifications.badgeCounts.isEmpty)
     }
 
     // An inbox that has not answered yet is an empty list, the same shape as an

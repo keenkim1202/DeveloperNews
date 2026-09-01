@@ -578,6 +578,12 @@ final class AppState {
         authService.signOut()
         // The inbox belonged to the account that just left. Leaving its count
         // on the icon offers a number nobody signed in can open.
+        //
+        // A sign-out can fail, and one that does leaves the reader where they
+        // were, unread rows and all.
+        guard authService.userId == nil else {
+            return
+        }
         await notificationScheduler.setBadgeCount(0)
     }
 
